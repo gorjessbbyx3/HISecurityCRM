@@ -19,7 +19,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).claims.sub;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
@@ -104,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log activity
       await storage.createActivity({
-        userId: req.user.claims.sub,
+        userId: (req.user as any).claims.sub,
         activityType: "client_contact",
         entityType: "client",
         entityId: client.id,
@@ -125,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const client = await storage.updateClient(id, updates);
       
       await storage.createActivity({
-        userId: req.user.claims.sub,
+        userId: (req.user as any).claims.sub,
         activityType: "client_contact",
         entityType: "client",
         entityId: id,
@@ -145,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteClient(id);
       
       await storage.createActivity({
-        userId: req.user.claims.sub,
+        userId: (req.user as any).claims.sub,
         activityType: "client_contact",
         entityType: "client",
         entityId: id,
@@ -179,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const property = await storage.createProperty(propertyData);
       
       await storage.createActivity({
-        userId: req.user.claims.sub,
+        userId: (req.user as any).claims.sub,
         activityType: "patrol",
         entityType: "property",
         entityId: property.id,
@@ -200,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const property = await storage.updateProperty(id, updates);
       
       await storage.createActivity({
-        userId: req.user.claims.sub,
+        userId: (req.user as any).claims.sub,
         activityType: "patrol",
         entityType: "property",
         entityId: id,
@@ -232,14 +232,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const incidentData = insertIncidentSchema.parse({
         ...req.body,
-        reportedBy: req.user.claims.sub,
+        reportedBy: (req.user as any).claims.sub,
         occuredAt: req.body.occuredAt || new Date(),
       });
       
       const incident = await storage.createIncident(incidentData);
       
       await storage.createActivity({
-        userId: req.user.claims.sub,
+        userId: (req.user as any).claims.sub,
         activityType: "incident",
         entityType: "incident",
         entityId: incident.id,
@@ -260,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const incident = await storage.updateIncident(id, updates);
       
       await storage.createActivity({
-        userId: req.user.claims.sub,
+        userId: (req.user as any).claims.sub,
         activityType: "incident",
         entityType: "incident",
         entityId: id,
@@ -299,14 +299,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const reportData = insertPatrolReportSchema.parse({
         ...req.body,
-        officerId: req.user.claims.sub,
+        officerId: (req.user as any).claims.sub,
         startTime: req.body.startTime || new Date(),
       });
       
       const report = await storage.createPatrolReport(reportData);
       
       await storage.createActivity({
-        userId: req.user.claims.sub,
+        userId: (req.user as any).claims.sub,
         activityType: "report",
         entityType: "patrol_report",
         entityId: report.id,
@@ -327,7 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const report = await storage.updatePatrolReport(id, updates);
       
       await storage.createActivity({
-        userId: req.user.claims.sub,
+        userId: (req.user as any).claims.sub,
         activityType: "report",
         entityType: "patrol_report",
         entityId: id,
@@ -361,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const appointment = await storage.createAppointment(appointmentData);
       
       await storage.createActivity({
-        userId: req.user.claims.sub,
+        userId: (req.user as any).claims.sub,
         activityType: "client_contact",
         entityType: "appointment",
         entityId: appointment.id,
