@@ -424,6 +424,8 @@ export class DatabaseStorage implements IStorage {
       staffOnDuty: staffOnDutyCount.count,
     };
   }
+
+
 }
 
 export const storage = new DatabaseStorage();

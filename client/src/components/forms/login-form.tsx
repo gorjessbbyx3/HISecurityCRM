@@ -35,10 +35,11 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
       if (response.ok) {
         toast({
-          title: "Login Successful",
+          title: "Login Successful", 
           description: `Welcome back, ${data.user.firstName}!`,
         });
-        onLoginSuccess();
+        // Force a page reload to update authentication state
+        window.location.href = "/dashboard";
       } else {
         setError(data.message || "Invalid credentials");
       }

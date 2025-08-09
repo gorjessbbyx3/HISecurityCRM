@@ -27,22 +27,27 @@ export default function Dashboard() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<{
+    activePatrols: number;
+    crimeIncidents: number;
+    propertiesSecured: number;
+    staffOnDuty: number;
+  }>({
     queryKey: ["/api/dashboard/stats"],
     enabled: isAuthenticated,
   });
 
-  const { data: recentIncidents = [] } = useQuery({
-    queryKey: ["/api/incidents", { recent: true }],
+  const { data: recentIncidents = [] } = useQuery<any[]>({
+    queryKey: ["/api/incidents"],
     enabled: isAuthenticated,
   });
 
-  const { data: todaysReports = [] } = useQuery({
-    queryKey: ["/api/patrol-reports", { today: true }],
+  const { data: todaysReports = [] } = useQuery<any[]>({
+    queryKey: ["/api/patrol-reports"],
     enabled: isAuthenticated,
   });
 
-  const { data: activeStaff = [] } = useQuery({
+  const { data: activeStaff = [] } = useQuery<any[]>({
     queryKey: ["/api/staff/active"],
     enabled: isAuthenticated,
   });
