@@ -5,7 +5,9 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: async ({ queryKey }) => {
         const url = queryKey[0] as string;
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          credentials: 'include', // Important for session cookies
+        });
         
         if (!res.ok) {
           const errorText = await res.text();
@@ -31,6 +33,7 @@ export async function apiRequest(url: string, options: RequestInit = {}) {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: 'include', // Important for session cookies
   };
 
   const mergedOptions = {

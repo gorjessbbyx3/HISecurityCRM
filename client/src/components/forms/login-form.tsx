@@ -28,6 +28,7 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: 'include', // Important for session cookies
         body: JSON.stringify({ username, password }),
       });
 
@@ -38,8 +39,8 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
           title: "Login Successful", 
           description: `Welcome back, ${data.user.firstName}!`,
         });
-        // Force a page reload to update authentication state
-        window.location.href = "/dashboard";
+        // Refresh the page to update authentication state
+        window.location.reload();
       } else {
         setError(data.message || "Invalid credentials");
       }

@@ -1,7 +1,8 @@
 import { Route, Switch } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/hooks/useAuth";
+import { queryClient } from "@/lib/queryClient";
 
 // Pages
 import Landing from "@/pages/landing";
@@ -16,17 +17,10 @@ import CommunityOutreach from "@/pages/community-outreach";
 import Accounting from "@/pages/accounting";
 import NotFound from "@/pages/not-found";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  console.log("Router state:", { isAuthenticated, isLoading, user });
 
   if (isLoading) {
     return (
@@ -41,24 +35,26 @@ function Router() {
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="*" component={Landing} />
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
-      {!isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/staff" component={Staff} />
-          <Route path="/clients" component={Clients} />
-          <Route path="/properties" component={Properties} />
-          <Route path="/reports" component={Reports} />
-          <Route path="/crime-intelligence" component={CrimeIntelligence} />
-          <Route path="/law-reference" component={LawReference} />
-          <Route path="/community-outreach" component={CommunityOutreach} />
-          <Route path="/accounting" component={Accounting} />
-        </>
-      )}
+      <Route path="/" component={Dashboard} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/staff" component={Staff} />
+      <Route path="/clients" component={Clients} />
+      <Route path="/properties" component={Properties} />
+      <Route path="/reports" component={Reports} />
+      <Route path="/crime-intelligence" component={CrimeIntelligence} />
+      <Route path="/law-reference" component={LawReference} />
+      <Route path="/community-outreach" component={CommunityOutreach} />
+      <Route path="/accounting" component={Accounting} />
       <Route component={NotFound} />
     </Switch>
   );
