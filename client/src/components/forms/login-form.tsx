@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -16,6 +17,7 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +41,8 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
           title: "Login Successful", 
           description: `Welcome back, ${data.user.firstName}!`,
         });
+        // Invalidate auth query to refresh authentication state
+        await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
         // Use the callback to navigate to dashboard
         onLoginSuccess();
       } else {
