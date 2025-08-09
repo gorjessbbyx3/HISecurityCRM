@@ -19,10 +19,19 @@ const DEFAULT_CREDENTIALS = {
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+  
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is required');
+  }
+  
+  if (!process.env.SESSION_SECRET) {
+    throw new Error('SESSION_SECRET environment variable is required');
+  }
+  
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: true, // Auto-create sessions table if missing
+    createTableIfMissing: true,
     ttl: sessionTtl,
     tableName: "sessions",
   });
@@ -31,9 +40,13 @@ export function getSession() {
   sessionStore.on('error', (error) => {
     console.error('Session store error:', error);
   });
+
+  sessionStore.on('connect', () => {
+    console.log('✅ Session store connected to database');
+  });
   
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
@@ -41,7 +54,7 @@ export function getSession() {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: sessionTtl,
-      sameSite: 'lax', // Add sameSite for better compatibility
+      sameSite: 'lax',
     },
   });
 }
