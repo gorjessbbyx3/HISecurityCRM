@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./localAuth";
@@ -16,24 +16,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // Auth routes
-  app.get('/api/auth/user', (req: any, res) => {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
+  // Authentication status endpoint
+  app.get('/api/auth/status', async (req: Request, res: Response) => {
     try {
-      res.json({
-        id: req.user.id,
-        username: req.user.username,
-        email: req.user.email,
-        firstName: req.user.firstName,
-        lastName: req.user.lastName,
-        role: req.user.role
-      });
+      if (req.session?.userId) {
+        const user = await storage.getUserById(req.session.userId);
+        if (user) {
+          return res.json({ authenticated: true, user });
+        }
+      }
+      res.json({ authenticated: false });
     } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      console.error('Auth status error:', error);
+      res.json({ authenticated: false });
+    }
+  });
+
+  // Authentication routes
+  app.post('/api/auth/login', async (req: Request, res: Response) => {
+    console.log('🔐 Login attempt for:', req.body.username);
+    try {
+      const result = await storage.login(req.body.username, req.body.password);
+      if (result.success && result.user) {
+        req.session.userId = result.user.id;
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+            return res.status(500).json({ success: false, error: 'Session error' });
+          }
+          console.log('✅ User logged in successfully:', result.user.username);
+          res.json({ success: true, user: result.user });
+        });
+      } else {
+        console.log('❌ Login failed for:', req.body.username);
+        res.status(401).json({ success: false, error: result.error });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ success: false, error: 'Login failed' });
+    }
+  });
+
+  // Auth routes
+  app.get('/api/auth/user', async (req: Request, res: Response) => {
+    try {
+      if (!req.session?.userId) {
+        console.log('No session found for /api/auth/user');
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUserById(req.session.userId);
+      if (!user) {
+        console.log('User not found for session:', req.session.userId);
+        req.session.destroy(() => {});
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      console.log('User found:', user.username);
+      res.json(user);
+    } catch (error) {
+      console.error('Get user error:', error);
+      res.status(500).json({ error: 'Failed to get user' });
     }
   });
 

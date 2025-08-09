@@ -36,11 +36,13 @@ import {
 import { db } from "./db";
 import { eq, desc, and, gte, sql, or, ilike, lte, lt, like } from "drizzle-orm";
 import crypto from "crypto";
+import bcrypt from 'bcrypt';
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  getUserById(id: number): Promise<any | null>; // Added for consistency with new login logic
 
   // Staff management
   getStaffMembers(): Promise<User[]>;
@@ -126,243 +128,471 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User operations (mandatory for Replit Auth)
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.error(`Error fetching user with id ${id}:`, error);
+      return undefined;
+    }
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
+    try {
+      const [user] = await db
+        .insert(users)
+        .values({...userData, createdAt: new Date(), updatedAt: new Date()})
+        .onConflictDoUpdate({
+          target: users.id,
+          set: {
+            ...userData,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      return user;
+    } catch (error) {
+      console.error('Error upserting user:', error);
+      throw error; // Re-throw to indicate failure
+    }
+  }
+
+  // Added new method to fetch user by ID, assuming the ID is numeric for the database
+  async getUserById(id: number): Promise<any | null> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id as any, id)); // Cast might be needed depending on drizzle-orm setup
+      if (!user) {
+        return null;
+      }
+      const { hashedPassword, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error(`Error fetching user by ID ${id}:`, error);
+      return null;
+    }
+  }
+
+  // Existing login method
+  async login(username: string, password: string) {
+    try {
+      const user = await db.query.usersTable.findFirst({
+        where: eq(users.username, username),
+      });
+
+      if (!user) {
+        return { success: false, error: 'Invalid credentials' };
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.hashedPassword);
+      if (!isValidPassword) {
+        return { success: false, error: 'Invalid credentials' };
+      }
+
+      const { hashedPassword, ...userWithoutPassword } = user;
+      return { success: true, user: userWithoutPassword };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: 'Login failed' };
+    }
   }
 
   // Staff management
   async getStaffMembers(): Promise<User[]> {
-    return await db.select().from(users).orderBy(users.firstName);
+    try {
+      return await db.select().from(users).orderBy(users.firstName);
+    } catch (error) {
+      console.error('Error fetching staff members:', error);
+      return [];
+    }
   }
 
   async getActiveStaff(): Promise<User[]> {
-    return await db
-      .select()
-      .from(users)
-      .where(eq(users.status, "active"))
-      .orderBy(users.firstName);
+    try {
+      return await db
+        .select()
+        .from(users)
+        .where(eq(users.status, "active"))
+        .orderBy(users.firstName);
+    } catch (error) {
+      console.error('Error fetching active staff:', error);
+      return [];
+    }
   }
 
   async updateUserStatus(id: string, status: string): Promise<void> {
-    await db
-      .update(users)
-      .set({ status, updatedAt: new Date() })
-      .where(eq(users.id, id));
+    try {
+      await db
+        .update(users)
+        .set({ status, updatedAt: new Date() })
+        .where(eq(users.id, id));
+    } catch (error) {
+      console.error(`Error updating user status for user ${id}:`, error);
+      // Depending on requirements, you might want to throw or handle this differently
+    }
   }
 
   // Client operations
   async getClients(): Promise<Client[]> {
-    return await db.select().from(clients).orderBy(clients.name);
+    try {
+      return await db.select().from(clients).orderBy(clients.name);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      return [];
+    }
   }
 
   async getClient(id: string): Promise<Client | undefined> {
-    const [client] = await db.select().from(clients).where(eq(clients.id, id));
-    return client;
+    try {
+      const [client] = await db.select().from(clients).where(eq(clients.id, id));
+      return client;
+    } catch (error) {
+      console.error(`Error fetching client with id ${id}:`, error);
+      return undefined;
+    }
   }
 
   async createClient(clientData: InsertClient): Promise<Client> {
-    const [client] = await db.insert(clients).values({
-      id: crypto.randomUUID(),
-      ...clientData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
-    return client;
+    try {
+      const [client] = await db.insert(clients).values({
+        id: crypto.randomUUID(),
+        ...clientData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return client;
+    } catch (error) {
+      console.error('Error creating client:', error);
+      throw error;
+    }
   }
 
   async updateClient(id: string, updates: Partial<InsertClient>): Promise<Client> {
-    const [client] = await db
-      .update(clients)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(clients.id, id))
-      .returning();
-    return client;
+    try {
+      const [client] = await db
+        .update(clients)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(clients.id, id))
+        .returning();
+      if (!client) {
+        throw new Error(`Client with id ${id} not found for update.`);
+      }
+      return client;
+    } catch (error) {
+      console.error(`Error updating client with id ${id}:`, error);
+      throw error;
+    }
   }
 
   async deleteClient(id: string): Promise<void> {
-    await db.delete(clients).where(eq(clients.id, id));
+    try {
+      await db.delete(clients).where(eq(clients.id, id));
+    } catch (error) {
+      console.error(`Error deleting client with id ${id}:`, error);
+      throw error;
+    }
   }
 
   // Property operations
   async getProperties(): Promise<Property[]> {
-    return await db.select().from(properties).orderBy(properties.name);
+    try {
+      return await db.select().from(properties).orderBy(properties.name);
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+      return [];
+    }
   }
 
   async getPropertiesByClient(clientId: string): Promise<Property[]> {
-    return await db
-      .select()
-      .from(properties)
-      .where(eq(properties.clientId, clientId))
-      .orderBy(properties.name);
+    try {
+      return await db
+        .select()
+        .from(properties)
+        .where(eq(properties.clientId, clientId))
+        .orderBy(properties.name);
+    } catch (error) {
+      console.error(`Error fetching properties for client ${clientId}:`, error);
+      return [];
+    }
   }
 
   async getProperty(id: string): Promise<Property | undefined> {
-    const [property] = await db.select().from(properties).where(eq(properties.id, id));
-    return property;
+    try {
+      const [property] = await db.select().from(properties).where(eq(properties.id, id));
+      return property;
+    } catch (error) {
+      console.error(`Error fetching property with id ${id}:`, error);
+      return undefined;
+    }
   }
 
   async createProperty(propertyData: InsertProperty): Promise<Property> {
-    const [property] = await db.insert(properties).values({
-      id: crypto.randomUUID(),
-      ...propertyData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
-    return property;
+    try {
+      const [property] = await db.insert(properties).values({
+        id: crypto.randomUUID(),
+        ...propertyData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return property;
+    } catch (error) {
+      console.error('Error creating property:', error);
+      throw error;
+    }
   }
 
   async updateProperty(id: string, updates: Partial<InsertProperty>): Promise<Property> {
-    const [property] = await db
-      .update(properties)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(properties.id, id))
-      .returning();
-    return property;
+    try {
+      const [property] = await db
+        .update(properties)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(properties.id, id))
+        .returning();
+      if (!property) {
+        throw new Error(`Property with id ${id} not found for update.`);
+      }
+      return property;
+    } catch (error) {
+      console.error(`Error updating property with id ${id}:`, error);
+      throw error;
+    }
   }
 
   async deleteProperty(id: string): Promise<void> {
-    await db.delete(properties).where(eq(properties.id, id));
+    try {
+      await db.delete(properties).where(eq(properties.id, id));
+    } catch (error) {
+      console.error(`Error deleting property with id ${id}:`, error);
+      throw error;
+    }
   }
 
   // Incident operations
   async getIncidents(): Promise<Incident[]> {
-    return await db.select().from(incidents).orderBy(desc(incidents.occuredAt));
+    try {
+      return await db.select().from(incidents).orderBy(desc(incidents.occuredAt));
+    } catch (error) {
+      console.error('Error fetching incidents:', error);
+      return [];
+    }
   }
 
   async getRecentIncidents(hours: number = 24): Promise<Incident[]> {
-    const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
-    return await db.select().from(incidents)
-      .where(gte(incidents.occuredAt, cutoff))
-      .orderBy(desc(incidents.occuredAt));
+    try {
+      const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
+      return await db.select().from(incidents)
+        .where(gte(incidents.occuredAt, cutoff))
+        .orderBy(desc(incidents.occuredAt));
+    } catch (error) {
+      console.error(`Error fetching recent incidents (last ${hours} hours):`, error);
+      return [];
+    }
   }
 
   async getIncident(id: string): Promise<Incident | undefined> {
-    const [incident] = await db.select().from(incidents).where(eq(incidents.id, id));
-    return incident;
+    try {
+      const [incident] = await db.select().from(incidents).where(eq(incidents.id, id));
+      return incident;
+    } catch (error) {
+      console.error(`Error fetching incident with id ${id}:`, error);
+      return undefined;
+    }
   }
 
   async createIncident(incidentData: InsertIncident): Promise<Incident> {
-    const [incident] = await db.insert(incidents).values({
-      id: crypto.randomUUID(),
-      ...incidentData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
-    return incident;
+    try {
+      const [incident] = await db.insert(incidents).values({
+        id: crypto.randomUUID(),
+        ...incidentData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return incident;
+    } catch (error) {
+      console.error('Error creating incident:', error);
+      throw error;
+    }
   }
 
   async updateIncident(id: string, updates: Partial<InsertIncident>): Promise<Incident> {
-    const [incident] = await db
-      .update(incidents)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(incidents.id, id))
-      .returning();
-    return incident;
+    try {
+      const [incident] = await db
+        .update(incidents)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(incidents.id, id))
+        .returning();
+      if (!incident) {
+        throw new Error(`Incident with id ${id} not found for update.`);
+      }
+      return incident;
+    } catch (error) {
+      console.error(`Error updating incident with id ${id}:`, error);
+      throw error;
+    }
   }
 
   // Patrol report operations
   async getPatrolReports(): Promise<PatrolReport[]> {
-    return await db.select().from(patrolReports).orderBy(desc(patrolReports.startTime));
+    try {
+      return await db.select().from(patrolReports).orderBy(desc(patrolReports.startTime));
+    } catch (error) {
+      console.error('Error fetching patrol reports:', error);
+      return [];
+    }
   }
 
   async getPatrolReportsByOfficer(officerId: string): Promise<PatrolReport[]> {
-    return await db
-      .select()
-      .from(patrolReports)
-      .where(eq(patrolReports.officerId, officerId))
-      .orderBy(desc(patrolReports.startTime));
+    try {
+      return await db
+        .select()
+        .from(patrolReports)
+        .where(eq(patrolReports.officerId, officerId))
+        .orderBy(desc(patrolReports.startTime));
+    } catch (error) {
+      console.error(`Error fetching patrol reports for officer ${officerId}:`, error);
+      return [];
+    }
   }
 
   async getTodaysReports(): Promise<PatrolReport[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return await db.select().from(patrolReports)
-      .where(gte(patrolReports.startTime, today))
-      .orderBy(desc(patrolReports.startTime));
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return await db.select().from(patrolReports)
+        .where(gte(patrolReports.startTime, today))
+        .orderBy(desc(patrolReports.startTime));
+    } catch (error) {
+      console.error('Error fetching today\'s patrol reports:', error);
+      return [];
+    }
   }
 
   async createPatrolReport(reportData: InsertPatrolReport): Promise<PatrolReport> {
-    const [report] = await db.insert(patrolReports).values({
-      id: crypto.randomUUID(),
-      ...reportData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
-    return report;
+    try {
+      const [report] = await db.insert(patrolReports).values({
+        id: crypto.randomUUID(),
+        ...reportData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return report;
+    } catch (error) {
+      console.error('Error creating patrol report:', error);
+      throw error;
+    }
   }
 
   async updatePatrolReport(id: string, updates: Partial<InsertPatrolReport>): Promise<PatrolReport> {
-    const [report] = await db
-      .update(patrolReports)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(patrolReports.id, id))
-      .returning();
-    return report;
+    try {
+      const [report] = await db
+        .update(patrolReports)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(patrolReports.id, id))
+        .returning();
+      if (!report) {
+        throw new Error(`Patrol report with id ${id} not found for update.`);
+      }
+      return report;
+    } catch (error) {
+      console.error(`Error updating patrol report with id ${id}:`, error);
+      throw error;
+    }
   }
 
   // Appointment operations
   async getAppointments(): Promise<Appointment[]> {
-    return await db.select().from(appointments).orderBy(appointments.scheduledAt);
+    try {
+      return await db.select().from(appointments).orderBy(appointments.scheduledAt);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      return [];
+    }
   }
 
   async getTodaysAppointments(): Promise<Appointment[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
-    return await db.select().from(appointments)
-      .where(and(
-        gte(appointments.scheduledAt, today),
-        lt(appointments.scheduledAt, tomorrow)
-      ))
-      .orderBy(appointments.scheduledAt);
+      return await db.select().from(appointments)
+        .where(and(
+          gte(appointments.scheduledAt, today),
+          lt(appointments.scheduledAt, tomorrow)
+        ))
+        .orderBy(appointments.scheduledAt);
+    } catch (error) {
+      console.error('Error fetching today\'s appointments:', error);
+      return [];
+    }
   }
 
   async createAppointment(appointmentData: InsertAppointment): Promise<Appointment> {
-    const [appointment] = await db.insert(appointments).values({
-      id: crypto.randomUUID(),
-      ...appointmentData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
-    return appointment;
+    try {
+      const [appointment] = await db.insert(appointments).values({
+        id: crypto.randomUUID(),
+        ...appointmentData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return appointment;
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      throw error;
+    }
+  }
+
+  async updateAppointment(id: string, updates: Partial<InsertAppointment>): Promise<Appointment> {
+    try {
+      const [appointment] = await db
+        .update(appointments)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(appointments.id, id))
+        .returning();
+      if (!appointment) {
+        throw new Error(`Appointment with id ${id} not found for update.`);
+      }
+      return appointment;
+    } catch (error) {
+      console.error(`Error updating appointment with id ${id}:`, error);
+      throw error;
+    }
   }
 
   // Activity tracking
   async createActivity(activityData: InsertActivity): Promise<Activity> {
-    const [activity] = await db.insert(activities).values({
-      id: crypto.randomUUID(),
-      ...activityData,
-      createdAt: new Date(),
-    }).returning();
-    return activity;
+    try {
+      const [activity] = await db.insert(activities).values({
+        id: crypto.randomUUID(),
+        ...activityData,
+        createdAt: new Date(),
+      }).returning();
+      return activity;
+    } catch (error) {
+      console.error('Error creating activity:', error);
+      throw error;
+    }
   }
 
   async getActivities(limit: number = 50): Promise<Activity[]> {
-    return await db.select().from(activities)
-      .orderBy(desc(activities.createdAt))
-      .limit(limit);
+    try {
+      return await db.select().from(activities)
+        .orderBy(desc(activities.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      return [];
+    }
   }
 
   // Financial operations
   async getFinancialRecords(): Promise<FinancialRecord[]> {
-    return await db.select().from(financialRecords).orderBy(desc(financialRecords.date));
+    try {
+      return await db.select().from(financialRecords).orderBy(desc(financialRecords.date));
+    } catch (error) {
+      console.error('Error fetching financial records:', error);
+      return [];
+    }
   }
 
   async getFinancialSummary(): Promise<{
@@ -370,116 +600,163 @@ export class DatabaseStorage implements IStorage {
     totalExpenses: number;
     netProfit: number;
   }> {
-    const records = await db.select().from(financialRecords);
-    const totalRevenue = records
-      .filter(r => r.type === 'payment')
-      .reduce((sum, r) => sum + Number(r.amount), 0);
-    const totalExpenses = records
-      .filter(r => r.type === 'expense')
-      .reduce((sum, r) => sum + Number(r.amount), 0);
+    try {
+      const records = await db.select().from(financialRecords);
+      const totalRevenue = records
+        .filter(r => r.type === 'payment')
+        .reduce((sum, r) => sum + Number(r.amount), 0);
+      const totalExpenses = records
+        .filter(r => r.type === 'expense')
+        .reduce((sum, r) => sum + Number(r.amount), 0);
 
-    return {
-      totalRevenue,
-      totalExpenses,
-      netProfit: totalRevenue - totalExpenses,
-    };
+      return {
+        totalRevenue,
+        totalExpenses,
+        netProfit: totalRevenue - totalExpenses,
+      };
+    } catch (error) {
+      console.error('Error fetching financial summary:', error);
+      return { totalRevenue: 0, totalExpenses: 0, netProfit: 0 };
+    }
   }
 
   async createFinancialRecord(recordData: InsertFinancialRecord): Promise<FinancialRecord> {
-    const [record] = await db.insert(financialRecords).values({
-      id: crypto.randomUUID(),
-      ...recordData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
-    return record;
+    try {
+      const [record] = await db.insert(financialRecords).values({
+        id: crypto.randomUUID(),
+        ...recordData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return record;
+    } catch (error) {
+      console.error('Error creating financial record:', error);
+      throw error;
+    }
   }
 
   // File operations
   async createFileUpload(fileData: InsertFileUpload): Promise<FileUpload> {
-    const [file] = await db.insert(fileUploads).values({
-      id: crypto.randomUUID(),
-      ...fileData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
-    return file;
+    try {
+      const [file] = await db.insert(fileUploads).values({
+        id: crypto.randomUUID(),
+        ...fileData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return file;
+    } catch (error) {
+      console.error('Error creating file upload:', error);
+      throw error;
+    }
   }
 
   async getFilesByEntity(entityType: string, entityId: string): Promise<FileUpload[]> {
-    return await db
-      .select()
-      .from(fileUploads)
-      .where(
-        and(
-          eq(fileUploads.entityType, entityType),
-          eq(fileUploads.entityId, entityId)
+    try {
+      return await db
+        .select()
+        .from(fileUploads)
+        .where(
+          and(
+            eq(fileUploads.entityType, entityType),
+            eq(fileUploads.entityId, entityId)
+          )
         )
-      )
-      .orderBy(desc(fileUploads.createdAt));
+        .orderBy(desc(fileUploads.createdAt));
+    } catch (error) {
+      console.error(`Error fetching files for entity ${entityType}/${entityId}:`, error);
+      return [];
+    }
   }
 
   // Evidence storage
   async getEvidence(): Promise<any[]> {
-    return await db.select().from(fileUploads).orderBy(desc(fileUploads.createdAt));
+    try {
+      return await db.select().from(fileUploads).orderBy(desc(fileUploads.createdAt));
+    } catch (error) {
+      console.error('Error fetching evidence:', error);
+      return [];
+    }
   }
 
   async createEvidence(evidenceData: any): Promise<any> {
-    const [evidence] = await db.insert(fileUploads).values({
-      id: crypto.randomUUID(),
-      ...evidenceData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
-
-    return evidence;
+    try {
+      const [evidence] = await db.insert(fileUploads).values({
+        id: crypto.randomUUID(),
+        ...evidenceData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return evidence;
+    } catch (error) {
+      console.error('Error creating evidence:', error);
+      throw error;
+    }
   }
 
   // Community resources
   async getCommunityResources(): Promise<any[]> {
-    return await db.select().from(communityResources).orderBy(communityResources.name);
+    try {
+      return await db.select().from(communityResources).orderBy(communityResources.name);
+    } catch (error) {
+      console.error('Error fetching community resources:', error);
+      return [];
+    }
   }
 
   async createCommunityResource(resourceData: any): Promise<any> {
-    const [resource] = await db.insert(communityResources).values({
-      id: crypto.randomUUID(),
-      ...resourceData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
-
-    return resource;
+    try {
+      const [resource] = await db.insert(communityResources).values({
+        id: crypto.randomUUID(),
+        ...resourceData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return resource;
+    } catch (error) {
+      console.error('Error creating community resource:', error);
+      throw error;
+    }
   }
 
   // Law references
   async getLawReferences(filters?: { search?: string; category?: string }): Promise<any[]> {
-    let query = db.select().from(lawReferences);
+    try {
+      let query = db.select().from(lawReferences);
 
-    if (filters?.search) {
-      query = query.where(
-        or(
-          like(lawReferences.title, `%${filters.search}%`),
-          like(lawReferences.content, `%${filters.search}%`)
-        )
-      );
+      if (filters?.search) {
+        query = query.where(
+          or(
+            like(lawReferences.title, `%${filters.search}%`),
+            like(lawReferences.content, `%${filters.search}%`)
+          )
+        );
+      }
+
+      if (filters?.category) {
+        query = query.where(eq(lawReferences.category, filters.category));
+      }
+
+      return await query.orderBy(lawReferences.title);
+    } catch (error) {
+      console.error('Error fetching law references:', error);
+      return [];
     }
-
-    if (filters?.category) {
-      query = query.where(eq(lawReferences.category, filters.category));
-    }
-
-    return await query.orderBy(lawReferences.title);
   }
 
   async createLawReference(lawData: any): Promise<any> {
-    const [law] = await db.insert(lawReferences).values({
-      id: crypto.randomUUID(),
-      ...lawData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
-
-    return law;
+    try {
+      const [law] = await db.insert(lawReferences).values({
+        id: crypto.randomUUID(),
+        ...lawData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return law;
+    } catch (error) {
+      console.error('Error creating law reference:', error);
+      throw error;
+    }
   }
 
   // Dashboard stats
@@ -489,38 +766,47 @@ export class DatabaseStorage implements IStorage {
     propertiesSecured: number;
     staffOnDuty: number;
   }> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const [totalIncidents] = await db.select({ count: sql`count(*)` }).from(incidents);
+      const [totalIncidentsResult] = await db.select({ count: sql`count(*)` }).from(incidents);
+      const totalIncidents = Number(totalIncidentsResult?.count || 0);
 
-    const [activePatrols] = await db.select({ count: sql`count(*)` }).from(patrolReports)
-      .where(
-        and(
-          eq(patrolReports.status, 'in_progress'),
-          gte(patrolReports.startTime, today)
-        )
-      );
+      const [activePatrolsResult] = await db.select({ count: sql`count(*)` }).from(patrolReports)
+        .where(
+          and(
+            eq(patrolReports.status, 'in_progress'),
+            gte(patrolReports.startTime, today)
+          )
+        );
+      const activePatrols = Number(activePatrolsResult?.count || 0);
 
-    const [propertiesSecured] = await db.select({ count: sql`count(*)` }).from(properties)
-      .where(eq(properties.status, 'active'));
+      const [propertiesSecuredResult] = await db.select({ count: sql`count(*)` }).from(properties)
+        .where(eq(properties.status, 'active'));
+      const propertiesSecured = Number(propertiesSecuredResult?.count || 0);
 
-    const [staffOnDuty] = await db.select({ count: sql`count(*)` }).from(users)
-      .where(eq(users.status, 'active'));
+      const [staffOnDutyResult] = await db.select({ count: sql`count(*)` }).from(users)
+        .where(eq(users.status, 'active'));
+      const staffOnDuty = Number(staffOnDutyResult?.count || 0);
 
-    return {
-      totalIncidents: Number(totalIncidents?.[0]?.count || 0),
-      activePatrols: Number(activePatrols?.[0]?.count || 0),
-      propertiesSecured: Number(propertiesSecured?.[0]?.count || 0),
-      staffOnDuty: Number(staffOnDuty?.[0]?.count || 0),
-    };
+      return {
+        totalIncidents,
+        activePatrols,
+        propertiesSecured,
+        staffOnDuty,
+      };
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      return { totalIncidents: 0, activePatrols: 0, propertiesSecured: 0, staffOnDuty: 0 };
+    }
   }
 
   // Seed database with sample data
   async seedDatabase() {
-    console.log('Seeding database with sample data...');
-
     try {
+      console.log('🌱 Starting database seeding...');
+
       // Create sample clients
       const sampleClients = [
         {
@@ -781,9 +1067,40 @@ export class DatabaseStorage implements IStorage {
         await db.insert(activities).values(activity).onConflictDoNothing();
       }
 
-      console.log('Database seeded successfully!');
+      // Check if admin user already exists
+      const existingAdmin = await db.query.users.findFirst({
+        where: eq(users.username, 'STREETPATROL808'),
+      });
+
+      if (!existingAdmin) {
+        console.log('Creating admin user...');
+        const hashedPassword = await bcrypt.hash('Password3211', 10);
+
+        await db.insert(users).values({
+          id: crypto.randomUUID(), // Ensure ID is generated if not provided by schema
+          username: 'STREETPATROL808',
+          email: 'admin@hawaiisecurity.com',
+          hashedPassword,
+          role: 'admin',
+          firstName: 'Admin',
+          lastName: 'User',
+          phone: '808-555-0001',
+          badge: 'ADMIN001',
+          department: 'Administration',
+          shift: 'Day',
+          status: 'active', // Use 'active' to match other status fields
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        console.log('✅ Admin user created successfully');
+      } else {
+        console.log('✅ Admin user already exists');
+      }
+
+      console.log('✅ Database seeding completed');
     } catch (error) {
-      console.error('Error seeding database:', error);
+      console.error('❌ Database seeding failed:', error);
       throw error;
     }
   }
