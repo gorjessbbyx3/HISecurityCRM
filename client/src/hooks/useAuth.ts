@@ -5,6 +5,21 @@ export function useAuth() {
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
       console.log('Fetching user authentication status...');
+      
+      // First check auth status endpoint
+      const statusResponse = await fetch("/api/auth/status", {
+        credentials: 'include'
+      });
+      
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        if (statusData.authenticated && statusData.user) {
+          console.log('Auth status check successful:', statusData.user);
+          return statusData.user;
+        }
+      }
+      
+      // If status check fails, try the user endpoint
       const response = await fetch("/api/auth/user", {
         credentials: 'include'
       });
@@ -25,8 +40,8 @@ export function useAuth() {
       return failureCount < 2;
     },
     refetchOnWindowFocus: false,
-    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    staleTime: 30 * 1000, // Cache for 30 seconds in development
+    gcTime: 2 * 60 * 1000, // Keep in cache for 2 minutes
   });
 
   const isAuthenticated = !!user && !error;

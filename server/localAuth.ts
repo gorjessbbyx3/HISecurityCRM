@@ -38,12 +38,20 @@ export function getSession() {
 
   // Add error handling for session store
   sessionStore.on('error', (error) => {
-    console.error('Session store error:', error);
+    console.error('❌ Session store error:', error);
   });
 
   sessionStore.on('connect', () => {
     console.log('✅ Session store connected to database');
   });
+
+  // Test database connection synchronously
+  try {
+    console.log('🔄 Testing session store connection...');
+  } catch (error) {
+    console.error('❌ Session store connection failed:', error);
+    throw error;
+  }
   
   return session({
     secret: process.env.SESSION_SECRET,

@@ -23,6 +23,10 @@ export const db = drizzle({ client: pool, schema });
     console.log('✅ Database connection successful');
   } catch (error) {
     console.error('❌ Database connection failed:', error);
-    process.exit(1); // Exit if database connection fails
+    console.error('Continuing without database connection - some features may not work');
+    // Don't exit in development - allow server to start for debugging
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
   }
 })();
