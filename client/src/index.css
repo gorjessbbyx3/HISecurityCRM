@@ -1,0 +1,195 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: hsl(222.2, 84%, 4.9%);
+    --foreground: hsl(210, 40%, 98%);
+    --card: hsl(222.2, 84%, 4.9%);
+    --card-foreground: hsl(210, 40%, 98%);
+    --popover: hsl(222.2, 84%, 4.9%);
+    --popover-foreground: hsl(210, 40%, 98%);
+    --primary: hsl(221.2, 83.2%, 53.3%);
+    --primary-foreground: hsl(210, 40%, 98%);
+    --secondary: hsl(217.2, 32.6%, 17.5%);
+    --secondary-foreground: hsl(210, 40%, 98%);
+    --muted: hsl(217.2, 32.6%, 17.5%);
+    --muted-foreground: hsl(215, 20.2%, 65.1%);
+    --accent: hsl(217.2, 32.6%, 17.5%);
+    --accent-foreground: hsl(210, 40%, 98%);
+    --destructive: hsl(0, 62.8%, 30.6%);
+    --destructive-foreground: hsl(210, 40%, 98%);
+    --border: hsl(217.2, 32.6%, 17.5%);
+    --input: hsl(217.2, 32.6%, 17.5%);
+    --ring: hsl(221.2, 83.2%, 53.3%);
+    --radius: 0.75rem;
+    --chart-1: hsl(220, 70%, 50%);
+    --chart-2: hsl(160, 60%, 45%);
+    --chart-3: hsl(30, 80%, 55%);
+    --chart-4: hsl(280, 65%, 60%);
+    --chart-5: hsl(340, 75%, 55%);
+    
+    /* Custom Hawaii Security Theme Colors */
+    --navy-50: hsl(214, 100%, 97%);
+    --navy-500: hsl(221, 83%, 53%);
+    --navy-700: hsl(224, 76%, 48%);
+    --navy-800: hsl(226, 71%, 40%);
+    --navy-900: hsl(224, 64%, 33%);
+    
+    --gold-400: hsl(43, 96%, 56%);
+    --gold-500: hsl(38, 92%, 50%);
+    --gold-600: hsl(32, 95%, 44%);
+    
+    --slate-50: hsl(210, 40%, 98%);
+    --slate-400: hsl(215, 20%, 65%);
+    --slate-600: hsl(215, 25%, 27%);
+    --slate-700: hsl(215, 25%, 27%);
+    --slate-800: hsl(217, 33%, 17%);
+    --slate-900: hsl(222, 84%, 5%);
+    
+    /* Sidebar variables */
+    --sidebar-background: hsl(217, 33%, 17%);
+    --sidebar-foreground: hsl(210, 40%, 98%);
+    --sidebar-primary: hsl(224, 76%, 48%);
+    --sidebar-primary-foreground: hsl(210, 40%, 98%);
+    --sidebar-accent: hsl(217, 32%, 17%);
+    --sidebar-accent-foreground: hsl(210, 40%, 98%);
+    --sidebar-border: hsl(215, 25%, 27%);
+    --sidebar-ring: hsl(221, 83%, 53%);
+    
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  .dark {
+    --background: hsl(222.2, 84%, 4.9%);
+    --foreground: hsl(210, 40%, 98%);
+    --card: hsl(222.2, 84%, 4.9%);
+    --card-foreground: hsl(210, 40%, 98%);
+    --popover: hsl(222.2, 84%, 4.9%);
+    --popover-foreground: hsl(210, 40%, 98%);
+    --primary: hsl(221.2, 83.2%, 53.3%);
+    --primary-foreground: hsl(210, 40%, 98%);
+    --secondary: hsl(217.2, 32.6%, 17.5%);
+    --secondary-foreground: hsl(210, 40%, 98%);
+    --muted: hsl(217.2, 32.6%, 17.5%);
+    --muted-foreground: hsl(215, 20.2%, 65.1%);
+    --accent: hsl(217.2, 32.6%, 17.5%);
+    --accent-foreground: hsl(210, 40%, 98%);
+    --destructive: hsl(0, 62.8%, 30.6%);
+    --destructive-foreground: hsl(210, 40%, 98%);
+    --border: hsl(217.2, 32.6%, 17.5%);
+    --input: hsl(217.2, 32.6%, 17.5%);
+    --ring: hsl(221.2, 83.2%, 53.3%);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  .font-inter {
+    font-family: var(--font-sans);
+  }
+  
+  /* Custom security theme colors */
+  .text-navy-500 {
+    color: hsl(var(--navy-500));
+  }
+  
+  .text-navy-700 {
+    color: hsl(var(--navy-700));
+  }
+  
+  .text-gold-400 {
+    color: hsl(var(--gold-400));
+  }
+  
+  .text-gold-500 {
+    color: hsl(var(--gold-500));
+  }
+  
+  .bg-navy-700 {
+    background-color: hsl(var(--navy-700));
+  }
+  
+  .bg-navy-800 {
+    background-color: hsl(var(--navy-800));
+  }
+  
+  .bg-gold-500 {
+    background-color: hsl(var(--gold-500));
+  }
+  
+  .bg-gold-600 {
+    background-color: hsl(var(--gold-600));
+  }
+  
+  .hover\:bg-navy-600:hover {
+    background-color: hsl(var(--navy-700));
+  }
+  
+  .hover\:bg-gold-600:hover {
+    background-color: hsl(var(--gold-600));
+  }
+  
+  .border-gold-500 {
+    border-color: hsl(var(--gold-500));
+  }
+  
+  /* Status indicator colors */
+  .status-active {
+    @apply bg-green-500/20 text-green-400;
+  }
+  
+  .status-inactive {
+    @apply bg-red-500/20 text-red-400;
+  }
+  
+  .status-warning {
+    @apply bg-yellow-500/20 text-yellow-400;
+  }
+  
+  .status-info {
+    @apply bg-blue-500/20 text-blue-400;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .security-gradient {
+    background: linear-gradient(135deg, hsl(var(--navy-800)) 0%, hsl(var(--slate-900)) 100%);
+  }
+  
+  .glass-effect {
+    backdrop-filter: blur(10px);
+    background: rgba(30, 41, 59, 0.8);
+  }
+}
