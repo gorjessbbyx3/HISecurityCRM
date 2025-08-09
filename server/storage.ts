@@ -8,6 +8,8 @@ import {
   activities,
   financialRecords,
   fileUploads,
+  communityResources,
+  lawReferences,
   type User,
   type UpsertUser,
   type Client,
@@ -26,27 +28,31 @@ import {
   type InsertFinancialRecord,
   type FileUpload,
   type InsertFileUpload,
+  type CommunityResource,
+  type InsertCommunityResource,
+  type LawReference,
+  type InsertLawReference,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, like, gte, lte, count, sql } from "drizzle-orm";
+import { eq, desc, and, gte, sql, or, ilike } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  
+
   // Staff management
   getStaffMembers(): Promise<User[]>;
   getActiveStaff(): Promise<User[]>;
   updateUserStatus(id: string, status: string): Promise<void>;
-  
+
   // Client operations
   getClients(): Promise<Client[]>;
   getClient(id: string): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: string, updates: Partial<InsertClient>): Promise<Client>;
   deleteClient(id: string): Promise<void>;
-  
+
   // Property operations
   getProperties(): Promise<Property[]>;
   getPropertiesByClient(clientId: string): Promise<Property[]>;
@@ -54,31 +60,31 @@ export interface IStorage {
   createProperty(property: InsertProperty): Promise<Property>;
   updateProperty(id: string, updates: Partial<InsertProperty>): Promise<Property>;
   deleteProperty(id: string): Promise<void>;
-  
+
   // Incident operations
   getIncidents(): Promise<Incident[]>;
   getRecentIncidents(hours?: number): Promise<Incident[]>;
   getIncident(id: string): Promise<Incident | undefined>;
   createIncident(incident: InsertIncident): Promise<Incident>;
   updateIncident(id: string, updates: Partial<InsertIncident>): Promise<Incident>;
-  
+
   // Patrol report operations
   getPatrolReports(): Promise<PatrolReport[]>;
   getPatrolReportsByOfficer(officerId: string): Promise<PatrolReport[]>;
   getTodaysReports(): Promise<PatrolReport[]>;
   createPatrolReport(report: InsertPatrolReport): Promise<PatrolReport>;
   updatePatrolReport(id: string, updates: Partial<InsertPatrolReport>): Promise<PatrolReport>;
-  
+
   // Appointment operations
   getAppointments(): Promise<Appointment[]>;
   getTodaysAppointments(): Promise<Appointment[]>;
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointment(id: string, updates: Partial<InsertAppointment>): Promise<Appointment>;
-  
+
   // Activity tracking
   createActivity(activity: InsertActivity): Promise<Activity>;
   getActivities(limit?: number): Promise<Activity[]>;
-  
+
   // Financial operations
   getFinancialRecords(): Promise<FinancialRecord[]>;
   getFinancialSummary(): Promise<{
@@ -87,15 +93,27 @@ export interface IStorage {
     netProfit: number;
   }>;
   createFinancialRecord(record: InsertFinancialRecord): Promise<FinancialRecord>;
-  
+
   // File operations
   createFileUpload(file: InsertFileUpload): Promise<FileUpload>;
   getFilesByEntity(entityType: string, entityId: string): Promise<FileUpload[]>;
-  
+
+  // Evidence storage
+  getEvidence(): Promise<any[]>;
+  createEvidence(data: any): Promise<any>;
+
+  // Community resources
+  getCommunityResources(): Promise<any[]>;
+  createCommunityResource(data: any): Promise<any>;
+
+  // Law references
+  getLawReferences(filters?: { search?: string; category?: string }): Promise<any[]>;
+  createLawReference(data: any): Promise<any>;
+
   // Dashboard stats
   getDashboardStats(): Promise<{
+    totalIncidents: number;
     activePatrols: number;
-    crimeIncidents: number;
     propertiesSecured: number;
     staffOnDuty: number;
   }>;
@@ -329,9 +347,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getActivities(limit: number = 50): Promise<Activity[]> {
-    return await db
-      .select()
-      .from(activities)
+    return await db.select().from(activities)
       .orderBy(desc(activities.createdAt))
       .limit(limit);
   }
@@ -390,42 +406,145 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(fileUploads.createdAt));
   }
 
+  // Evidence storage
+  async getEvidence(): Promise<any[]> {
+    return await db.select({
+      id: fileUploads.id,
+      incidentId: fileUploads.entityId,
+      fileName: fileUploads.fileName,
+      fileUrl: fileUploads.fileUrl,
+      fileType: fileUploads.fileType,
+      uploadedBy: fileUploads.uploadedBy,
+      uploadedByName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+      createdAt: fileUploads.createdAt,
+      incident: {
+        incidentType: incidents.incidentType,
+        location: incidents.location,
+        description: incidents.description,
+      }
+    })
+    .from(fileUploads)
+    .leftJoin(users, eq(fileUploads.uploadedBy, users.id))
+    .leftJoin(incidents, eq(fileUploads.entityId, incidents.id))
+    .where(eq(fileUploads.entityType, 'incident'))
+    .orderBy(desc(fileUploads.createdAt));
+  }
+
+  async createEvidence(data: any): Promise<any> {
+    const [evidence] = await db.insert(fileUploads).values({
+      entityType: data.entityType,
+      entityId: data.entityId,
+      fileName: data.fileName,
+      fileUrl: data.fileUrl,
+      fileType: data.fileType,
+      fileSize: data.fileSize,
+      uploadedBy: data.uploadedBy,
+    }).returning();
+
+    return evidence;
+  }
+
+  // Community resources
+  async getCommunityResources(): Promise<any[]> {
+    return await db.select().from(communityResources)
+      .orderBy(desc(communityResources.createdAt));
+  }
+
+  async createCommunityResource(data: any): Promise<any> {
+    const [resource] = await db.insert(communityResources).values({
+      name: data.name,
+      type: data.type,
+      description: data.description,
+      address: data.address,
+      phone: data.phone,
+      email: data.email,
+      website: data.website,
+      hours: data.hours,
+      services: data.services,
+      status: data.status || 'active',
+    }).returning();
+
+    return resource;
+  }
+
+  // Law references
+  async getLawReferences(filters?: { search?: string; category?: string }): Promise<any[]> {
+    let query = this.db.select().from(lawReferences);
+
+    if (filters?.search) {
+      const search = `%${filters.search}%`;
+      query = query.where(
+        or(
+          ilike(lawReferences.title, search),
+          ilike(lawReferences.code, search),
+          ilike(lawReferences.description, search)
+        )
+      );
+    }
+
+    if (filters?.category && filters.category !== 'all') {
+      query = query.where(eq(lawReferences.category, filters.category));
+    }
+
+    return await query.orderBy(desc(lawReferences.lastUpdated));
+  }
+
+  async createLawReference(data: any): Promise<any> {
+    const [lawRef] = await this.db.insert(lawReferences).values({
+      title: data.title,
+      category: data.category,
+      code: data.code,
+      description: data.description,
+      fullText: data.fullText,
+      penalties: data.penalties,
+      relatedCodes: data.relatedCodes,
+      lastUpdated: new Date(),
+    }).returning();
+
+    return lawRef;
+  }
+
   // Dashboard stats
   async getDashboardStats(): Promise<{
+    totalIncidents: number;
     activePatrols: number;
-    crimeIncidents: number;
     propertiesSecured: number;
     staffOnDuty: number;
   }> {
-    const [activePatrolsCount] = await db
-      .select({ count: count() })
-      .from(patrolReports)
-      .where(eq(patrolReports.status, "in_progress"));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const [recentIncidentsCount] = await db
-      .select({ count: count() })
-      .from(incidents)
-      .where(gte(incidents.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000)));
+    const [totalIncidents] = await this.db.select({ 
+      count: sql<number>`count(*)` 
+    }).from(incidents);
 
-    const [propertiesCount] = await db
-      .select({ count: count() })
-      .from(properties)
-      .where(eq(properties.status, "active"));
+    const [activePatrols] = await this.db.select({ 
+      count: sql<number>`count(*)` 
+    }).from(patrolReports)
+    .where(
+      and(
+        eq(patrolReports.status, 'in_progress'),
+        gte(patrolReports.startTime, today)
+      )
+    );
 
-    const [staffOnDutyCount] = await db
-      .select({ count: count() })
-      .from(users)
-      .where(eq(users.status, "active"));
+    const [propertiesSecured] = await this.db.select({ 
+      count: sql<number>`count(*)` 
+    }).from(properties)
+    .where(eq(properties.status, 'active'));
+
+    const [staffOnDuty] = await this.db.select({ 
+      count: sql<number>`count(*)` 
+    }).from(users)
+    .where(eq(users.status, 'active'));
 
     return {
-      activePatrols: activePatrolsCount.count,
-      crimeIncidents: recentIncidentsCount.count,
-      propertiesSecured: propertiesCount.count,
-      staffOnDuty: staffOnDutyCount.count,
+      totalIncidents: totalIncidents?.count || 0,
+      activePatrols: activePatrols?.count || 0,
+      propertiesSecured: propertiesSecured?.count || 0,
+      staffOnDuty: staffOnDuty?.count || 0,
     };
   }
-
-
 }
 
 export const storage = new DatabaseStorage();

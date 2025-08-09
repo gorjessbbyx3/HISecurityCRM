@@ -110,6 +110,7 @@ export async function setupAuth(app: Express) {
 
   passport.deserializeUser(async (id: string, done) => {
     try {
+      // First check if it's the default admin
       if (id === DEFAULT_CREDENTIALS.userId) {
         const user = {
           id: DEFAULT_CREDENTIALS.userId,
@@ -122,10 +123,25 @@ export async function setupAuth(app: Express) {
         return done(null, user);
       }
       
-      // Could add database user lookup here
+      // Lookup user in database
       const user = await storage.getUser(id);
-      done(null, user);
+      if (!user) {
+        return done(null, false);
+      }
+      
+      // Return user object matching passport expectations
+      const authUser = {
+        id: user.id,
+        username: user.email, // Use email as username for DB users
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      };
+      
+      done(null, authUser);
     } catch (error) {
+      console.error('Error deserializing user:', error);
       done(error);
     }
   });

@@ -18,20 +18,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes
   app.get('/api/auth/user', (req: any, res) => {
-    console.log('Auth check - Session ID:', req.sessionID);
-    console.log('Auth check - Session data:', req.session);
-    console.log('Auth check - Is authenticated:', req.isAuthenticated());
-    console.log('Auth check - User:', req.user);
-    
-    if (!req.isAuthenticated()) {
-      console.log('User not authenticated, returning 401');
+    if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     
     try {
-      const user = req.user;
-      console.log('Returning authenticated user:', user);
-      res.json(user);
+      res.json({
+        id: req.user.id,
+        username: req.user.username,
+        email: req.user.email,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        role: req.user.role
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -248,6 +247,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const incident = await storage.createIncident(incidentData);
       
+      // Generate AI analysis if enabled
+      try {
+        const { aiService } = await import('./ai');
+        const analysis = await aiService.analyzeIncident({
+          incidentType: incident.incidentType,
+          description: incident.description,
+          location: incident.location || 'Unknown',
+          severity: incident.severity || 'medium',
+        });
+        
+        await storage.createActivity({
+          userId: (req.user as any).id,
+          activityType: "incident",
+          entityType: "incident",
+          entityId: incident.id,
+          description: `AI Analysis: ${analysis.riskAssessment}`,
+          metadata: analysis,
+        });
+      } catch (aiError) {
+        console.warn('AI analysis failed, continuing without it:', aiError);
+      }
+      
       await storage.createActivity({
         userId: (req.user as any).id,
         activityType: "incident",
@@ -255,6 +276,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityId: incident.id,
         description: `Reported new incident: ${incident.incidentType}`,
       });
+
+      // Broadcast new incident to connected clients
+      if (app.locals.broadcast) {
+        app.locals.broadcast({
+          type: 'incident_created',
+          data: incident,
+          timestamp: new Date().toISOString()
+        });
+      }
 
       res.status(201).json(incident);
     } catch (error) {
@@ -417,6 +447,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Evidence routes
+  app.get('/api/evidence', isAuthenticated, async (req, res) => {
+    try {
+      const evidence = await storage.getEvidence();
+      res.json(evidence);
+    } catch (error) {
+      console.error("Error fetching evidence:", error);
+      res.status(500).json({ message: "Failed to fetch evidence" });
+    }
+  });
+
+  app.post('/api/evidence', isAuthenticated, async (req, res) => {
+    try {
+      const evidenceData = {
+        ...req.body,
+        uploadedBy: (req.user as any).id,
+      };
+      const evidence = await storage.createEvidence(evidenceData);
+      res.status(201).json(evidence);
+    } catch (error) {
+      console.error("Error creating evidence:", error);
+      res.status(500).json({ message: "Failed to create evidence" });
+    }
+  });
+
+  // AI-powered crime pattern analysis
+  app.get('/api/crime-patterns', isAuthenticated, async (req, res) => {
+    try {
+      const recentIncidents = await storage.getRecentIncidents(168); // Last 7 days
+      
+      if (recentIncidents.length === 0) {
+        return res.json({
+          patterns: [],
+          hotspots: [],
+          recommendations: ['Insufficient data for pattern analysis']
+        });
+      }
+
+      try {
+        const { aiService } = await import('./ai');
+        const analysis = await aiService.analyzeCrimePatterns(
+          recentIncidents.map(incident => ({
+            incidentType: incident.incidentType,
+            location: incident.location || 'Unknown',
+            time: incident.occuredAt?.toISOString() || new Date().toISOString(),
+            severity: incident.severity || 'medium'
+          }))
+        );
+        
+        res.json(analysis);
+      } catch (aiError) {
+        console.warn('AI pattern analysis failed:', aiError);
+        res.json({
+          patterns: ['Pattern analysis unavailable'],
+          hotspots: [...new Set(recentIncidents.map(i => i.location).filter(Boolean))],
+          recommendations: ['Manual pattern analysis recommended']
+        });
+      }
+    } catch (error) {
+      console.error("Error analyzing crime patterns:", error);
+      res.status(500).json({ message: "Failed to analyze crime patterns" });
+    }
+  });
+
+  // File upload endpoint
+  app.post('/api/upload', isAuthenticated, async (req, res) => {
+    try {
+      // In a production environment, you would integrate with a file storage service
+      // like AWS S3, Google Cloud Storage, or similar
+      const { fileName, fileData, fileType, entityType, entityId } = req.body;
+      
+      // For now, we'll create a mock file URL
+      // In production, this would upload to your storage service
+      const fileUrl = `/uploads/${Date.now()}-${fileName}`;
+      
+      const fileUpload = await storage.createEvidence({
+        entityType,
+        entityId,
+        fileName,
+        fileUrl,
+        fileType,
+        fileSize: fileData ? fileData.length : 0,
+        uploadedBy: (req.user as any).id,
+      });
+      
+      res.status(201).json(fileUpload);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ message: "Failed to upload file" });
+    }
+  });
+
+  // Community resources routes
+  app.get('/api/community-resources', isAuthenticated, async (req, res) => {
+    try {
+      const resources = await storage.getCommunityResources();
+      res.json(resources);
+    } catch (error) {
+      console.error("Error fetching community resources:", error);
+      res.status(500).json({ message: "Failed to fetch community resources" });
+    }
+  });
+
+  app.post('/api/community-resources', isAuthenticated, async (req, res) => {
+    try {
+      const resource = await storage.createCommunityResource(req.body);
+      res.status(201).json(resource);
+    } catch (error) {
+      console.error("Error creating community resource:", error);
+      res.status(500).json({ message: "Failed to create community resource" });
+    }
+  });
+
+  // Law references routes
+  app.get('/api/law-references', isAuthenticated, async (req, res) => {
+    try {
+      const { search, category } = req.query;
+      const laws = await storage.getLawReferences({
+        search: search as string,
+        category: category as string,
+      });
+      res.json(laws);
+    } catch (error) {
+      console.error("Error fetching law references:", error);
+      res.status(500).json({ message: "Failed to fetch law references" });
+    }
+  });
+
+  app.post('/api/law-references', isAuthenticated, async (req, res) => {
+    try {
+      const lawRef = await storage.createLawReference(req.body);
+      res.status(201).json(lawRef);
+    } catch (error) {
+      console.error("Error creating law reference:", error);
+      res.status(500).json({ message: "Failed to create law reference" });
+    }
+  });
+
   // Activity feed
   app.get('/api/activities', isAuthenticated, async (req, res) => {
     try {
@@ -433,21 +601,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // WebSocket server for real-time updates
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const clients = new Set<WebSocket>();
+
+  // Broadcast function for real-time updates
+  const broadcast = (data: any) => {
+    clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(data));
+      }
+    });
+  };
+
+  // Make broadcast available to routes
+  app.locals.broadcast = broadcast;
 
   wss.on('connection', (ws: WebSocket) => {
     console.log('WebSocket client connected');
+    clients.add(ws);
 
     ws.on('message', (message: string) => {
       try {
         const data = JSON.parse(message);
-        console.log('Received WebSocket message:', data);
         
         // Handle different message types
         if (data.type === 'subscribe') {
-          // Subscribe to specific data feeds
           ws.send(JSON.stringify({
             type: 'subscribed',
-            channel: data.channel
+            channel: data.channel,
+            timestamp: new Date().toISOString()
+          }));
+        } else if (data.type === 'ping') {
+          ws.send(JSON.stringify({
+            type: 'pong',
+            timestamp: new Date().toISOString()
           }));
         }
       } catch (error) {
@@ -457,13 +643,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     ws.on('close', () => {
       console.log('WebSocket client disconnected');
+      clients.delete(ws);
+    });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+      clients.delete(ws);
     });
 
     // Send initial connection confirmation
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
         type: 'connected',
-        message: 'Connected to Hawaii Security CRM'
+        message: 'Connected to Hawaii Security CRM',
+        timestamp: new Date().toISOString()
       }));
     }
   });

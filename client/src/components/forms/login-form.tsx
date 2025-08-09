@@ -41,11 +41,9 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
           title: "Login Successful", 
           description: `Welcome back, ${data.user.firstName}!`,
         });
-        // Wait a moment for session to be fully established
-        await new Promise(resolve => setTimeout(resolve, 100));
         // Invalidate auth query to refresh authentication state
         await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-        // Use the callback to navigate to dashboard
+        // Navigate to dashboard
         onLoginSuccess();
       } else {
         setError(data.message || "Invalid credentials");

@@ -1,212 +1,199 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
 
-interface EvidenceItem {
+interface Evidence {
   id: string;
-  type: string;
-  location: string;
-  timestamp: string;
-  imageUrl: string;
-  description: string;
-  officerName: string;
+  incidentId: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  uploadedBy: string;
+  uploadedByName?: string;
+  createdAt: string;
+  incident?: {
+    incidentType: string;
+    location: string;
+    description: string;
+  };
 }
 
-export default function EvidenceGallery() {
-  const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null);
+export function EvidenceGallery() {
+  const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null);
 
-  // Mock evidence data - in real app this would come from API
-  const recentEvidence: EvidenceItem[] = [
-    {
-      id: "1",
-      type: "Trespasser Documentation",
-      location: "Zone A - East Entry",
-      timestamp: "2 hours ago",
-      imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
-      description: "Individual attempting unauthorized entry at east gate. Subject was documented and escorted off premises.",
-      officerName: "Officer Martinez"
+  const { data: evidence = [], isLoading, error } = useQuery({
+    queryKey: ["/api/evidence"],
+    queryFn: async () => {
+      const response = await fetch("/api/evidence", {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch evidence');
+      }
+      return response.json();
     },
-    {
-      id: "2",
-      type: "Property Damage Report",
-      location: "Parking Structure Level 2",
-      timestamp: "4 hours ago",
-      imageUrl: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
-      description: "Vandalism discovered on parking structure wall. Evidence preserved and police notified.",
-      officerName: "Officer Chen"
-    },
-    {
-      id: "3",
-      type: "Community Outreach",
-      location: "Main Entrance",
-      timestamp: "1 day ago",
-      imageUrl: "https://images.unsplash.com/photo-1559526324-593bc073d938?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
-      description: "Community assistance provided to individual in need. Connected with local shelter services.",
-      officerName: "Officer Wong"
-    },
-    {
-      id: "4",
-      type: "Security Patrol",
-      location: "Zone B - Perimeter",
-      timestamp: "1 day ago",
-      imageUrl: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
-      description: "Routine perimeter check completed. All access points secured and functioning properly.",
-      officerName: "Officer Johnson"
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  if (isLoading) {
+    return (
+      <Card className="bg-slate-800 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">Evidence Gallery</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="bg-slate-800 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">Evidence Gallery</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-red-400">
+            Failed to load evidence
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const formatFileType = (fileType: string) => {
+    switch (fileType) {
+      case 'image': return 'Photo';
+      case 'video': return 'Video';
+      case 'document': return 'Document';
+      default: return 'File';
     }
-  ];
-
-  const getTypeIcon = (type: string) => {
-    if (type.includes("Trespasser")) return "fas fa-user-slash";
-    if (type.includes("Damage")) return "fas fa-exclamation-triangle";
-    if (type.includes("Outreach")) return "fas fa-hands-helping";
-    if (type.includes("Patrol")) return "fas fa-route";
-    return "fas fa-camera";
-  };
-
-  const getTypeColor = (type: string) => {
-    if (type.includes("Trespasser")) return "text-red-400";
-    if (type.includes("Damage")) return "text-orange-400";
-    if (type.includes("Outreach")) return "text-green-400";
-    if (type.includes("Patrol")) return "text-blue-400";
-    return "text-slate-400";
   };
 
   return (
-    <>
-      <Card className="bg-slate-800 border-slate-700">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-white text-lg" data-testid="evidence-gallery-title">
-            Recent Evidence & Documentation
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {recentEvidence.map((evidence) => (
-              <div 
-                key={evidence.id} 
-                className="p-3 border border-slate-600 rounded-lg hover:border-slate-500 transition-colors cursor-pointer"
-                onClick={() => setSelectedEvidence(evidence)}
-                data-testid={`evidence-item-${evidence.id}`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="relative">
-                    <img 
-                      src={evidence.imageUrl}
-                      alt={evidence.type}
-                      className="w-16 h-12 rounded object-cover"
-                    />
-                    <div className="absolute top-1 left-1">
-                      <i className={`${getTypeIcon(evidence.type)} ${getTypeColor(evidence.type)} text-xs bg-slate-900/80 p-1 rounded`}></i>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-white text-sm font-medium truncate">
-                      {evidence.type}
-                    </h4>
-                    <p className="text-slate-400 text-xs truncate">
-                      {evidence.location}
-                    </p>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-slate-500 text-xs">
-                        {evidence.timestamp}
-                      </span>
-                      <span className="text-slate-500 text-xs">
-                        {evidence.officerName}
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-slate-400 hover:text-white p-1 flex-shrink-0"
-                    data-testid={`view-evidence-${evidence.id}`}
+    <Card className="bg-slate-800 border-slate-700">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-white">Evidence Gallery</CardTitle>
+        <Button 
+          size="sm" 
+          className="bg-gold-500 hover:bg-gold-600 text-black"
+          onClick={() => window.location.href = '/crime-intelligence'}
+        >
+          View All
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {evidence.length === 0 ? (
+          <div className="text-center py-8 text-slate-400">
+            No evidence files available
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {evidence.slice(0, 6).map((item: Evidence) => (
+              <Dialog key={item.id}>
+                <DialogTrigger asChild>
+                  <div 
+                    className="relative group cursor-pointer"
+                    onClick={() => setSelectedEvidence(item)}
                   >
-                    <i className="fas fa-eye text-xs"></i>
-                  </Button>
-                </div>
-              </div>
+                    <div className="aspect-square bg-slate-700 rounded-lg overflow-hidden">
+                      {item.fileType === 'image' ? (
+                        <img
+                          src={item.fileUrl}
+                          alt={item.fileName}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <i className={`fas ${
+                            item.fileType === 'video' ? 'fa-video' : 'fa-file-alt'
+                          } text-4xl text-slate-400`}></i>
+                        </div>
+                      )}
+                    </div>
+                    <div className="absolute top-2 right-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {formatFileType(item.fileType)}
+                      </Badge>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-2 text-xs">
+                      <p className="truncate">{item.incident?.incidentType || 'Evidence'}</p>
+                      <p className="text-slate-300 truncate">{item.incident?.location}</p>
+                    </div>
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="bg-slate-800 border-slate-700 max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">{item.fileName}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="aspect-video bg-slate-700 rounded-lg overflow-hidden">
+                      {item.fileType === 'image' ? (
+                        <img
+                          src={item.fileUrl}
+                          alt={item.fileName}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : item.fileType === 'video' ? (
+                        <video
+                          src={item.fileUrl}
+                          controls
+                          className="w-full h-full"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="text-center">
+                            <i className="fas fa-file-alt text-6xl text-slate-400 mb-4"></i>
+                            <p className="text-white">{item.fileName}</p>
+                            <Button 
+                              className="mt-4"
+                              onClick={() => window.open(item.fileUrl, '_blank')}
+                            >
+                              Download File
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-slate-400">Incident Type</p>
+                        <p className="text-white">{item.incident?.incidentType || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Location</p>
+                        <p className="text-white">{item.incident?.location || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Uploaded By</p>
+                        <p className="text-white">{item.uploadedByName || 'System'}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Date</p>
+                        <p className="text-white">{new Date(item.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    {item.incident?.description && (
+                      <div>
+                        <p className="text-slate-400 text-sm">Description</p>
+                        <p className="text-white text-sm">{item.incident.description}</p>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
             ))}
           </div>
-          
-          <Button 
-            variant="ghost"
-            className="w-full mt-4 text-slate-400 hover:text-white text-sm"
-            data-testid="view-all-evidence"
-          >
-            View All Evidence →
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Evidence Detail Modal */}
-      <Dialog open={!!selectedEvidence} onOpenChange={() => setSelectedEvidence(null)}>
-        <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-white">Evidence Details</DialogTitle>
-          </DialogHeader>
-          
-          {selectedEvidence && (
-            <div className="space-y-4">
-              <div className="relative">
-                <img 
-                  src={selectedEvidence.imageUrl}
-                  alt={selectedEvidence.type}
-                  className="w-full h-64 rounded-lg object-cover"
-                />
-                <div className="absolute top-3 left-3">
-                  <div className="flex items-center space-x-2 bg-slate-900/80 px-3 py-1 rounded-full">
-                    <i className={`${getTypeIcon(selectedEvidence.type)} ${getTypeColor(selectedEvidence.type)}`}></i>
-                    <span className="text-white text-sm font-medium">{selectedEvidence.type}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-slate-400 text-sm font-medium mb-1">Location</h4>
-                  <p className="text-white">{selectedEvidence.location}</p>
-                </div>
-                <div>
-                  <h4 className="text-slate-400 text-sm font-medium mb-1">Documented by</h4>
-                  <p className="text-white">{selectedEvidence.officerName}</p>
-                </div>
-                <div>
-                  <h4 className="text-slate-400 text-sm font-medium mb-1">Time</h4>
-                  <p className="text-white">{selectedEvidence.timestamp}</p>
-                </div>
-                <div>
-                  <h4 className="text-slate-400 text-sm font-medium mb-1">Evidence ID</h4>
-                  <p className="text-white font-mono">EVD-{selectedEvidence.id.padStart(6, '0')}</p>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="text-slate-400 text-sm font-medium mb-2">Description</h4>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                  {selectedEvidence.description}
-                </p>
-              </div>
-              
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-600">
-                <Button
-                  variant="outline"
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
-                  data-testid="download-evidence"
-                >
-                  <i className="fas fa-download mr-2"></i>Download
-                </Button>
-                <Button
-                  className="bg-navy-700 hover:bg-navy-600 text-white"
-                  data-testid="add-to-report"
-                >
-                  <i className="fas fa-file-alt mr-2"></i>Add to Report
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

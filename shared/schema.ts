@@ -179,6 +179,38 @@ export const fileUploads = pgTable("file_uploads", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Community resources table
+export const communityResources = pgTable("community_resources", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  type: varchar("type").notNull(), // shelter, medical, food, legal, mental_health, education, employment
+  description: text("description").notNull(),
+  address: text("address").notNull(),
+  phone: varchar("phone").notNull(),
+  email: varchar("email"),
+  website: varchar("website"),
+  hours: varchar("hours").notNull(),
+  services: text("services").array(),
+  status: varchar("status").default("active"), // active, limited, closed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Law references table
+export const lawReferences = pgTable("law_references", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  category: varchar("category").notNull(), // criminal, traffic, property, public_safety, business, environmental, civil_rights, administrative
+  code: varchar("code").notNull(), // e.g., HRS §711-1101
+  description: text("description").notNull(),
+  fullText: text("full_text").notNull(),
+  penalties: text("penalties"),
+  relatedCodes: text("related_codes").array(),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   patrolReports: many(patrolReports),
@@ -315,6 +347,18 @@ export const insertFileUploadSchema = createInsertSchema(fileUploads).omit({
   createdAt: true,
 });
 
+export const insertCommunityResourceSchema = createInsertSchema(communityResources).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLawReferenceSchema = createInsertSchema(lawReferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -343,3 +387,9 @@ export type InsertFinancialRecord = z.infer<typeof insertFinancialRecordSchema>;
 
 export type FileUpload = typeof fileUploads.$inferSelect;
 export type InsertFileUpload = z.infer<typeof insertFileUploadSchema>;
+
+export type CommunityResource = typeof communityResources.$inferSelect;
+export type InsertCommunityResource = z.infer<typeof insertCommunityResourceSchema>;
+
+export type LawReference = typeof lawReferences.$inferSelect;
+export type InsertLawReference = z.infer<typeof insertLawReferenceSchema>;
