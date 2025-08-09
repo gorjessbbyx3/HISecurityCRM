@@ -22,9 +22,14 @@ export function getSession() {
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
+    createTableIfMissing: true, // Auto-create sessions table if missing
     ttl: sessionTtl,
     tableName: "sessions",
+  });
+
+  // Add error handling for session store
+  sessionStore.on('error', (error) => {
+    console.error('Session store error:', error);
   });
   
   return session({
@@ -36,6 +41,7 @@ export function getSession() {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: sessionTtl,
+      sameSite: 'lax', // Add sameSite for better compatibility
     },
   });
 }
@@ -126,18 +132,26 @@ export async function setupAuth(app: Express) {
 
   // Login route
   app.post('/api/login', (req, res, next) => {
+    console.log('Login attempt for:', req.body.username);
     passport.authenticate('local', (err: any, user: any, info: any) => {
       if (err) {
+        console.error('Authentication error:', err);
         return res.status(500).json({ message: 'Authentication error' });
       }
       if (!user) {
+        console.log('Authentication failed:', info?.message);
         return res.status(401).json({ message: info?.message || 'Invalid credentials' });
       }
       
+      console.log('User authenticated, logging in:', user.username);
       req.logIn(user, (err) => {
         if (err) {
+          console.error('Login error:', err);
           return res.status(500).json({ message: 'Login error' });
         }
+        console.log('Login successful for:', user.username);
+        console.log('Session ID:', req.sessionID);
+        console.log('Session data:', req.session);
         return res.json({ 
           message: 'Login successful',
           user: {

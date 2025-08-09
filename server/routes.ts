@@ -17,9 +17,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', (req: any, res) => {
+    console.log('Auth check - Session ID:', req.sessionID);
+    console.log('Auth check - Session data:', req.session);
+    console.log('Auth check - Is authenticated:', req.isAuthenticated());
+    console.log('Auth check - User:', req.user);
+    
+    if (!req.isAuthenticated()) {
+      console.log('User not authenticated, returning 401');
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
     try {
       const user = req.user;
+      console.log('Returning authenticated user:', user);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
