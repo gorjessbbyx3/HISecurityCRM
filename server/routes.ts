@@ -21,7 +21,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     try {
       res.json({
         id: req.user.id,
@@ -34,6 +34,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Check auth status route
+  app.get('/api/auth/status', (req, res) => {
+    if (req.isAuthenticated()) {
+      res.json({ 
+        authenticated: true,
+        user: req.user
+      });
+    } else {
+      res.json({ authenticated: false });
+    }
+  });
+
+  // Database initialization route (should be removed in production)
+  app.post('/api/admin/seed-database', isAuthenticated, async (req, res) => {
+    try {
+      if ((req.user as any).role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      await storage.seedDatabase();
+      res.json({ message: 'Database seeded successfully' });
+    } catch (error) {
+      console.error('Error seeding database:', error);
+      res.status(500).json({ message: 'Failed to seed database' });
     }
   });
 
@@ -110,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const clientData = insertClientSchema.parse(req.body);
       const client = await storage.createClient(clientData);
-      
+
       // Log activity
       await storage.createActivity({
         userId: (req.user as any).id,
@@ -132,7 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const updates = insertClientSchema.partial().parse(req.body);
       const client = await storage.updateClient(id, updates);
-      
+
       await storage.createActivity({
         userId: (req.user as any).id,
         activityType: "client_contact",
@@ -152,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       await storage.deleteClient(id);
-      
+
       await storage.createActivity({
         userId: (req.user as any).id,
         activityType: "client_contact",
@@ -186,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const propertyData = insertPropertySchema.parse(req.body);
       const property = await storage.createProperty(propertyData);
-      
+
       await storage.createActivity({
         userId: (req.user as any).id,
         activityType: "patrol",
@@ -207,7 +234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const updates = insertPropertySchema.partial().parse(req.body);
       const property = await storage.updateProperty(id, updates);
-      
+
       await storage.createActivity({
         userId: (req.user as any).id,
         activityType: "patrol",
@@ -244,9 +271,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reportedBy: (req.user as any).id,
         occuredAt: req.body.occuredAt || new Date(),
       });
-      
+
       const incident = await storage.createIncident(incidentData);
-      
+
       // Generate AI analysis if enabled
       try {
         const { aiService } = await import('./ai');
@@ -256,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           location: incident.location || 'Unknown',
           severity: incident.severity || 'medium',
         });
-        
+
         await storage.createActivity({
           userId: (req.user as any).id,
           activityType: "incident",
@@ -268,7 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (aiError) {
         console.warn('AI analysis failed, continuing without it:', aiError);
       }
-      
+
       await storage.createActivity({
         userId: (req.user as any).id,
         activityType: "incident",
@@ -298,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const updates = insertIncidentSchema.partial().parse(req.body);
       const incident = await storage.updateIncident(id, updates);
-      
+
       await storage.createActivity({
         userId: (req.user as any).id,
         activityType: "incident",
@@ -319,7 +346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { today, officerId } = req.query;
       let reports;
-      
+
       if (today === 'true') {
         reports = await storage.getTodaysReports();
       } else if (officerId) {
@@ -327,7 +354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         reports = await storage.getPatrolReports();
       }
-      
+
       res.json(reports);
     } catch (error) {
       console.error("Error fetching patrol reports:", error);
@@ -342,9 +369,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         officerId: (req.user as any).id,
         startTime: req.body.startTime || new Date(),
       });
-      
+
       const report = await storage.createPatrolReport(reportData);
-      
+
       await storage.createActivity({
         userId: (req.user as any).id,
         activityType: "report",
@@ -365,7 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const updates = insertPatrolReportSchema.partial().parse(req.body);
       const report = await storage.updatePatrolReport(id, updates);
-      
+
       await storage.createActivity({
         userId: (req.user as any).id,
         activityType: "report",
@@ -399,7 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const appointmentData = insertAppointmentSchema.parse(req.body);
       const appointment = await storage.createAppointment(appointmentData);
-      
+
       await storage.createActivity({
         userId: (req.user as any).id,
         activityType: "client_contact",
@@ -476,7 +503,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/crime-patterns', isAuthenticated, async (req, res) => {
     try {
       const recentIncidents = await storage.getRecentIncidents(168); // Last 7 days
-      
+
       if (recentIncidents.length === 0) {
         return res.json({
           patterns: [],
@@ -495,7 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             severity: incident.severity || 'medium'
           }))
         );
-        
+
         res.json(analysis);
       } catch (aiError) {
         console.warn('AI pattern analysis failed:', aiError);
@@ -517,11 +544,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // In a production environment, you would integrate with a file storage service
       // like AWS S3, Google Cloud Storage, or similar
       const { fileName, fileData, fileType, entityType, entityId } = req.body;
-      
+
       // For now, we'll create a mock file URL
       // In production, this would upload to your storage service
       const fileUrl = `/uploads/${Date.now()}-${fileName}`;
-      
+
       const fileUpload = await storage.createEvidence({
         entityType,
         entityId,
@@ -531,7 +558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileSize: fileData ? fileData.length : 0,
         uploadedBy: (req.user as any).id,
       });
-      
+
       res.status(201).json(fileUpload);
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -622,7 +649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ws.on('message', (message: string) => {
       try {
         const data = JSON.parse(message);
-        
+
         // Handle different message types
         if (data.type === 'subscribe') {
           ws.send(JSON.stringify({

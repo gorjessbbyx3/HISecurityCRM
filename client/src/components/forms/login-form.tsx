@@ -37,15 +37,22 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
       const data = await response.json();
 
       if (response.ok) {
+        console.log('Login successful, user data:', data.user);
         toast({
           title: "Login Successful", 
           description: `Welcome back, ${data.user.firstName}!`,
         });
-        // Invalidate auth query to refresh authentication state
+        // Invalidate and refetch auth query to refresh authentication state
         await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-        // Navigate to dashboard
-        onLoginSuccess();
+        await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+        
+        // Small delay to ensure auth state is updated
+        setTimeout(() => {
+          console.log('Navigating to dashboard...');
+          onLoginSuccess();
+        }, 100);
       } else {
+        console.error('Login failed:', data.message);
         setError(data.message || "Invalid credentials");
       }
     } catch (error) {

@@ -105,10 +105,12 @@ export async function setupAuth(app: Express) {
   ));
 
   passport.serializeUser((user: any, done) => {
+    console.log('Serializing user:', user.id);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: string, done) => {
+    console.log('Deserializing user:', id);
     try {
       // First check if it's the default admin
       if (id === DEFAULT_CREDENTIALS.userId) {
@@ -120,12 +122,14 @@ export async function setupAuth(app: Express) {
           lastName: DEFAULT_CREDENTIALS.lastName,
           role: DEFAULT_CREDENTIALS.role,
         };
+        console.log('Found default admin user:', user.username);
         return done(null, user);
       }
       
       // Lookup user in database
       const user = await storage.getUser(id);
       if (!user) {
+        console.log('User not found in database:', id);
         return done(null, false);
       }
       
@@ -139,6 +143,7 @@ export async function setupAuth(app: Express) {
         role: user.role,
       };
       
+      console.log('Found database user:', authUser.username);
       done(null, authUser);
     } catch (error) {
       console.error('Error deserializing user:', error);
