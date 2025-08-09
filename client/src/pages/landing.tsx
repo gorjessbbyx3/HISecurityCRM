@@ -1,261 +1,131 @@
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Landing() {
   return (
     <div className="min-h-screen bg-slate-900 text-white">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-navy-800 via-slate-900 to-slate-900"></div>
-        <div className="relative">
-          {/* Header */}
-          <header className="border-b border-slate-800">
-            <div className="container mx-auto px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-navy-700 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-shield-alt text-gold-500 text-lg"></i>
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-gradient-to-br from-navy-800 via-slate-900 to-slate-900"></div>
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}></div>
+      </div>
+
+      {/* Login Portal */}
+      <div className="relative min-h-screen flex items-center justify-center px-6">
+        <div className="w-full max-w-md">
+          {/* Logo & Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-navy-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
+              <i className="fas fa-shield-alt text-gold-500 text-2xl"></i>
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-login-title">
+              Hawaii Security CRM
+            </h1>
+            <p className="text-slate-400" data-testid="text-login-subtitle">
+              Crime Watch & Protection Services
+            </p>
+          </div>
+
+          {/* Login Card */}
+          <Card className="bg-slate-800/80 border-slate-700 backdrop-blur-sm shadow-2xl">
+            <CardHeader className="text-center pb-4">
+              <CardTitle className="text-white text-xl">Security Portal Access</CardTitle>
+              <CardDescription className="text-slate-400">
+                Sign in to access your security management dashboard
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Security Features */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3 text-sm text-slate-300">
+                  <div className="w-6 h-6 bg-red-500/20 rounded flex items-center justify-center">
+                    <i className="fas fa-chart-line text-red-400 text-xs"></i>
                   </div>
-                  <div>
-                    <h1 className="text-lg font-bold text-white">Hawaii Security CRM</h1>
-                    <p className="text-xs text-slate-400">Crime Watch & Protection Services</p>
+                  <span>Crime Intelligence & Mapping</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm text-slate-300">
+                  <div className="w-6 h-6 bg-blue-500/20 rounded flex items-center justify-center">
+                    <i className="fas fa-route text-blue-400 text-xs"></i>
+                  </div>
+                  <span>Patrol Management & Scheduling</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm text-slate-300">
+                  <div className="w-6 h-6 bg-green-500/20 rounded flex items-center justify-center">
+                    <i className="fas fa-building text-green-400 text-xs"></i>
+                  </div>
+                  <span>Client & Property Database</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm text-slate-300">
+                  <div className="w-6 h-6 bg-gold-500/20 rounded flex items-center justify-center">
+                    <i className="fas fa-gavel text-gold-400 text-xs"></i>
+                  </div>
+                  <span>Hawaii Law Reference</span>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-600"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-slate-800 px-2 text-slate-400">Secure Access</span>
+                </div>
+              </div>
+
+              {/* Login Button */}
+              <Button 
+                onClick={() => window.location.href = "/api/login"}
+                className="w-full bg-gold-500 hover:bg-gold-600 text-black font-semibold py-3 text-base shadow-lg"
+                data-testid="button-login"
+              >
+                <i className="fas fa-sign-in-alt mr-2"></i>
+                Sign In with Replit
+              </Button>
+
+              {/* Security Notice */}
+              <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-5 h-5 bg-blue-500/20 rounded flex items-center justify-center mt-0.5">
+                    <i className="fas fa-shield-alt text-blue-400 text-xs"></i>
+                  </div>
+                  <div className="text-xs text-slate-300">
+                    <p className="font-medium text-white mb-1">Secure Authentication</p>
+                    <p className="text-slate-400">
+                      Your login is protected by Replit's secure authentication system. 
+                      All data is encrypted and access is logged for security purposes.
+                    </p>
                   </div>
                 </div>
-                <Button 
-                  onClick={() => window.location.href = "/api/login"}
-                  className="bg-gold-500 hover:bg-gold-600 text-black font-medium"
-                  data-testid="button-login"
-                >
-                  <i className="fas fa-sign-in-alt mr-2"></i>
-                  Sign In
-                </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Additional Info */}
+          <div className="text-center mt-8 space-y-4">
+            <div className="flex justify-center space-x-6 text-xs text-slate-400">
+              <span className="flex items-center">
+                <i className="fas fa-lock mr-1"></i>
+                Secure Access
+              </span>
+              <span className="flex items-center">
+                <i className="fas fa-clock mr-1"></i>
+                24/7 Availability
+              </span>
+              <span className="flex items-center">
+                <i className="fas fa-mobile-alt mr-1"></i>
+                Mobile Ready
+              </span>
             </div>
-          </header>
-
-          {/* Hero Content */}
-          <div className="container mx-auto px-6 py-20">
-            <div className="max-w-4xl mx-auto text-center">
-              <div className="mb-8">
-                <div className="w-20 h-20 bg-navy-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <i className="fas fa-shield-alt text-gold-500 text-3xl"></i>
-                </div>
-                <h1 className="text-5xl font-bold text-white mb-4" data-testid="text-hero-title">
-                  Professional Security <br />
-                  <span className="text-gold-500">Management System</span>
-                </h1>
-                <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto" data-testid="text-hero-description">
-                  Comprehensive crime intelligence, patrol management, and client tracking system 
-                  designed for Hawaii's security professionals and community watch programs.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                <Button 
-                  size="lg"
-                  onClick={() => window.location.href = "/api/login"}
-                  className="bg-gold-500 hover:bg-gold-600 text-black font-semibold px-8 py-4 text-lg"
-                  data-testid="button-get-started"
-                >
-                  <i className="fas fa-rocket mr-2"></i>
-                  Get Started
-                </Button>
-                <Button 
-                  size="lg"
-                  variant="outline"
-                  className="border-gold-500 text-gold-500 hover:bg-gold-500 hover:text-black font-semibold px-8 py-4 text-lg"
-                  data-testid="button-learn-more"
-                >
-                  <i className="fas fa-info-circle mr-2"></i>
-                  Learn More
-                </Button>
-              </div>
-
-              {/* Feature badges */}
-              <div className="flex flex-wrap justify-center gap-4 text-sm">
-                <span className="bg-slate-800 text-slate-300 px-4 py-2 rounded-full border border-slate-700">
-                  <i className="fas fa-map-marked-alt mr-2 text-gold-500"></i>
-                  Crime Intelligence
-                </span>
-                <span className="bg-slate-800 text-slate-300 px-4 py-2 rounded-full border border-slate-700">
-                  <i className="fas fa-route mr-2 text-gold-500"></i>
-                  Patrol Management
-                </span>
-                <span className="bg-slate-800 text-slate-300 px-4 py-2 rounded-full border border-slate-700">
-                  <i className="fas fa-users mr-2 text-gold-500"></i>
-                  Client Tracking
-                </span>
-                <span className="bg-slate-800 text-slate-300 px-4 py-2 rounded-full border border-slate-700">
-                  <i className="fas fa-hands-helping mr-2 text-gold-500"></i>
-                  Community Outreach
-                </span>
-              </div>
-            </div>
+            
+            <p className="text-xs text-slate-500">
+              &copy; 2024 Hawaii Security CRM. Professional Security Management System.
+            </p>
           </div>
         </div>
       </div>
-
-      {/* Features Section */}
-      <section className="py-20 bg-slate-800/50">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white mb-4" data-testid="text-features-title">
-              Comprehensive Security Management
-            </h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto" data-testid="text-features-description">
-              Everything you need to manage security operations, track crime patterns, 
-              and serve your community effectively.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Crime Intelligence */}
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-8 hover:border-gold-500/50 transition-colors">
-              <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center mb-6">
-                <i className="fas fa-chart-line text-red-400 text-xl"></i>
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-4">Crime Intelligence</h3>
-              <p className="text-slate-400 mb-4">
-                Real-time crime mapping, incident tracking, and pattern analysis 
-                to stay ahead of security threats.
-              </p>
-              <ul className="space-y-2 text-sm text-slate-300">
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Interactive crime maps</li>
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Incident reporting</li>
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Trend analysis</li>
-              </ul>
-            </div>
-
-            {/* Patrol Management */}
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-8 hover:border-gold-500/50 transition-colors">
-              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-6">
-                <i className="fas fa-route text-blue-400 text-xl"></i>
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-4">Patrol Management</h3>
-              <p className="text-slate-400 mb-4">
-                Smart scheduling, route optimization, and comprehensive 
-                patrol reporting with photo documentation.
-              </p>
-              <ul className="space-y-2 text-sm text-slate-300">
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Staff scheduling</li>
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Daily reports</li>
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Photo uploads</li>
-              </ul>
-            </div>
-
-            {/* Client & Property Management */}
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-8 hover:border-gold-500/50 transition-colors">
-              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mb-6">
-                <i className="fas fa-building text-green-400 text-xl"></i>
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-4">Client & Property Management</h3>
-              <p className="text-slate-400 mb-4">
-                Comprehensive client database with property details, 
-                security notes, and activity tracking.
-              </p>
-              <ul className="space-y-2 text-sm text-slate-300">
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Client profiles</li>
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Property database</li>
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Activity logs</li>
-              </ul>
-            </div>
-
-            {/* Hawaii Law Reference */}
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-8 hover:border-gold-500/50 transition-colors">
-              <div className="w-12 h-12 bg-gold-500/20 rounded-lg flex items-center justify-center mb-6">
-                <i className="fas fa-gavel text-gold-400 text-xl"></i>
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-4">Hawaii Law Reference</h3>
-              <p className="text-slate-400 mb-4">
-                Quick access to relevant Hawaii state laws and regulations 
-                for security operations and community watch.
-              </p>
-              <ul className="space-y-2 text-sm text-slate-300">
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Trespassing laws</li>
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Security regulations</li>
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Community guidelines</li>
-              </ul>
-            </div>
-
-            {/* Community Outreach */}
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-8 hover:border-gold-500/50 transition-colors">
-              <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-6">
-                <i className="fas fa-hands-helping text-purple-400 text-xl"></i>
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-4">Community Outreach</h3>
-              <p className="text-slate-400 mb-4">
-                Resources and programs for community assistance, 
-                homeless outreach, and social services coordination.
-              </p>
-              <ul className="space-y-2 text-sm text-slate-300">
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Shelter locations</li>
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Crisis hotlines</li>
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Outreach programs</li>
-              </ul>
-            </div>
-
-            {/* Smart Accounting */}
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-8 hover:border-gold-500/50 transition-colors">
-              <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center mb-6">
-                <i className="fas fa-calculator text-cyan-400 text-xl"></i>
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-4">Smart Accounting</h3>
-              <p className="text-slate-400 mb-4">
-                Easy financial tracking with tax-friendly categorization 
-                and automated expense reporting.
-              </p>
-              <ul className="space-y-2 text-sm text-slate-300">
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Expense tracking</li>
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Tax categories</li>
-                <li><i className="fas fa-check text-gold-500 mr-2"></i>Financial reports</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-navy-800 to-slate-900">
-        <div className="container mx-auto px-6 text-center">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold text-white mb-4" data-testid="text-cta-title">
-              Ready to Enhance Your Security Operations?
-            </h2>
-            <p className="text-xl text-slate-300 mb-8" data-testid="text-cta-description">
-              Join Hawaii's leading security professionals using our comprehensive 
-              management system to protect communities and serve clients better.
-            </p>
-            <Button 
-              size="lg"
-              onClick={() => window.location.href = "/api/login"}
-              className="bg-gold-500 hover:bg-gold-600 text-black font-semibold px-12 py-4 text-lg"
-              data-testid="button-start-now"
-            >
-              <i className="fas fa-shield-alt mr-2"></i>
-              Start Protecting Today
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800 py-12">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-navy-700 rounded-lg flex items-center justify-center">
-                <i className="fas fa-shield-alt text-gold-500"></i>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold">Hawaii Security CRM</h3>
-                <p className="text-slate-400 text-sm">Professional Security Management</p>
-              </div>
-            </div>
-            <div className="text-slate-400 text-sm">
-              <p>&copy; 2024 Hawaii Security CRM. All rights reserved.</p>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
