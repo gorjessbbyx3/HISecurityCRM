@@ -39,8 +39,8 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
           title: "Login Successful", 
           description: `Welcome back, ${data.user.firstName}!`,
         });
-        // Refresh the page to update authentication state
-        window.location.reload();
+        // Use the callback to navigate to dashboard
+        onLoginSuccess();
       } else {
         setError(data.message || "Invalid credentials");
       }
