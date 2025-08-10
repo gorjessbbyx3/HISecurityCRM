@@ -36,8 +36,8 @@ export function useAuth() {
       return failureCount < 2;
     },
     refetchOnWindowFocus: false,
-    staleTime: 30 * 1000, // Cache for 30 seconds in development
-    gcTime: 2 * 60 * 1000, // Keep in cache for 2 minutes
+    staleTime: 1 * 1000, // Cache for 1 second in development to get fresh auth state
+    gcTime: 10 * 1000, // Keep in cache for 10 seconds
   });
 
   const isAuthenticated = !!user && !error;

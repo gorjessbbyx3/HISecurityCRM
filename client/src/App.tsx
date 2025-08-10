@@ -15,6 +15,10 @@ import CrimeIntelligence from "@/pages/crime-intelligence";
 import LawReference from "@/pages/law-reference";
 import CommunityOutreach from "@/pages/community-outreach";
 import Accounting from "@/pages/accounting";
+import StaffManagement from "@/pages/staff-management";
+import Scheduling from "@/pages/scheduling";
+import PatrolReports from "@/pages/patrol-reports";
+import HawaiiLaw from "@/pages/hawaii-law";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -48,13 +52,17 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/staff" component={Staff} />
+      <Route path="/staff-management" component={StaffManagement} />
       <Route path="/clients" component={Clients} />
       <Route path="/properties" component={Properties} />
       <Route path="/reports" component={Reports} />
+      <Route path="/patrol-reports" component={PatrolReports} />
       <Route path="/crime-intelligence" component={CrimeIntelligence} />
       <Route path="/law-reference" component={LawReference} />
+      <Route path="/hawaii-law" component={HawaiiLaw} />
       <Route path="/community-outreach" component={CommunityOutreach} />
       <Route path="/accounting" component={Accounting} />
+      <Route path="/scheduling" component={Scheduling} />
       <Route component={NotFound} />
     </Switch>
   );

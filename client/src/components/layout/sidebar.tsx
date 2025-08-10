@@ -20,9 +20,9 @@ export default function Sidebar() {
     {
       section: "Crime Intelligence",
       items: [
-        { path: "/crime-intelligence", icon: "fas fa-map-marked-alt", label: "Crime Maps", badge: "12" },
-        { path: "/crime-intelligence", icon: "fas fa-chart-line", label: "Analytics" },
-        { path: "/crime-intelligence", icon: "fas fa-exclamation-triangle", label: "Active Incidents", badge: "3" },
+        { path: "/crime-intelligence", icon: "fas fa-map-marked-alt", label: "Crime Maps" },
+        { path: "/patrol-reports", icon: "fas fa-chart-line", label: "Patrol Reports" },
+        { path: "/reports", icon: "fas fa-exclamation-triangle", label: "Incident Reports" },
       ]
     },
     {
@@ -30,30 +30,28 @@ export default function Sidebar() {
       items: [
         { path: "/clients", icon: "fas fa-users", label: "Clients" },
         { path: "/properties", icon: "fas fa-building", label: "Properties" },
-        { path: "/properties", icon: "fas fa-sticky-note", label: "Notes & Photos" },
+        { path: "/scheduling", icon: "fas fa-calendar-alt", label: "Scheduling" },
       ]
     },
     {
-      section: "Operations",
+      section: "Staff Management",
       items: [
-        { path: "/reports", icon: "fas fa-route", label: "Patrol Routes" },
-        { path: "/staff", icon: "fas fa-calendar-check", label: "Scheduling" },
-        { path: "/reports", icon: "fas fa-file-alt", label: "Daily Reports" },
+        { path: "/staff", icon: "fas fa-user-shield", label: "Staff Overview" },
+        { path: "/staff-management", icon: "fas fa-users-cog", label: "Staff Management" },
       ]
     },
     {
       section: "Resources",
       items: [
-        { path: "/law-reference", icon: "fas fa-gavel", label: "Hawaii Law Ref" },
+        { path: "/law-reference", icon: "fas fa-gavel", label: "Hawaii Law Reference" },
+        { path: "/hawaii-law", icon: "fas fa-balance-scale", label: "Guard Card Law" },
         { path: "/community-outreach", icon: "fas fa-hands-helping", label: "Community Outreach" },
-        { path: "/accounting", icon: "fas fa-calculator", label: "Accounting" },
       ]
     },
     {
       section: "Administration",
       items: [
-        { path: "/staff", icon: "fas fa-user-shield", label: "Staff Management" },
-        { path: "/settings", icon: "fas fa-cog", label: "Settings" },
+        { path: "/accounting", icon: "fas fa-calculator", label: "Accounting" },
       ]
     }
   ];
