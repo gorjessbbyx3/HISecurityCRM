@@ -84,13 +84,13 @@ export default function Sidebar() {
               >
                 <i className={`${item.icon} w-5`}></i>
                 <span className="text-sm font-medium">{item.label}</span>
-                {item.badge && (
+                {(item as any).badge && (
                   <span className={`ml-auto text-xs px-2 py-1 rounded-full ${
-                    item.badge === "12" ? "bg-red-500 text-white" :
-                    item.badge === "3" ? "bg-yellow-500 text-black" :
+                    (item as any).badge === "12" ? "bg-red-500 text-white" :
+                    (item as any).badge === "3" ? "bg-yellow-500 text-black" :
                     "bg-blue-500 text-white"
                   }`}>
-                    {item.badge}
+                    {(item as any).badge}
                   </span>
                 )}
               </Link>
