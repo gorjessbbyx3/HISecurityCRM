@@ -34,7 +34,7 @@ export function useAuth() {
       console.log('Fetching user authentication status...');
       setAuthState(prev => ({ ...prev, isLoading: true }));
 
-      const response = await fetch('/api/user', {
+      const response = await fetch('/api/auth/user', {
         credentials: 'include',
         headers: {
           'Cache-Control': 'no-cache',
@@ -74,7 +74,7 @@ export function useAuth() {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      const response = await fetch('/api/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,7 +115,7 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      await fetch('/api/logout', {
+      await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
       });
