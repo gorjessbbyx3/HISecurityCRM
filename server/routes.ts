@@ -29,8 +29,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ authenticated: false });
     } catch (error) {
-      console.error('Auth status error:', error);
-      res.json({ authenticated: false });
+      console.error('Auth status error:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        sessionID: req.sessionID,
+        timestamp: new Date().toISOString()
+      });
+      res.status(500).json({ authenticated: false, error: 'Authentication check failed' });
     }
   });
 
@@ -832,8 +837,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Broadcast function for real-time updates
   const broadcast = (data: any) => {
     clients.forEach(client => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(data));
+      try {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(data));
+        } else {
+          // Remove stale connections
+          clients.delete(client);
+        }
+      } catch (error) {
+        console.error('Error broadcasting to WebSocket client:', error);
+        clients.delete(client);
       }
     });
   };
@@ -844,6 +857,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   wss.on('connection', (ws: WebSocket) => {
     console.log('WebSocket client connected');
     clients.add(ws);
+
+    // Send initial connection confirmation
+    try {
+      ws.send(JSON.stringify({
+        type: 'connected',
+        message: 'Connected to Hawaii Security CRM',
+        timestamp: new Date().toISOString()
+      }));
+    } catch (error) {
+      console.error('Error sending initial WebSocket message:', error);
+    }
 
     ws.on('message', (message: string) => {
       try {
@@ -864,27 +888,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (error) {
         console.error('Error processing WebSocket message:', error);
+        try {
+          ws.send(JSON.stringify({
+            type: 'error',
+            message: 'Invalid message format',
+            timestamp: new Date().toISOString()
+          }));
+        } catch (sendError) {
+          console.error('Error sending error message:', sendError);
+        }
       }
     });
 
-    ws.on('close', () => {
-      console.log('WebSocket client disconnected');
+    ws.on('close', (code, reason) => {
+      console.log(`WebSocket client disconnected - Code: ${code}, Reason: ${reason}`);
       clients.delete(ws);
     });
 
     ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
+      console.error('WebSocket connection error:', error);
       clients.delete(ws);
     });
-
-    // Send initial connection confirmation
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: 'connected',
-        message: 'Connected to Hawaii Security CRM',
-        timestamp: new Date().toISOString()
-      }));
-    }
   });
 
   return httpServer;

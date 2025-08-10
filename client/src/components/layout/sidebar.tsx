@@ -3,22 +3,6 @@ import { Link, useLocation } from "wouter";
 export default function Sidebar() {
   const [location] = useLocation();
 
-import { Link } from 'wouter';
-
-// Example links in your sidebar
-const Sidebar = () => (
-  <nav>
-    <Link href="/dashboard">Dashboard</Link>
-    <Link href="/staff">Staff</Link>
-    <Link href="/clients">Clients</Link>
-    <Link href="/properties">Properties</Link>
-    // Add all navigation links with correct paths
-  </nav>
-);
-
-export default Sidebar;
-
-
   const isActive = (path: string) => {
     if (path === "/" && (location === "/" || location === "/dashboard")) {
       return true;
@@ -88,7 +72,7 @@ export default Sidebar;
               {section.section}
             </h4>
             {section.items.map((item, itemIndex) => (
-              <Link 
+              <Link
                 key={itemIndex}
                 href={item.path}
                 className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
