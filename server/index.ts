@@ -1,4 +1,3 @@
-
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
@@ -35,35 +34,37 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Error handling middleware
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(`Server error on ${req.method} ${req.url}:`, {
-    message: err.message,
-    stack: err.stack,
-    timestamp: new Date().toISOString(),
-    userAgent: req.get('User-Agent'),
-    ip: req.ip
-  });
-  
-  res.status(500).json({
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Global error handlers
+// Global unhandled promise rejection handler
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Promise Rejection at:', promise, 'reason:', reason);
-  // Don't exit the process in development, but log it
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit the process in development, just log
   if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
 });
 
+// Global uncaught exception handler
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
-  process.exit(1);
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+});
+
+// Global error handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error('Global error:', {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+
+  res.status(err.status || 500).json({
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
 });
 
 (async () => {

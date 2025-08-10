@@ -14,6 +14,35 @@ import {
 import { WebSocketServer, WebSocket } from "ws";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint (before auth middleware)
+  app.get('/api/health', async (req, res) => {
+    try {
+      // Test database connection
+      const testQuery = await storage.getDashboardStats();
+      
+      const healthStatus = {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        services: {
+          database: 'connected',
+          auth: 'configured',
+          server: 'running'
+        },
+        version: process.env.npm_package_version || '1.0.0',
+        environment: process.env.NODE_ENV || 'development'
+      };
+      
+      res.json(healthStatus);
+    } catch (error) {
+      console.error('Health check failed:', error);
+      res.status(503).json({
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Auth middleware
   await setupAuth(app);
 
@@ -627,7 +656,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { limit = 50, since } = req.query;
       
       // Build the API URL with proper query parameters
-      let apiUrl = `https://data.honolulu.gov/resource/vg88-5rn5.json?$limit=${limit}&$order=date DESC`;
+      const baseApiUrl = process.env.CRIME_DATA_API_URL || 'https://data.honolulu.gov/resource/vg88-5rn5.json';
+      let apiUrl = `${baseApiUrl}?$limit=${limit}&$order=date DESC`;
       if (since) {
         apiUrl += `&$where=date > '${since}'`;
       }
@@ -670,7 +700,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sinceDate = new Date();
       sinceDate.setDate(sinceDate.getDate() - parseInt(days as string));
       
-      const apiUrl = `https://data.honolulu.gov/resource/vg88-5rn5.json?$limit=1000&$where=date > '${sinceDate.toISOString()}'&$order=date DESC`;
+      const baseApiUrl = process.env.CRIME_DATA_API_URL || 'https://data.honolulu.gov/resource/vg88-5rn5.json';
+      const apiUrl = `${baseApiUrl}?$limit=1000&$where=date > '${sinceDate.toISOString()}'&$order=date DESC`;
       
       const response = await fetch(apiUrl);
       if (!response.ok) {
@@ -863,8 +894,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
           type: 'connected',
-          message: 'Connected to Hawaii Security CRM',
-          timestamp: new Date().toISOString()
+          message: process.env.WS_WELCOME_MESSAGE || 'Connected to Security CRM',
+          timestamp: new Date().toISOString(),
+          serverId: process.env.SERVER_ID || 'security-crm-1'
         }));
       }
     } catch (error) {

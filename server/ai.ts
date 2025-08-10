@@ -52,11 +52,14 @@ class AIService {
     }
 
     try {
+      const systemPrompt = process.env.AI_SYSTEM_PROMPT || 
+        "You are a security analyst AI that assesses incident risk and provides actionable recommendations. Respond only with valid JSON.";
+      
       const completion = await this.groq.chat.completions.create({
         messages: [
           {
             role: "system",
-            content: "You are a security analyst AI that assesses incident risk and provides actionable recommendations. Respond only with valid JSON."
+            content: systemPrompt
           },
           {
             role: "user",
@@ -72,9 +75,9 @@ class AIService {
             - priority: "low" | "medium" | "high" | "critical"`
           }
         ],
-        model: "mixtral-8x7b-32768",
-        temperature: 0.2,
-        max_tokens: 500,
+        model: process.env.AI_MODEL || "mixtral-8x7b-32768",
+        temperature: parseFloat(process.env.AI_TEMPERATURE || "0.2"),
+        max_tokens: parseInt(process.env.AI_MAX_TOKENS || "500"),
       });
 
       const response = completion.choices[0]?.message?.content;
@@ -119,11 +122,14 @@ class AIService {
     }
 
     try {
+      const systemPrompt = process.env.AI_PATROL_PROMPT || 
+        "You are a security patrol analyst that creates professional patrol summaries. Respond only with valid JSON.";
+      
       const completion = await this.groq.chat.completions.create({
         messages: [
           {
             role: "system",
-            content: "You are a security patrol analyst that creates professional patrol summaries. Respond only with valid JSON."
+            content: systemPrompt
           },
           {
             role: "user",
@@ -138,9 +144,9 @@ class AIService {
             - recommendations: string[] (future recommendations)`
           }
         ],
-        model: "mixtral-8x7b-32768",
-        temperature: 0.3,
-        max_tokens: 600,
+        model: process.env.AI_MODEL || "mixtral-8x7b-32768",
+        temperature: parseFloat(process.env.AI_TEMPERATURE || "0.3"),
+        max_tokens: parseInt(process.env.AI_MAX_TOKENS || "600"),
       });
 
       const response = completion.choices[0]?.message?.content;
@@ -178,11 +184,14 @@ class AIService {
     }
 
     try {
+      const systemPrompt = process.env.AI_CRIME_ANALYSIS_PROMPT || 
+        "You are a crime analyst AI that identifies patterns and trends in incident data. Provide structured JSON responses.";
+      
       const completion = await this.groq.chat.completions.create({
         messages: [
           {
             role: "system",
-            content: "You are a crime analyst AI that identifies patterns and trends in incident data. Provide structured JSON responses."
+            content: systemPrompt
           },
           {
             role: "user",
@@ -195,9 +204,9 @@ class AIService {
             - recommendations: string[] (strategic recommendations)`
           }
         ],
-        model: "mixtral-8x7b-32768",
-        temperature: 0.3,
-        max_tokens: 1000,
+        model: process.env.AI_MODEL || "mixtral-8x7b-32768",
+        temperature: parseFloat(process.env.AI_TEMPERATURE || "0.3"),
+        max_tokens: parseInt(process.env.AI_MAX_TOKENS || "1000"),
       });
 
       const response = completion.choices[0]?.message?.content;

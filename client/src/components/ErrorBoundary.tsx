@@ -1,4 +1,3 @@
-
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -21,7 +20,17 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('React Error Boundary caught an error:', error, errorInfo);
+    console.error('Error caught by boundary:', {
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      timestamp: new Date().toISOString()
+    });
+
+    // Log to external service in production
+    if (process.env.NODE_ENV === 'production') {
+      // Add external logging service here if needed
+    }
   }
 
   public render() {
@@ -34,22 +43,30 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
             <h1 className="text-2xl font-bold text-white mb-4">Something went wrong</h1>
             <p className="text-slate-400 mb-6">
-              An unexpected error occurred. Please try refreshing the page.
+              We're sorry, but something unexpected happened. You can try to recover from this error.
             </p>
-            {this.state.error && (
-              <details className="text-left mb-4 text-sm text-slate-500">
-                <summary className="cursor-pointer">Error details</summary>
-                <pre className="mt-2 bg-slate-800 p-2 rounded text-xs overflow-auto">
-                  {this.state.error.message}
+            <div className="space-x-4">
+              <button
+                onClick={() => this.setState({ hasError: false, error: null })}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+              >
+                Refresh Page
+              </button>
+            </div>
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <details className="mt-6 text-left">
+                <summary className="text-slate-300 cursor-pointer">Error Details</summary>
+                <pre className="mt-2 p-4 bg-slate-900 rounded text-red-400 text-sm overflow-auto">
+                  {this.state.error.stack}
                 </pre>
               </details>
             )}
-            <Button 
-              onClick={() => window.location.reload()} 
-              className="bg-gold-500 hover:bg-gold-600 text-black"
-            >
-              Refresh Page
-            </Button>
           </div>
         </div>
       );

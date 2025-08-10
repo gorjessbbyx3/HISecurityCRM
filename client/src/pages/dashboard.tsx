@@ -1,4 +1,3 @@
-
 import Header from "@/components/layout/header";
 import Sidebar from "@/components/layout/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EvidenceGallery } from "@/components/dashboard/evidence-gallery";
 import { useQuery } from "@tanstack/react-query";
+import LoginTest from "@/components/test/LoginTest";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -85,13 +86,15 @@ export default function Dashboard() {
     }
   };
 
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="bg-slate-900 text-white min-h-screen">
       <Header />
-      
+
       <div className="flex">
         <Sidebar />
-        
+
         <main className="flex-1 p-6 overflow-y-auto" data-testid="main-dashboard">
           {/* Dashboard Header */}
           <div className="mb-8">
@@ -336,6 +339,10 @@ export default function Dashboard() {
               </Card>
             </div>
           </div>
+          {/* Show login test for non-authenticated users */}
+          {!isAuthenticated && (
+            <LoginTest />
+          )}
         </main>
       </div>
     </div>

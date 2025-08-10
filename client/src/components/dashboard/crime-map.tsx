@@ -24,7 +24,7 @@ export default function CrimeMap() {
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white" data-testid="text-crime-intelligence-title">
-          Crime Intelligence Dashboard
+          {import.meta.env.VITE_CRIME_MAP_TITLE || 'Crime Intelligence Dashboard'}
         </h3>
         <div className="flex space-x-2">
           <button 

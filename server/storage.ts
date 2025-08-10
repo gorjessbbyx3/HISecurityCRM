@@ -796,27 +796,35 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Dashboard stats
+  // Dashboard stats with trend calculations
   async getDashboardStats(): Promise<{
     totalIncidents: number;
     activePatrols: number;
     propertiesSecured: number;
     staffOnDuty: number;
+    activePatrolsChange?: string;
+    activePatrolsChangeType?: string;
+    incidentsChange?: string;
+    incidentsChangeType?: string;
+    propertiesChange?: string;
+    propertiesChangeType?: string;
+    staffChange?: string;
+    staffChangeType?: string;
   }> {
     try {
-      const today = new Date();
+      const now = new Date();
+      const today = new Date(now);
       today.setHours(0, 0, 0, 0);
+      
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
 
+      // Current stats
       const [totalIncidentsResult] = await db.select({ count: sql`count(*)` }).from(incidents);
       const totalIncidents = Number(totalIncidentsResult?.count || 0);
 
       const [activePatrolsResult] = await db.select({ count: sql`count(*)` }).from(patrolReports)
-        .where(
-          and(
-            eq(patrolReports.status, 'in_progress'),
-            gte(patrolReports.startTime, today)
-          )
-        );
+        .where(eq(patrolReports.status, 'in_progress'));
       const activePatrols = Number(activePatrolsResult?.count || 0);
 
       const [propertiesSecuredResult] = await db.select({ count: sql`count(*)` }).from(properties)
@@ -827,282 +835,64 @@ export class DatabaseStorage implements IStorage {
         .where(eq(users.status, 'active'));
       const staffOnDuty = Number(staffOnDutyResult?.count || 0);
 
+      // Yesterday's stats for comparison
+      const [yesterdayIncidentsResult] = await db.select({ count: sql`count(*)` }).from(incidents)
+        .where(and(
+          gte(incidents.createdAt, yesterday),
+          lte(incidents.createdAt, today)
+        ));
+      const yesterdayIncidents = Number(yesterdayIncidentsResult?.count || 0);
+
+      const [yesterdayPatrolsResult] = await db.select({ count: sql`count(*)` }).from(patrolReports)
+        .where(and(
+          gte(patrolReports.startTime, yesterday),
+          lte(patrolReports.startTime, today)
+        ));
+      const yesterdayPatrols = Number(yesterdayPatrolsResult?.count || 0);
+
+      // Calculate trends
+      const incidentsDiff = totalIncidents - yesterdayIncidents;
+      const patrolsDiff = activePatrols - yesterdayPatrols;
+
       return {
         totalIncidents,
         activePatrols,
         propertiesSecured,
         staffOnDuty,
+        activePatrolsChange: patrolsDiff > 0 ? `+${patrolsDiff} from yesterday` : 
+                           patrolsDiff < 0 ? `${patrolsDiff} from yesterday` : 'No change',
+        activePatrolsChangeType: patrolsDiff > 0 ? 'positive' : patrolsDiff < 0 ? 'negative' : 'neutral',
+        incidentsChange: incidentsDiff > 0 ? `+${incidentsDiff} from yesterday` : 
+                        incidentsDiff < 0 ? `${incidentsDiff} from yesterday` : 'No change',
+        incidentsChangeType: incidentsDiff < 0 ? 'positive' : incidentsDiff > 0 ? 'negative' : 'neutral',
+        propertiesChange: `${propertiesSecured} active`,
+        propertiesChangeType: 'neutral',
+        staffChange: `${staffOnDuty} available`,
+        staffChangeType: 'neutral'
       };
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
-      return { totalIncidents: 0, activePatrols: 0, propertiesSecured: 0, staffOnDuty: 0 };
+      return { 
+        totalIncidents: 0, 
+        activePatrols: 0, 
+        propertiesSecured: 0, 
+        staffOnDuty: 0,
+        activePatrolsChange: 'No data',
+        activePatrolsChangeType: 'neutral',
+        incidentsChange: 'No data',
+        incidentsChangeType: 'neutral',
+        propertiesChange: 'No data',
+        propertiesChangeType: 'neutral',
+        staffChange: 'No data',
+        staffChangeType: 'neutral'
+      };
     }
   }
 
-  // Seed database with sample data
+  // Initialize database with essential admin user only
   async seedDatabase() {
     try {
-      console.log('🌱 Starting database seeding...');
-
-      // Create sample clients
-      const sampleClients = [
-        {
-          id: crypto.randomUUID(),
-          name: "Aloha Resort & Spa",
-          contactName: "Maria Santos",
-          email: "maria@aloharesort.com",
-          phone: "(808) 555-0101",
-          address: "123 Kaanapali Beach Dr, Lahaina, HI 96761",
-          contractStartDate: new Date('2024-01-01'),
-          contractEndDate: new Date('2024-12-31'),
-          monthlyRate: "15000.00",
-          notes: "Luxury resort requiring 24/7 security coverage",
-          status: "active",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: crypto.randomUUID(),
-          name: "Pacific Business Center",
-          contactName: "James Chen",
-          email: "security@pbcenter.com",
-          phone: "(808) 555-0102",
-          address: "456 Ward Ave, Honolulu, HI 96814",
-          contractStartDate: new Date('2024-02-01'),
-          contractEndDate: new Date('2025-01-31'),
-          monthlyRate: "8500.00",
-          notes: "Commercial office building with parking garage",
-          status: "active",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-      ];
-
-      for (const client of sampleClients) {
-        await db.insert(clients).values(client).onConflictDoNothing();
-      }
-
-      // Create sample properties
-      const sampleProperties = [
-        {
-          id: crypto.randomUUID(),
-          clientId: sampleClients[0].id,
-          name: "Aloha Resort Main Building",
-          address: "123 Kaanapali Beach Dr, Lahaina, HI 96761",
-          propertyType: "resort",
-          coordinates: "20.9292,-156.6960",
-          accessInstructions: "Main entrance keycard access, security office on ground floor",
-          emergencyContact: "Front Desk: (808) 555-0101",
-          specialInstructions: "Monitor pool area after 10 PM, check beach access points hourly",
-          riskLevel: "medium",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: crypto.randomUUID(),
-          clientId: sampleClients[1].id,
-          name: "Pacific Business Center",
-          address: "456 Ward Ave, Honolulu, HI 96814",
-          propertyType: "commercial",
-          coordinates: "21.2969,-157.8482",
-          accessInstructions: "Badge access to all floors, security desk in lobby",
-          emergencyContact: "Building Manager: (808) 555-0102",
-          specialInstructions: "Lock down all floors after business hours, patrol parking garage every 2 hours",
-          riskLevel: "low",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-      ];
-
-      for (const property of sampleProperties) {
-        await db.insert(properties).values(property).onConflictDoNothing();
-      }
-
-      // Create sample staff
-      const sampleStaff = [
-        {
-          id: crypto.randomUUID(),
-          email: "officer.kane@hawaiisecurity.com",
-          firstName: "Keoni",
-          lastName: "Kane",
-          role: "officer",
-          status: "active",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: crypto.randomUUID(),
-          email: "officer.patel@hawaiisecurity.com",
-          firstName: "Leilani",
-          lastName: "Patel",
-          role: "officer",
-          status: "active",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-      ];
-
-      for (const staff of sampleStaff) {
-        await db.insert(users).values(staff).onConflictDoNothing();
-      }
-
-      // Create sample incidents
-      const sampleIncidents = [
-        {
-          id: crypto.randomUUID(),
-          propertyId: sampleProperties[0].id,
-          reportedBy: sampleStaff[0].id,
-          incidentType: "trespassing",
-          severity: "medium",
-          description: "Unauthorized individual found on private beach area after hours. Individual was escorted off property without incident.",
-          location: "Private beach access - North end",
-          coordinates: "20.9295,-156.6965",
-          occuredAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-          status: "resolved",
-          policeReported: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: crypto.randomUUID(),
-          propertyId: sampleProperties[1].id,
-          reportedBy: sampleStaff[1].id,
-          incidentType: "vandalism",
-          severity: "low",
-          description: "Graffiti discovered on exterior wall of building. Maintenance notified for cleanup.",
-          location: "South exterior wall - parking garage level",
-          coordinates: "21.2965,-157.8485",
-          occuredAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
-          status: "open",
-          policeReported: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-      ];
-
-      for (const incident of sampleIncidents) {
-        await db.insert(incidents).values(incident).onConflictDoNothing();
-      }
-
-      // Create sample patrol reports
-      const sampleReports = [
-        {
-          id: crypto.randomUUID(),
-          officerId: sampleStaff[0].id,
-          propertyId: sampleProperties[0].id,
-          shiftType: "day",
-          startTime: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
-          endTime: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-          status: "completed",
-          summary: "Routine patrol completed. All areas secured. Pool area monitored, beach access checked hourly as requested.",
-          incidentsReported: 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: crypto.randomUUID(),
-          officerId: sampleStaff[1].id,
-          propertyId: sampleProperties[1].id,
-          shiftType: "night",
-          startTime: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-          endTime: null,
-          status: "in_progress",
-          summary: "Night shift in progress. Building lockdown completed. Parking garage patrol scheduled for next hour.",
-          incidentsReported: 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-      ];
-
-      for (const report of sampleReports) {
-        await db.insert(patrolReports).values(report).onConflictDoNothing();
-      }
-
-      // Create sample law references
-      const sampleLaws = [
-        {
-          id: crypto.randomUUID(),
-          title: "Hawaii Revised Statutes §708-813 - Criminal Trespass in the First Degree",
-          category: "trespassing",
-          content: "A person commits criminal trespass in the first degree if the person knowingly enters or remains unlawfully in a building.",
-          source: "Hawaii Revised Statutes",
-          effectiveDate: new Date('2023-01-01'),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: crypto.randomUUID(),
-          title: "Hawaii Revised Statutes §708-821 - Criminal Property Damage in the Fourth Degree",
-          category: "vandalism",
-          content: "A person commits criminal property damage in the fourth degree if the person intentionally damages property of another without the other's consent.",
-          source: "Hawaii Revised Statutes",
-          effectiveDate: new Date('2023-01-01'),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-      ];
-
-      for (const law of sampleLaws) {
-        await db.insert(lawReferences).values(law).onConflictDoNothing();
-      }
-
-      // Create sample community resources
-      const sampleResources = [
-        {
-          id: crypto.randomUUID(),
-          name: "Honolulu Police Department",
-          category: "emergency",
-          description: "Primary law enforcement agency for Honolulu County",
-          contactInfo: "Emergency: 911, Non-emergency: (808) 529-3111",
-          address: "801 S Beretania St, Honolulu, HI 96813",
-          website: "https://www.honolulupd.org",
-          availability: "24/7",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: crypto.randomUUID(),
-          name: "Institute for Human Services",
-          category: "social_services",
-          description: "Homeless services and emergency shelter",
-          contactInfo: "(808) 447-2800",
-          address: "350 Sumner St, Honolulu, HI 96817",
-          website: "https://www.ihshawaii.org",
-          availability: "Monday-Friday 8AM-5PM",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-      ];
-
-      for (const resource of sampleResources) {
-        await db.insert(communityResources).values(resource).onConflictDoNothing();
-      }
-
-      // Create sample activities
-      const sampleActivities = [
-        {
-          id: crypto.randomUUID(),
-          userId: sampleStaff[0].id,
-          activityType: "incident",
-          entityType: "incident",
-          entityId: sampleIncidents[0].id,
-          description: "Reported trespassing incident at Aloha Resort",
-          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        },
-        {
-          id: crypto.randomUUID(),
-          userId: sampleStaff[1].id,
-          activityType: "patrol",
-          entityType: "patrol_report",
-          entityId: sampleReports[1].id,
-          description: "Started night shift patrol at Pacific Business Center",
-          createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
-        }
-      ];
-
-      for (const activity of sampleActivities) {
-        await db.insert(activities).values(activity).onConflictDoNothing();
-      }
+      console.log('🌱 Starting database initialization...');
 
       // Check if admin user already exists
       const existingAdmin = await db.query.users.findFirst({
@@ -1114,7 +904,7 @@ export class DatabaseStorage implements IStorage {
         const hashedPassword = await bcrypt.hash('Password3211', 10);
 
         await db.insert(users).values({
-          id: crypto.randomUUID(), // Ensure ID is generated if not provided by schema
+          id: crypto.randomUUID(),
           username: 'STREETPATROL808',
           email: 'admin@hawaiisecurity.com',
           hashedPassword,
@@ -1125,7 +915,8 @@ export class DatabaseStorage implements IStorage {
           badge: 'ADMIN001',
           department: 'Administration',
           shift: 'Day',
-          status: 'active', // Use 'active' to match other status fields
+          status: 'active',
+          permissions: ['admin', 'create_users', 'manage_clients', 'view_reports'],
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -1135,9 +926,9 @@ export class DatabaseStorage implements IStorage {
         console.log('✅ Admin user already exists');
       }
 
-      console.log('✅ Database seeding completed');
+      console.log('✅ Database initialization completed');
     } catch (error) {
-      console.error('❌ Database seeding failed:', error);
+      console.error('❌ Database initialization failed:', error);
       throw error;
     }
   }

@@ -24,14 +24,15 @@ export function useAuth() {
     error: null,
   });
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
+  // Helper to set auth state
+  const setAuthStateInternal = (state: Partial<AuthState>) => {
+    setAuthState(prev => ({ ...prev, ...state }));
+  };
 
   const checkAuthStatus = useCallback(async () => {
     try {
       console.log('Fetching user authentication status...');
-      setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+      setAuthStateInternal({ isLoading: true, error: null });
 
       const response = await fetch('/api/auth/status', {
         method: 'GET',
@@ -39,22 +40,31 @@ export function useAuth() {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
+          'Content-Type': 'application/json',
         },
+      }).catch(fetchError => {
+        console.error('Network error during auth check:', fetchError);
+        throw new Error('Network error');
       });
 
       if (response.ok) {
-        const statusData = await response.json();
-        console.log('Auth status response:', statusData);
-        
-        if (statusData.authenticated && statusData.user) {
-          setAuthState({
-            user: statusData.user,
+        const data = await response.json().catch(jsonError => {
+          console.error('JSON parse error:', jsonError);
+          throw new Error('Invalid response format');
+        });
+
+        console.log('Auth status response:', data);
+
+        if (data.authenticated && data.user) {
+          setAuthStateInternal({
+            user: data.user,
             isLoading: false,
             isAuthenticated: true,
             error: null,
           });
         } else {
-          setAuthState({
+          console.log('User not authenticated');
+          setAuthStateInternal({
             user: null,
             isLoading: false,
             isAuthenticated: false,
@@ -62,29 +72,28 @@ export function useAuth() {
           });
         }
       } else {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        console.log('User not authenticated:', response.status, errorText);
-        setAuthState({
+        console.error('Auth status check failed:', response.status);
+        setAuthStateInternal({
           user: null,
           isLoading: false,
           isAuthenticated: false,
-          error: response.status >= 500 ? 'Server error' : null,
+          error: `Authentication check failed: ${response.status}`,
         });
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      setAuthState({
+      setAuthStateInternal({
         user: null,
         isLoading: false,
         isAuthenticated: false,
-        error: error instanceof Error ? error.message : 'Network error',
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }, []);
 
   const login = async (credentials: { username: string; password: string }) => {
     try {
-      setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+      setAuthStateInternal({ isLoading: true, error: null });
 
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -93,59 +102,81 @@ export function useAuth() {
         },
         credentials: 'include',
         body: JSON.stringify(credentials),
+      }).catch(fetchError => {
+        console.error('Network error during login:', fetchError);
+        throw new Error('Network connection failed');
       });
 
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log('Login successful, response data:', responseData);
-        
-        // The server returns { success: true, user: userData }
-        const userData = responseData.user || responseData;
-        
-        setAuthState({
-          user: userData,
+      const data = await response.json().catch(jsonError => {
+        console.error('JSON parse error during login:', jsonError);
+        throw new Error('Invalid server response');
+      });
+
+      if (data.success) {
+        setAuthStateInternal({
+          user: data.user,
           isLoading: false,
           isAuthenticated: true,
           error: null,
         });
-        return true;
+        return { success: true };
       } else {
-        const errorData = await response.json();
-        setAuthState(prev => ({
-          ...prev,
+        const errorMsg = data.error || 'Login failed';
+        console.error('Login failed:', errorMsg);
+        setAuthStateInternal({
+          ...authState,
           isLoading: false,
-          error: errorData.error || 'Login failed',
-        }));
-        return false;
+          error: errorMsg,
+        });
+        return { success: false, error: errorMsg };
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setAuthState(prev => ({
-        ...prev,
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      console.error('Login error:', errorMessage);
+      setAuthStateInternal({
+        ...authState,
         isLoading: false,
-        error: 'Network error during login',
-      }));
-      return false;
+        error: errorMessage,
+      });
+      return { success: false, error: errorMessage };
     }
   };
 
   const logout = async () => {
     try {
+      setAuthStateInternal({ isLoading: true });
+
       await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
+      }).catch(fetchError => {
+        console.error('Network error during logout:', fetchError);
+        // Continue with local logout even if network fails
       });
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setAuthState({
+
+      setAuthStateInternal({
         user: null,
         isLoading: false,
         isAuthenticated: false,
         error: null,
       });
+      return { success: true };
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if logout fails on server, clear local state
+      setAuthStateInternal({
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+        error: null,
+      });
+      return { success: true };
     }
   };
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]); // Depend on checkAuthStatus
 
   console.log('useAuth state:', authState);
 

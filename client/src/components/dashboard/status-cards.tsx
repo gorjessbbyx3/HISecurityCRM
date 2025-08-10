@@ -10,8 +10,8 @@ export default function StatusCards() {
     {
       title: "Active Patrols",
       value: stats?.activePatrols || 0,
-      change: "+2 from yesterday",
-      changeType: "positive" as const,
+      change: stats?.activePatrolsChange || "Current status",
+      changeType: (stats?.activePatrolsChangeType || "neutral") as const,
       icon: "fas fa-walking",
       iconColor: "text-green-400",
       iconBg: "bg-green-500/20",
@@ -19,19 +19,19 @@ export default function StatusCards() {
     },
     {
       title: "Recent Incidents",
-      value: stats?.crimeIncidents || 0,
-      change: "-3 from last week",
-      changeType: "positive" as const,
+      value: stats?.totalIncidents || 0,
+      change: stats?.incidentsChange || "No recent data",
+      changeType: (stats?.incidentsChangeType || "neutral") as const,
       icon: "fas fa-exclamation-triangle",
       iconColor: "text-red-400",
       iconBg: "bg-red-500/20",
-      description: "Security incidents in last 24h"
+      description: "Security incidents tracked"
     },
     {
       title: "Properties Secured",
       value: stats?.propertiesSecured || 0,
-      change: "100% compliance",
-      changeType: "neutral" as const,
+      change: stats?.propertiesChange || "Active monitoring",
+      changeType: (stats?.propertiesChangeType || "neutral") as const,
       icon: "fas fa-building",
       iconColor: "text-blue-400",
       iconBg: "bg-blue-500/20",
@@ -40,8 +40,8 @@ export default function StatusCards() {
     {
       title: "Staff Available",
       value: stats?.staffOnDuty || 0,
-      change: "Next shift in 4h",
-      changeType: "neutral" as const,
+      change: stats?.staffChange || "Current shift",
+      changeType: (stats?.staffChangeType || "neutral") as const,
       icon: "fas fa-user-shield",
       iconColor: "text-gold-400",
       iconBg: "bg-gold-500/20",
