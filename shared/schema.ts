@@ -39,6 +39,8 @@ export const users = pgTable("users", {
   status: varchar("status").default("active"), // active, inactive, on_leave
   zone: varchar("zone"),
   shift: varchar("shift"), // day, night, swing
+  hashedPassword: varchar("hashed_password"), // Added for authentication
+  permissions: text("permissions").array(), // Added for role-based access control
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

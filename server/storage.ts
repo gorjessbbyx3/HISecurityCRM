@@ -42,7 +42,12 @@ export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  getUserById(id: number): Promise<any | null>; // Added for consistency with new login logic
+  getUserById(id: string): Promise<User | null>; // Fixed type consistency
+  
+  // Authentication operations
+  login(username: string, password: string): Promise<{ success: boolean; user?: any; error?: string }>;
+  createUser(userData: any): Promise<User>;
+  updateUserPermissions(userId: string, permissions: string[]): Promise<void>;
 
   // Staff management
   getStaffMembers(): Promise<User[]>;
@@ -157,29 +162,61 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Added new method to fetch user by ID, assuming the ID is numeric for the database
-  async getUserById(id: number): Promise<any | null> {
+  // Fixed method to fetch user by string ID
+  async getUserById(id: string): Promise<User | null> {
     try {
-      const [user] = await db.select().from(users).where(eq(users.id as any, id)); // Cast might be needed depending on drizzle-orm setup
-      if (!user) {
-        return null;
-      }
-      const { hashedPassword, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user || null;
     } catch (error) {
       console.error(`Error fetching user by ID ${id}:`, error);
       return null;
     }
   }
 
-  // Existing login method
+  // Create a new user
+  async createUser(userData: any): Promise<User> {
+    try {
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      const [user] = await db
+        .insert(users)
+        .values({
+          id: crypto.randomUUID(),
+          ...userData,
+          hashedPassword,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      return user;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  }
+
+  // Update user permissions (role-based access control)
+  async updateUserPermissions(userId: string, permissions: string[]): Promise<void> {
+    try {
+      await db
+        .update(users)
+        .set({ 
+          permissions: permissions,
+          updatedAt: new Date() 
+        })
+        .where(eq(users.id, userId));
+    } catch (error) {
+      console.error(`Error updating permissions for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  // Login method - for database users only, passport handles default admin
   async login(username: string, password: string) {
     try {
-      const user = await db.query.usersTable.findFirst({
-        where: eq(users.username, username),
-      });
+      // Look up user by email (since username might be email)
+      const [user] = await db.select().from(users).where(eq(users.email, username));
 
-      if (!user) {
+      if (!user || !user.hashedPassword) {
         return { success: false, error: 'Invalid credentials' };
       }
 
@@ -728,16 +765,16 @@ export class DatabaseStorage implements IStorage {
         query = query.where(
           or(
             like(lawReferences.title, `%${filters.search}%`),
-            like(lawReferences.content, `%${filters.search}%`)
+            like(lawReferences.description, `%${filters.search}%`)
           )
         );
       }
 
       if (filters?.category) {
-        query = query.where(eq(lawReferences.category, filters.category));
+        query = query.where(eq(lawReferences.category, filters.category)) as any;
       }
 
-      return await query.orderBy(lawReferences.title);
+      return await query.orderBy(lawReferences.title).execute();
     } catch (error) {
       console.error('Error fetching law references:', error);
       return [];

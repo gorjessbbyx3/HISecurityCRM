@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import passport from "passport";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./localAuth";
 import {
@@ -19,11 +20,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication status endpoint
   app.get('/api/auth/status', async (req: Request, res: Response) => {
     try {
-      if (req.session?.userId) {
-        const user = await storage.getUserById(req.session.userId);
-        if (user) {
-          return res.json({ authenticated: true, user });
-        }
+      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+        return res.json({ authenticated: true, user: req.user });
       }
       res.json({ authenticated: false });
     } catch (error) {
@@ -32,64 +30,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Authentication routes
-  app.post('/api/auth/login', async (req: Request, res: Response) => {
+  // Authentication routes - Use passport for login
+  app.post('/api/auth/login', (req: Request, res: Response, next) => {
     console.log('🔐 Login attempt for:', req.body.username);
-    try {
-      const result = await storage.login(req.body.username, req.body.password);
-      if (result.success && result.user) {
-        req.session.userId = result.user.id;
-        req.session.save((err) => {
-          if (err) {
-            console.error('Session save error:', err);
-            return res.status(500).json({ success: false, error: 'Session error' });
-          }
-          console.log('✅ User logged in successfully:', result.user.username);
-          res.json({ success: true, user: result.user });
-        });
-      } else {
-        console.log('❌ Login failed for:', req.body.username);
-        res.status(401).json({ success: false, error: result.error });
+    
+    // Use passport.authenticate directly
+    const authenticate = passport.authenticate('local', (err: any, user: any, info: any) => {
+      if (err) {
+        console.error('Authentication error:', err);
+        return res.status(500).json({ success: false, error: 'Authentication failed' });
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ success: false, error: 'Login failed' });
-    }
-  });
-
-  // Auth routes
-  app.get('/api/auth/user', async (req: Request, res: Response) => {
-    try {
-      if (!req.session?.userId) {
-        console.log('No session found for /api/auth/user');
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const user = await storage.getUserById(req.session.userId);
+      
       if (!user) {
-        console.log('User not found for session:', req.session.userId);
-        req.session.destroy(() => {});
-        return res.status(401).json({ error: 'User not found' });
+        console.log('❌ Login failed for:', req.body.username);
+        return res.status(401).json({ success: false, error: info?.message || 'Invalid credentials' });
       }
+      
+      // Log the user in
+      req.logIn(user, (err) => {
+        if (err) {
+          console.error('Login session error:', err);
+          return res.status(500).json({ success: false, error: 'Session error' });
+        }
+        
+        console.log('✅ User logged in successfully:', user.username);
+        res.json({ success: true, user });
+      });
+    });
+    
+    authenticate(req, res, next);
+  });
 
-      console.log('User found:', user.username);
-      res.json(user);
-    } catch (error) {
-      console.error('Get user error:', error);
-      res.status(500).json({ error: 'Failed to get user' });
+  // Get current user route
+  app.get('/api/auth/user', (req: Request, res: Response) => {
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      res.json(req.user);
+    } else {
+      res.status(401).json({ error: 'Not authenticated' });
     }
   });
 
-  // Check auth status route
-  app.get('/api/auth/status', (req, res) => {
-    if (req.isAuthenticated()) {
-      res.json({ 
-        authenticated: true,
-        user: req.user
-      });
-    } else {
-      res.json({ authenticated: false });
-    }
+  // Logout route
+  app.post('/api/auth/logout', (req: Request, res: Response) => {
+    req.logout((err) => {
+      if (err) {
+        console.error('Logout error:', err);
+        return res.status(500).json({ error: 'Logout failed' });
+      }
+      res.json({ success: true });
+    });
   });
 
   // Database initialization route (should be removed in production)
@@ -571,7 +560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn('AI pattern analysis failed:', aiError);
         res.json({
           patterns: ['Pattern analysis unavailable'],
-          hotspots: [...new Set(recentIncidents.map(i => i.location).filter(Boolean))],
+          hotspots: Array.from(new Set(recentIncidents.map(i => i.location).filter(Boolean))),
           recommendations: ['Manual pattern analysis recommended']
         });
       }
@@ -630,7 +619,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Law references routes
+  // Live crime data from Honolulu API
+  app.get('/api/crime-data/live', isAuthenticated, async (req, res) => {
+    try {
+      const { limit = 50, since } = req.query;
+      
+      // Build the API URL with proper query parameters
+      let apiUrl = `https://data.honolulu.gov/resource/vg88-5rn5.json?$limit=${limit}&$order=date DESC`;
+      if (since) {
+        apiUrl += `&$where=date > '${since}'`;
+      }
+      
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`Honolulu API responded with ${response.status}`);
+      }
+      
+      const crimeData = await response.json();
+      
+      // Transform the data to match our format
+      const transformedData = crimeData.map((crime: any) => ({
+        id: crime.objectid,
+        incidentNumber: crime.incidentnum,
+        location: crime.blockaddress,
+        type: crime.type,
+        date: crime.date,
+        agency: crime.cmagency,
+        coordinates: crime.coordinates ? {
+          lat: parseFloat(crime.coordinates.latitude),
+          lng: parseFloat(crime.coordinates.longitude)
+        } : null
+      }));
+      
+      res.json(transformedData);
+    } catch (error) {
+      console.error('Error fetching live crime data:', error);
+      res.status(500).json({ 
+        message: 'Failed to fetch live crime data',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Crime data analytics endpoint
+  app.get('/api/crime-data/analytics', isAuthenticated, async (req, res) => {
+    try {
+      const { days = 30 } = req.query;
+      const sinceDate = new Date();
+      sinceDate.setDate(sinceDate.getDate() - parseInt(days as string));
+      
+      const apiUrl = `https://data.honolulu.gov/resource/vg88-5rn5.json?$limit=1000&$where=date > '${sinceDate.toISOString()}'&$order=date DESC`;
+      
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`Honolulu API responded with ${response.status}`);
+      }
+      
+      const crimeData = await response.json();
+      
+      // Analyze the data
+      const typeCount: Record<string, number> = {};
+      const locationCount: Record<string, number> = {};
+      const hourCount: Record<number, number> = {};
+      
+      crimeData.forEach((crime: any) => {
+        // Count by type
+        typeCount[crime.type] = (typeCount[crime.type] || 0) + 1;
+        
+        // Count by general location (first part of address)
+        const location = crime.blockaddress?.split(' ')[0] || 'Unknown';
+        locationCount[location] = (locationCount[location] || 0) + 1;
+        
+        // Count by hour of day
+        if (crime.date) {
+          const hour = new Date(crime.date).getHours();
+          hourCount[hour] = (hourCount[hour] || 0) + 1;
+        }
+      });
+      
+      res.json({
+        totalIncidents: crimeData.length,
+        topCrimeTypes: Object.entries(typeCount)
+          .sort(([,a], [,b]) => (b as number) - (a as number))
+          .slice(0, 10)
+          .map(([type, count]) => ({ type, count })),
+        topLocations: Object.entries(locationCount)
+          .sort(([,a], [,b]) => (b as number) - (a as number))
+          .slice(0, 10)
+          .map(([location, count]) => ({ location, count })),
+        hourlyDistribution: Array.from({ length: 24 }, (_, hour) => ({
+          hour,
+          count: hourCount[hour] || 0
+        }))
+      });
+    } catch (error) {
+      console.error('Error analyzing crime data:', error);
+      res.status(500).json({ 
+        message: 'Failed to analyze crime data',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Law references routes with guard card requirements
   app.get('/api/law-references', isAuthenticated, async (req, res) => {
     try {
       const { search, category } = req.query;
@@ -652,6 +743,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating law reference:", error);
       res.status(500).json({ message: "Failed to create law reference" });
+    }
+  });
+
+  // User management and permissions
+  app.get('/api/users', isAuthenticated, async (req, res) => {
+    try {
+      if ((req.user as any).role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      const users = await storage.getStaffMembers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.post('/api/users', isAuthenticated, async (req, res) => {
+    try {
+      if ((req.user as any).role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      const userData = {
+        ...req.body,
+        permissions: req.body.permissions || []
+      };
+      
+      const user = await storage.createUser(userData);
+      
+      await storage.createActivity({
+        userId: (req.user as any).id,
+        activityType: "admin",
+        entityType: "user",
+        entityId: user.id,
+        description: `Created new user: ${user.email}`,
+      });
+      
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  app.put('/api/users/:id/permissions', isAuthenticated, async (req, res) => {
+    try {
+      if ((req.user as any).role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      const { id } = req.params;
+      const { permissions } = req.body;
+      
+      await storage.updateUserPermissions(id, permissions);
+      
+      await storage.createActivity({
+        userId: (req.user as any).id,
+        activityType: "admin",
+        entityType: "user",
+        entityId: id,
+        description: `Updated user permissions`,
+      });
+      
+      res.json({ message: 'Permissions updated successfully' });
+    } catch (error) {
+      console.error("Error updating user permissions:", error);
+      res.status(500).json({ message: "Failed to update permissions" });
     }
   });
 
