@@ -22,39 +22,34 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
+    setError('');
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        credentials: 'include', // Important for session cookies
+        credentials: 'include',
         body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
+      if (data.success) {
         console.log('Login successful, user data:', data.user);
-        toast({
-          title: "Login Successful", 
-          description: `Welcome back, ${data.user.firstName}!`,
-        });
         console.log('Navigating to dashboard...');
-        
-        // Invalidate auth query to force refresh of authentication state
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-        
-        // Use onLoginSuccess callback to handle navigation
-        onLoginSuccess();
+
+        // Give the server a moment to set the session cookie
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 100);
       } else {
-        console.error('Login failed:', data.error || data.message);
-        setError(data.error || data.message || "Invalid credentials");
+        setError(data.error || 'Login failed');
       }
     } catch (error) {
-      setError("Network error. Please try again.");
+      console.error('Login error:', error);
+      setError('Network error occurred');
     } finally {
       setIsLoading(false);
     }

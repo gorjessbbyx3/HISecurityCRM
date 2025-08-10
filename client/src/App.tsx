@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Route, Switch } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -22,9 +23,19 @@ import HawaiiLaw from "@/pages/hawaii-law";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, refetch } = useAuth();
 
   console.log("Router state:", { isAuthenticated, isLoading, user });
+
+  // Listen for storage events to refetch auth status when other tabs log in/out
+  useEffect(() => {
+    const handleStorageChange = () => {
+      refetch();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [refetch]);
 
   if (isLoading) {
     return (
