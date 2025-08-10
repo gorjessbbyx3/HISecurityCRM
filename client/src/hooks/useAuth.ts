@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { authUtils } from '@/lib/authUtils';
 
 interface User {
   id: string;
@@ -24,68 +25,118 @@ export function useAuth() {
     error: null,
   });
 
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
   const checkAuthStatus = async () => {
     try {
       console.log('Fetching user authentication status...');
-      const response = await fetch('/api/auth/status', {
+      setAuthState(prev => ({ ...prev, isLoading: true }));
+
+      const response = await fetch('/api/user', {
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
         },
       });
 
       if (response.ok) {
-        const data = await response.json();
-        if (data.authenticated && data.user) {
-          console.log('User authenticated:', data.user);
-          setAuthState({
-            user: data.user,
-            isLoading: false,
-            isAuthenticated: true,
-            error: null,
-          });
-        } else {
-          console.log('User not authenticated');
-          setAuthState({
-            user: null,
-            isLoading: false,
-            isAuthenticated: false,
-            error: null,
-          });
-        }
+        const userData = await response.json();
+        console.log('User authenticated:', userData);
+        setAuthState({
+          user: userData,
+          isLoading: false,
+          isAuthenticated: true,
+          error: null,
+        });
       } else {
-        console.log('Auth status check failed');
+        console.log('User not authenticated');
         setAuthState({
           user: null,
           isLoading: false,
           isAuthenticated: false,
-          error: 'Authentication check failed',
+          error: null,
         });
       }
     } catch (error) {
-      console.error('Auth status error:', error);
+      console.error('Auth check failed:', error);
       setAuthState({
         user: null,
         isLoading: false,
         isAuthenticated: false,
-        error: 'Network error',
+        error: 'Failed to check authentication',
       });
     }
   };
 
-  useEffect(() => {
-    checkAuthStatus();
+  const login = async (credentials: { username: string; password: string }) => {
+    try {
+      setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
-    // Check auth status periodically to handle session expiration
-    const interval = setInterval(checkAuthStatus, 30000); // Check every 30 seconds
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(credentials),
+      });
 
-    return () => clearInterval(interval);
-  }, []);
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('Login successful, user data:', userData);
+        setAuthState({
+          user: userData,
+          isLoading: false,
+          isAuthenticated: true,
+          error: null,
+        });
+        return true;
+      } else {
+        const errorData = await response.json();
+        setAuthState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: errorData.error || 'Login failed',
+        }));
+        return false;
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: 'Network error during login',
+      }));
+      return false;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setAuthState({
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+        error: null,
+      });
+    }
+  };
 
   console.log('useAuth state:', authState);
 
   return {
     ...authState,
-    refetch: checkAuthStatus,
+    checkAuthStatus,
+    login,
+    logout,
   };
 }

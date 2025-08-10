@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -18,6 +20,8 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [error, setError] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,31 +29,17 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ username, password }),
-      });
+      const success = await login({ username, password });
 
-      const data = await response.json();
-
-      if (data.success) {
-        console.log('Login successful, user data:', data.user);
+      if (success) {
         console.log('Navigating to dashboard...');
-
-        // Give the server a moment to set the session cookie
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 100);
+        navigate('/dashboard');
       } else {
-        setError(data.error || 'Login failed');
+        setError('Login failed. Please check your credentials.');
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('Network error occurred');
+      setError('Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }
