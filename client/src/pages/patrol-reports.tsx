@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import Header from "@/components/layout/header";
 import Sidebar from "@/components/layout/sidebar";
-import PatrolReportForm from "@/components/reports/patrol-report-form";
+import PatrolReportForm from "@/components/forms/incident-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
