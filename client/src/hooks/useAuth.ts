@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { authUtils } from '@/lib/authUtils';
+import { useState, useEffect, useCallback } from 'react';
 
 interface User {
   id: string;
@@ -29,15 +28,17 @@ export function useAuth() {
     checkAuthStatus();
   }, []);
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
       console.log('Fetching user authentication status...');
-      setAuthState(prev => ({ ...prev, isLoading: true }));
+      setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
       const response = await fetch('/api/auth/status', {
+        method: 'GET',
         credentials: 'include',
         headers: {
           'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
         },
       });
 
@@ -61,12 +62,13 @@ export function useAuth() {
           });
         }
       } else {
-        console.log('User not authenticated');
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.log('User not authenticated:', response.status, errorText);
         setAuthState({
           user: null,
           isLoading: false,
           isAuthenticated: false,
-          error: null,
+          error: response.status >= 500 ? 'Server error' : null,
         });
       }
     } catch (error) {
@@ -75,10 +77,10 @@ export function useAuth() {
         user: null,
         isLoading: false,
         isAuthenticated: false,
-        error: 'Failed to check authentication',
+        error: error instanceof Error ? error.message : 'Network error',
       });
     }
-  };
+  }, []);
 
   const login = async (credentials: { username: string; password: string }) => {
     try {

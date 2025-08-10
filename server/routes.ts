@@ -860,42 +860,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Send initial connection confirmation
     try {
-      ws.send(JSON.stringify({
-        type: 'connected',
-        message: 'Connected to Hawaii Security CRM',
-        timestamp: new Date().toISOString()
-      }));
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'connected',
+          message: 'Connected to Hawaii Security CRM',
+          timestamp: new Date().toISOString()
+        }));
+      }
     } catch (error) {
       console.error('Error sending initial WebSocket message:', error);
+      clients.delete(ws);
     }
 
-    ws.on('message', (message: string) => {
+    ws.on('message', (message: Buffer) => {
       try {
-        const data = JSON.parse(message);
+        const messageStr = message.toString();
+        const data = JSON.parse(messageStr);
 
         // Handle different message types
         if (data.type === 'subscribe') {
-          ws.send(JSON.stringify({
-            type: 'subscribed',
-            channel: data.channel,
-            timestamp: new Date().toISOString()
-          }));
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'subscribed',
+              channel: data.channel,
+              timestamp: new Date().toISOString()
+            }));
+          }
         } else if (data.type === 'ping') {
-          ws.send(JSON.stringify({
-            type: 'pong',
-            timestamp: new Date().toISOString()
-          }));
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'pong',
+              timestamp: new Date().toISOString()
+            }));
+          }
         }
       } catch (error) {
         console.error('Error processing WebSocket message:', error);
         try {
-          ws.send(JSON.stringify({
-            type: 'error',
-            message: 'Invalid message format',
-            timestamp: new Date().toISOString()
-          }));
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'error',
+              message: 'Invalid message format',
+              timestamp: new Date().toISOString()
+            }));
+          }
         } catch (sendError) {
           console.error('Error sending error message:', sendError);
+          clients.delete(ws);
         }
       }
     });
