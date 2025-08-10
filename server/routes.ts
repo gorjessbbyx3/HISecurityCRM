@@ -65,14 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticate(req, res, next);
   });
 
-  // Get current user route
-  app.get('/api/auth/user', (req: Request, res: Response) => {
-    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-      res.json(req.user);
-    } else {
-      res.status(401).json({ error: 'Not authenticated' });
-    }
-  });
+  
 
   // Logout route
   app.post('/api/auth/logout', (req: Request, res: Response) => {

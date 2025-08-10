@@ -34,7 +34,7 @@ export function useAuth() {
       console.log('Fetching user authentication status...');
       setAuthState(prev => ({ ...prev, isLoading: true }));
 
-      const response = await fetch('/api/auth/user', {
+      const response = await fetch('/api/auth/status', {
         credentials: 'include',
         headers: {
           'Cache-Control': 'no-cache',
@@ -42,14 +42,24 @@ export function useAuth() {
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        console.log('User authenticated:', userData);
-        setAuthState({
-          user: userData,
-          isLoading: false,
-          isAuthenticated: true,
-          error: null,
-        });
+        const statusData = await response.json();
+        console.log('Auth status response:', statusData);
+        
+        if (statusData.authenticated && statusData.user) {
+          setAuthState({
+            user: statusData.user,
+            isLoading: false,
+            isAuthenticated: true,
+            error: null,
+          });
+        } else {
+          setAuthState({
+            user: null,
+            isLoading: false,
+            isAuthenticated: false,
+            error: null,
+          });
+        }
       } else {
         console.log('User not authenticated');
         setAuthState({
