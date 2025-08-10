@@ -25,7 +25,7 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
     setError("");
 
     try {
-      const response = await fetch("/api/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -36,7 +36,7 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data.success) {
         console.log('Login successful, user data:', data.user);
         toast({
           title: "Login Successful", 
@@ -50,8 +50,8 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
         // Use onLoginSuccess callback to handle navigation
         onLoginSuccess();
       } else {
-        console.error('Login failed:', data.message);
-        setError(data.message || "Invalid credentials");
+        console.error('Login failed:', data.error || data.message);
+        setError(data.error || data.message || "Invalid credentials");
       }
     } catch (error) {
       setError("Network error. Please try again.");

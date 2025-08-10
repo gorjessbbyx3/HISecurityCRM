@@ -20,6 +20,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication status endpoint
   app.get('/api/auth/status', async (req: Request, res: Response) => {
     try {
+      console.log('Auth status check - Session ID:', req.sessionID);
+      console.log('Auth status check - User in session:', req.user);
+      console.log('Auth status check - isAuthenticated:', req.isAuthenticated?.());
+      
       if (req.isAuthenticated && req.isAuthenticated() && req.user) {
         return res.json({ authenticated: true, user: req.user });
       }

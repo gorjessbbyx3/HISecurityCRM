@@ -41,17 +41,17 @@ export default function CrimeIntelligence() {
   const { data: incidents = [], isLoading: incidentsLoading } = useQuery({
     queryKey: ["/api/incidents"],
     enabled: isAuthenticated,
-  });
+  }) as { data: Incident[], isLoading: boolean };
 
   const { data: recentIncidents = [] } = useQuery({
     queryKey: ["/api/incidents", { recent: true }],
     enabled: isAuthenticated,
-  });
+  }) as { data: Incident[] };
 
   const { data: properties = [] } = useQuery({
     queryKey: ["/api/properties"],
     enabled: isAuthenticated,
-  });
+  }) as { data: any[] };
 
   const form = useForm({
     resolver: zodResolver(insertIncidentSchema.omit({ reportedBy: true, occuredAt: true })),
@@ -63,7 +63,7 @@ export default function CrimeIntelligence() {
       location: "",
       coordinates: "",
       status: "open",
-      photoUrls: [],
+      photoUrls: [] as string[],
       policeReported: false,
       policeReportNumber: "",
     },

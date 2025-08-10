@@ -41,7 +41,7 @@ export default function Clients() {
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
     queryKey: ["/api/clients"],
     enabled: isAuthenticated,
-  });
+  }) as { data: Client[], isLoading: boolean };
 
   const form = useForm({
     resolver: zodResolver(insertClientSchema),

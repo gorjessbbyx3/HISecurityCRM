@@ -41,12 +41,12 @@ export default function Properties() {
   const { data: properties = [], isLoading: propertiesLoading } = useQuery({
     queryKey: ["/api/properties"],
     enabled: isAuthenticated,
-  });
+  }) as { data: Property[], isLoading: boolean };
 
   const { data: clients = [] } = useQuery({
     queryKey: ["/api/clients"],
     enabled: isAuthenticated,
-  });
+  }) as { data: any[] };
 
   const form = useForm({
     resolver: zodResolver(insertPropertySchema),

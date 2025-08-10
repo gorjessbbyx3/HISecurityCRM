@@ -41,12 +41,12 @@ export default function Reports() {
   const { data: reports = [], isLoading: reportsLoading } = useQuery({
     queryKey: ["/api/patrol-reports"],
     enabled: isAuthenticated,
-  });
+  }) as { data: PatrolReport[], isLoading: boolean };
 
   const { data: properties = [] } = useQuery({
     queryKey: ["/api/properties"],
     enabled: isAuthenticated,
-  });
+  }) as { data: any[] };
 
   const form = useForm({
     resolver: zodResolver(insertPatrolReportSchema.omit({ officerId: true })),
@@ -55,10 +55,10 @@ export default function Reports() {
       shiftType: "day",
       startTime: new Date().toISOString().slice(0, 16),
       endTime: "",
-      checkpoints: [],
+      checkpoints: [] as string[],
       incidentsReported: 0,
       summary: "",
-      photoUrls: [],
+      photoUrls: [] as string[],
       weatherConditions: "",
       vehicleUsed: "",
       mileage: "",
