@@ -33,7 +33,7 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
       if (success) {
         console.log('Navigating to dashboard...');
-        navigate('/dashboard');
+        window.location.href = '/dashboard';
       } else {
         setError('Login failed. Please check your credentials.');
       }

@@ -84,8 +84,12 @@ export function useAuth() {
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        console.log('Login successful, user data:', userData);
+        const responseData = await response.json();
+        console.log('Login successful, response data:', responseData);
+        
+        // The server returns { success: true, user: userData }
+        const userData = responseData.user || responseData;
+        
         setAuthState({
           user: userData,
           isLoading: false,

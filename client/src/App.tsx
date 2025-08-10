@@ -23,19 +23,19 @@ import HawaiiLaw from "@/pages/hawaii-law";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading, user, refetch } = useAuth();
+  const { isAuthenticated, isLoading, user, checkAuthStatus } = useAuth();
 
   console.log("Router state:", { isAuthenticated, isLoading, user });
 
   // Listen for storage events to refetch auth status when other tabs log in/out
   useEffect(() => {
     const handleStorageChange = () => {
-      refetch();
+      checkAuthStatus();
     };
     
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [refetch]);
+  }, [checkAuthStatus]);
 
   if (isLoading) {
     return (
