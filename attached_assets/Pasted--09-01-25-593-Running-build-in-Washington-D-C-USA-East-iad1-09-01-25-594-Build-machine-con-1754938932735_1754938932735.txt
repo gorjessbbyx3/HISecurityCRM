@@ -1,0 +1,52 @@
+[09:01:25.593] Running build in Washington, D.C., USA (East) – iad1
+[09:01:25.594] Build machine configuration: 2 cores, 8 GB
+[09:01:25.606] Cloning github.com/gorjessbbyx3/HISecurityCRM (Branch: main, Commit: fae8a0d)
+[09:01:28.612] Cloning completed: 3.006s
+[09:01:29.396] Restored build cache from previous deployment (tS3CYeTpzGa167MXaTiWExonRkJ2)
+[09:01:32.959] Running "vercel build"
+[09:01:33.463] Vercel CLI 44.7.3
+[09:01:33.636] WARN! Due to `builds` existing in your configuration file, the Build and Development Settings defined in your Project Settings will not apply. Learn More: https://vercel.link/unused-build-settings
+[09:01:34.126] Installing dependencies...
+[09:01:35.317] npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+[09:01:35.611] 
+[09:01:35.611] added 19 packages in 1s
+[09:01:35.611] 
+[09:01:35.611] 43 packages are looking for funding
+[09:01:35.611]   run `npm fund` for details
+[09:01:35.925] Using TypeScript 5.9.2 (local user-provided)
+[09:01:40.620] server/routes.ts(104,16): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.620] server/routes.ts(192,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.620] server/routes.ts(213,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.620] server/routes.ts(233,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.621] server/routes.ts(267,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.621] server/routes.ts(288,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.621] server/routes.ts(320,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.621] server/routes.ts(337,24): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.622] server/routes.ts(349,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.622] server/routes.ts(379,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.622] server/routes.ts(418,25): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.622] server/routes.ts(425,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.623] server/routes.ts(446,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.623] server/routes.ts(480,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.623] server/routes.ts(541,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.624] server/routes.ts(608,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.624] server/routes.ts(747,51): error TS2554: Expected 0 arguments, but got 1.
+[09:01:40.624] server/routes.ts(771,16): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.624] server/routes.ts(784,16): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.625] server/routes.ts(796,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.625] server/routes.ts(812,16): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.625] server/routes.ts(822,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.625] 
+[09:01:40.890] server/memoryStorage.ts(515,42): error TS2339: Property 'type' does not exist on type 'FinancialRecord'.
+[09:01:40.890] server/memoryStorage.ts(516,44): error TS2339: Property 'type' does not exist on type 'FinancialRecord'.
+[09:01:40.894] server/memoryStorage.ts(517,72): error TS2339: Property 'type' does not exist on type 'FinancialRecord'.
+[09:01:40.894] 
+[09:01:40.965] server/memoryAuth.ts(41,9): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.965] server/memoryAuth.ts(52,9): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.965] server/memoryAuth.ts(57,9): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.966] server/memoryAuth.ts(62,9): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[09:01:40.966] 
+[09:01:41.005] server/ai.ts(36,11): error TS2564: Property 'groq' has no initializer and is not definitely assigned in the constructor.
+[09:01:41.006] 
+[09:01:49.529] Build Completed in /vercel/output [15s]
+[09:01:49.782] Deploying outputs...

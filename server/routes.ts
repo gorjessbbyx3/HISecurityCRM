@@ -101,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Database initialization route (should be removed in production)
   app.post('/api/admin/seed-database', authenticateToken, async (req, res) => {
     try {
-      if ((req.user as any).role !== 'admin') {
+      if (!req.user || req.user.role !== 'admin') {
         return res.status(403).json({ message: 'Admin access required' });
       }
 
@@ -189,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       await storage.createActivity({
-        userId: (req.user as any).id,
+        userId: req.user?.id,
         activityType: "client_contact",
         entityType: "client",
         entityId: client.id,
@@ -210,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const client = await storage.updateClient(id, updates);
 
       await storage.createActivity({
-        userId: (req.user as any).id,
+        userId: req.user?.id,
         activityType: "client_contact",
         entityType: "client",
         entityId: id,
@@ -230,7 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteClient(id);
 
       await storage.createActivity({
-        userId: (req.user as any).id,
+        userId: req.user?.id,
         activityType: "client_contact",
         entityType: "client",
         entityId: id,
@@ -264,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const property = await storage.createProperty(propertyData);
 
       await storage.createActivity({
-        userId: (req.user as any).id,
+        userId: req.user?.id,
         activityType: "patrol",
         entityType: "property",
         entityId: property.id,
@@ -285,7 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const property = await storage.updateProperty(id, updates);
 
       await storage.createActivity({
-        userId: (req.user as any).id,
+        userId: req.user?.id,
         activityType: "patrol",
         entityType: "property",
         entityId: id,
@@ -317,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const incidentData = insertIncidentSchema.parse({
         ...req.body,
-        reportedBy: (req.user as any).id,
+        reportedBy: req.user?.id,
         occuredAt: req.body.occuredAt || new Date(),
       });
 
@@ -334,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         await storage.createActivity({
-          userId: (req.user as any).id,
+          userId: req.user?.id,
           activityType: "incident",
           entityType: "incident",
           entityId: incident.id,
@@ -346,7 +346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await storage.createActivity({
-        userId: (req.user as any).id,
+        userId: req.user?.id,
         activityType: "incident",
         entityType: "incident",
         entityId: incident.id,
@@ -376,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const incident = await storage.updateIncident(id, updates);
 
       await storage.createActivity({
-        userId: (req.user as any).id,
+        userId: req.user?.id,
         activityType: "incident",
         entityType: "incident",
         entityId: id,
@@ -415,14 +415,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const reportData = insertPatrolReportSchema.parse({
         ...req.body,
-        officerId: (req.user as any).id,
+        officerId: req.user?.id,
         startTime: req.body.startTime || new Date(),
       });
 
       const report = await storage.createPatrolReport(reportData);
 
       await storage.createActivity({
-        userId: (req.user as any).id,
+        userId: req.user?.id,
         activityType: "report",
         entityType: "patrol_report",
         entityId: report.id,
@@ -443,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const report = await storage.updatePatrolReport(id, updates);
 
       await storage.createActivity({
-        userId: (req.user as any).id,
+        userId: req.user?.id,
         activityType: "report",
         entityType: "patrol_report",
         entityId: id,
@@ -477,7 +477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const appointment = await storage.createAppointment(appointmentData);
 
       await storage.createActivity({
-        userId: (req.user as any).id,
+        userId: req.user?.id,
         activityType: "client_contact",
         entityType: "appointment",
         entityId: appointment.id,
@@ -538,7 +538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const evidenceData = {
         ...req.body,
-        uploadedBy: (req.user as any).id,
+        uploadedBy: req.user?.id,
       };
       const evidence = await storage.createEvidence(evidenceData);
       res.status(201).json(evidence);
@@ -605,7 +605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileUrl,
         fileType,
         fileSize: fileData ? fileData.length : 0,
-        uploadedBy: (req.user as any).id,
+        uploadedBy: req.user?.id,
       });
 
       res.status(201).json(fileUpload);
@@ -744,10 +744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/law-references', authenticateToken, async (req, res) => {
     try {
       const { search, category } = req.query;
-      const laws = await storage.getLawReferences({
-        search: search as string,
-        category: category as string,
-      });
+      const laws = await storage.getLawReferences();
       res.json(laws);
     } catch (error) {
       console.error("Error fetching law references:", error);
@@ -768,7 +765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User management and permissions
   app.get('/api/users', authenticateToken, async (req, res) => {
     try {
-      if ((req.user as any).role !== 'admin') {
+      if (req.user?.role !== 'admin') {
         return res.status(403).json({ message: 'Admin access required' });
       }
       const users = await storage.getStaffMembers();
@@ -781,7 +778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/users', authenticateToken, async (req, res) => {
     try {
-      if ((req.user as any).role !== 'admin') {
+      if (req.user?.role !== 'admin') {
         return res.status(403).json({ message: 'Admin access required' });
       }
       
@@ -793,7 +790,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.createUser(userData);
       
       await storage.createActivity({
-        userId: (req.user as any).id,
+        userId: req.user?.id,
         activityType: "admin",
         entityType: "user",
         entityId: user.id,
@@ -809,7 +806,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/users/:id/permissions', authenticateToken, async (req, res) => {
     try {
-      if ((req.user as any).role !== 'admin') {
+      if (req.user?.role !== 'admin') {
         return res.status(403).json({ message: 'Admin access required' });
       }
       
@@ -819,7 +816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUserPermissions(id, permissions);
       
       await storage.createActivity({
-        userId: (req.user as any).id,
+        userId: req.user?.id,
         activityType: "admin",
         entityType: "user",
         entityId: id,
