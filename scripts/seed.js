@@ -1,5 +1,5 @@
 
-const { storage } = require('../server/storage');
+import { storage } from '../server/supabaseStorage.js';
 
 async function seedDatabase() {
   try {
