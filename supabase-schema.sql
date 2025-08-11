@@ -147,6 +147,9 @@ CREATE TABLE IF NOT EXISTS financial_records (
 );
 
 -- Insert default admin user
+ALTER TABLE public.users
+ADD COLUMN username VARCHAR(255) UNIQUE,
+ADD COLUMN password VARCHAR(255);
 INSERT INTO users (
   id,
   email,
