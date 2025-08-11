@@ -1,0 +1,34 @@
+[09:05:07.076] Running build in Washington, D.C., USA (East) – iad1
+[09:05:07.084] Build machine configuration: 2 cores, 8 GB
+[09:05:07.117] Cloning github.com/gorjessbbyx3/HISecurityCRM (Branch: main, Commit: 47b239f)
+[09:05:07.765] Cloning completed: 648.000ms
+[09:05:08.458] Restored build cache from previous deployment (7iFXU2dhaSgwRdpCQ6a12FHEru9b)
+[09:05:12.130] Running "vercel build"
+[09:05:12.623] Vercel CLI 44.7.3
+[09:05:12.802] WARN! Due to `builds` existing in your configuration file, the Build and Development Settings defined in your Project Settings will not apply. Learn More: https://vercel.link/unused-build-settings
+[09:05:13.283] Installing dependencies...
+[09:05:14.298] 
+[09:05:14.298] up to date in 887ms
+[09:05:14.299] 
+[09:05:14.299] 43 packages are looking for funding
+[09:05:14.299]   run `npm fund` for details
+[09:05:14.534] Using TypeScript 5.9.2 (local user-provided)
+[09:05:19.257] server/routes.ts(518,58): error TS2345: Argument of type '{ recordType: string; amount: number; description: string; transactionDate: string; status: string; clientId?: string | undefined; category?: string | undefined; taxCategory?: string | undefined; paymentMethod?: string | undefined; referenceNumber?: string | undefined; notes?: string | undefined; }' is not assignable to parameter of type 'Omit<FinancialRecord, "id" | "createdAt" | "updatedAt">'.
+[09:05:19.260]   Property 'type' is missing in type '{ recordType: string; amount: number; description: string; transactionDate: string; status: string; clientId?: string | undefined; category?: string | undefined; taxCategory?: string | undefined; paymentMethod?: string | undefined; referenceNumber?: string | undefined; notes?: string | undefined; }' but required in type 'Omit<FinancialRecord, "id" | "createdAt" | "updatedAt">'.
+[09:05:19.261] 
+[09:05:19.566] server/memoryStorage.ts(127,3): error TS2300: Duplicate identifier 'amount'.
+[09:05:19.567] server/memoryStorage.ts(128,3): error TS2300: Duplicate identifier 'status'.
+[09:05:19.568] server/memoryStorage.ts(130,3): error TS2300: Duplicate identifier 'amount'.
+[09:05:19.568] server/memoryStorage.ts(137,3): error TS2300: Duplicate identifier 'status'.
+[09:05:19.568] server/memoryStorage.ts(137,3): error TS2717: Subsequent property declarations must have the same type.  Property 'status' must be of type '"pending" | "paid" | "overdue"', but here has type 'string'.
+[09:05:19.568] 
+[09:05:19.627] server/memoryAuth.ts(52,5): error TS2322: Type 'null' is not assignable to type '{ id: string; username: string; role: "admin" | "officer" | "supervisor"; firstName?: string | undefined; lastName?: string | undefined; email?: string | undefined; } | undefined'.
+[09:05:19.627] server/memoryAuth.ts(57,5): error TS2322: Type 'null' is not assignable to type '{ id: string; username: string; role: "admin" | "officer" | "supervisor"; firstName?: string | undefined; lastName?: string | undefined; email?: string | undefined; } | undefined'.
+[09:05:19.627] 
+[09:05:28.497] Build Completed in /vercel/output [15s]
+[09:05:28.753] Deploying outputs...
+[09:05:36.893] Deployment completed
+[09:05:37.772] Creating build cache...
+[09:05:46.262] Created build cache: 8.479s
+[09:05:46.262] Uploading build cache [42.66 MB]
+[09:05:46.929] Build cache uploaded: 675.914ms
