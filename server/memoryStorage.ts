@@ -231,6 +231,25 @@ class MemoryStorage {
     return user;
   }
 
+  async updateUserStatus(id: string, status: string): Promise<User> {
+    return this.updateStaffStatus(id, status);
+  }
+
+  async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+    return this.upsertUser(userData);
+  }
+
+  async updateUserPermissions(id: string, permissions: string[]): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) {
+      throw new Error(`User with id ${id} not found`);
+    }
+    user.permissions = permissions;
+    user.updatedAt = new Date();
+    this.users.set(id, user);
+    return user;
+  }
+
   // Client methods
   async getClients(): Promise<Client[]> {
     return Array.from(this.clients.values());
@@ -307,6 +326,10 @@ class MemoryStorage {
     this.properties.delete(id);
   }
 
+  async getPropertiesByClient(clientId: string): Promise<Property[]> {
+    return Array.from(this.properties.values()).filter(property => property.clientId === clientId);
+  }
+
   // Incident methods
   async getIncidents(): Promise<Incident[]> {
     return Array.from(this.incidents.values());
@@ -334,6 +357,16 @@ class MemoryStorage {
     };
     this.incidents.set(id, incident);
     return incident;
+  }
+
+  async updateIncident(id: string, updates: Partial<Incident>): Promise<Incident> {
+    const incident = this.incidents.get(id);
+    if (!incident) {
+      throw new Error(`Incident with id ${id} not found`);
+    }
+    const updatedIncident = { ...incident, ...updates, updatedAt: new Date() };
+    this.incidents.set(id, updatedIncident);
+    return updatedIncident;
   }
 
   // Dashboard stats
@@ -397,6 +430,24 @@ class MemoryStorage {
     return report;
   }
 
+  async getTodaysReports(): Promise<PatrolReport[]> {
+    return this.getTodaysPatrolReports();
+  }
+
+  async getPatrolReportsByOfficer(officerId: string): Promise<PatrolReport[]> {
+    return Array.from(this.patrolReports.values()).filter(report => report.officerId === officerId);
+  }
+
+  async updatePatrolReport(id: string, updates: Partial<PatrolReport>): Promise<PatrolReport> {
+    const report = this.patrolReports.get(id);
+    if (!report) {
+      throw new Error(`Patrol report with id ${id} not found`);
+    }
+    const updatedReport = { ...report, ...updates, updatedAt: new Date() };
+    this.patrolReports.set(id, updatedReport);
+    return updatedReport;
+  }
+
   // Appointments
   async getAppointments(): Promise<Appointment[]> {
     return Array.from(this.appointments.values())
@@ -456,6 +507,49 @@ class MemoryStorage {
     };
     this.financialRecords.set(id, record);
     return record;
+  }
+
+  async getFinancialSummary(): Promise<any> {
+    const records = Array.from(this.financialRecords.values());
+    return {
+      totalIncome: records.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0),
+      totalExpenses: records.filter(r => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0),
+      pendingInvoices: records.filter(r => r.status === 'pending' && r.type === 'income').length,
+      overduePayments: records.filter(r => r.status === 'overdue').length,
+    };
+  }
+
+  // Evidence management
+  async getEvidence(): Promise<any[]> {
+    // For now, return empty array as evidence is not implemented in memory storage
+    return [];
+  }
+
+  async createEvidence(evidenceData: any): Promise<any> {
+    // For now, just return the data with an ID as evidence is not implemented
+    return { id: uuidv4(), ...evidenceData, createdAt: new Date() };
+  }
+
+  // Community resources
+  async getCommunityResources(): Promise<any[]> {
+    // For now, return empty array as community resources are not implemented
+    return [];
+  }
+
+  async createCommunityResource(resourceData: any): Promise<any> {
+    // For now, just return the data with an ID
+    return { id: uuidv4(), ...resourceData, createdAt: new Date() };
+  }
+
+  // Law references
+  async getLawReferences(): Promise<any[]> {
+    // For now, return empty array as law references are not implemented
+    return [];
+  }
+
+  async createLawReference(referenceData: any): Promise<any> {
+    // For now, just return the data with an ID
+    return { id: uuidv4(), ...referenceData, createdAt: new Date() };
   }
 
   // Seed database with sample data

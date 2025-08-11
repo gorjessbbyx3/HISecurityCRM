@@ -85,7 +85,8 @@ export function generateToken(user: any): string {
 }
 
 // Login handler
-export async function loginHandler(username: string, password: string) {
+export async function loginHandler(credentials: { username: string; password: string }, storage: any) {
+  const { username, password } = credentials;
   try {
     console.log('🔐 Attempting login for:', username);
     
@@ -105,7 +106,7 @@ export async function loginHandler(username: string, password: string) {
       return { success: true, token, user };
     }
 
-    // Try to find user in storage and verify password
+    // Try to find user in storage and verify password  
     const users = await storage.getStaffMembers();
     for (const user of users) {
       if ((user.email === username || user.firstName + user.lastName === username) && user.hashedPassword) {

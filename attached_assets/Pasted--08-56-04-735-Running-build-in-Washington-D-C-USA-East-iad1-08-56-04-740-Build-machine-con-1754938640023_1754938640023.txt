@@ -1,0 +1,76 @@
+[08:56:04.735] Running build in Washington, D.C., USA (East) – iad1
+[08:56:04.740] Build machine configuration: 2 cores, 8 GB
+[08:56:04.817] Cloning github.com/gorjessbbyx3/HISecurityCRM (Branch: main, Commit: 899e3b9)
+[08:56:04.845] Skipping build cache, deployment was triggered without cache.
+[08:56:05.488] Cloning completed: 671.000ms
+[08:56:08.663] Running "vercel build"
+[08:56:09.102] Vercel CLI 44.7.3
+[08:56:09.281] WARN! Due to `builds` existing in your configuration file, the Build and Development Settings defined in your Project Settings will not apply. Learn More: https://vercel.link/unused-build-settings
+[08:56:09.745] Installing dependencies...
+[08:56:16.546] 
+[08:56:16.546] added 282 packages in 7s
+[08:56:16.546] 
+[08:56:16.547] 41 packages are looking for funding
+[08:56:16.547]   run `npm fund` for details
+[08:56:16.769] Using TypeScript 5.9.2 (local user-provided)
+[08:56:20.428] server/index.ts(92,25): error TS2769: No overload matches this call.
+[08:56:20.428]   The last overload gave the following error.
+[08:56:20.428]     Argument of type 'string' is not assignable to parameter of type 'number'.
+[08:56:20.428] 
+[08:56:21.159] server/routes.ts(79,28): error TS2554: Expected 2 arguments, but got 1.
+[08:56:21.160] server/routes.ts(104,16): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.160] server/routes.ts(152,21): error TS2339: Property 'updateUserStatus' does not exist on type 'MemoryStorage'.
+[08:56:21.160] server/routes.ts(192,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.160] server/routes.ts(213,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.161] server/routes.ts(233,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.161] server/routes.ts(252,25): error TS2339: Property 'getPropertiesByClient' does not exist on type 'MemoryStorage'.
+[08:56:21.161] server/routes.ts(267,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.161] server/routes.ts(288,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.162] server/routes.ts(307,44): error TS2554: Expected 0 arguments, but got 1.
+[08:56:21.162] server/routes.ts(320,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.162] server/routes.ts(337,24): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.162] server/routes.ts(349,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.163] server/routes.ts(376,38): error TS2551: Property 'updateIncident' does not exist on type 'MemoryStorage'. Did you mean 'updateClient'?
+[08:56:21.163] server/routes.ts(379,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.163] server/routes.ts(400,33): error TS2339: Property 'getTodaysReports' does not exist on type 'MemoryStorage'.
+[08:56:21.166] server/routes.ts(402,33): error TS2339: Property 'getPatrolReportsByOfficer' does not exist on type 'MemoryStorage'.
+[08:56:21.166] server/routes.ts(418,25): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.166] server/routes.ts(425,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.166] server/routes.ts(443,36): error TS2551: Property 'updatePatrolReport' does not exist on type 'MemoryStorage'. Did you mean 'createPatrolReport'?
+[08:56:21.166] server/routes.ts(446,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.166] server/routes.ts(480,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.167] server/routes.ts(497,37): error TS2339: Property 'getFinancialSummary' does not exist on type 'MemoryStorage'.
+[08:56:21.167] server/routes.ts(529,38): error TS2339: Property 'getEvidence' does not exist on type 'MemoryStorage'.
+[08:56:21.167] server/routes.ts(541,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.167] server/routes.ts(543,38): error TS2339: Property 'createEvidence' does not exist on type 'MemoryStorage'.
+[08:56:21.167] server/routes.ts(554,64): error TS2554: Expected 0 arguments, but got 1.
+[08:56:21.167] server/routes.ts(601,40): error TS2339: Property 'createEvidence' does not exist on type 'MemoryStorage'.
+[08:56:21.168] server/routes.ts(608,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.168] server/routes.ts(621,39): error TS2339: Property 'getCommunityResources' does not exist on type 'MemoryStorage'.
+[08:56:21.168] server/routes.ts(631,38): error TS2339: Property 'createCommunityResource' does not exist on type 'MemoryStorage'.
+[08:56:21.168] server/routes.ts(747,34): error TS2339: Property 'getLawReferences' does not exist on type 'MemoryStorage'.
+[08:56:21.168] server/routes.ts(760,36): error TS2339: Property 'createLawReference' does not exist on type 'MemoryStorage'.
+[08:56:21.168] server/routes.ts(771,16): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.169] server/routes.ts(784,16): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.169] server/routes.ts(793,34): error TS2339: Property 'createUser' does not exist on type 'MemoryStorage'.
+[08:56:21.169] server/routes.ts(796,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.169] server/routes.ts(812,16): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.169] server/routes.ts(819,21): error TS2339: Property 'updateUserPermissions' does not exist on type 'MemoryStorage'.
+[08:56:21.169] server/routes.ts(822,22): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.170] 
+[08:56:21.695] server/memoryAuth.ts(41,9): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.695] server/memoryAuth.ts(52,9): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.696] server/memoryAuth.ts(57,9): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.696] server/memoryAuth.ts(62,9): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+[08:56:21.696] server/memoryAuth.ts(111,39): error TS18048: 'user.firstName' is possibly 'undefined'.
+[08:56:21.696] server/memoryAuth.ts(111,56): error TS18048: 'user.lastName' is possibly 'undefined'.
+[08:56:21.696] 
+[08:56:21.733] server/ai.ts(2,18): error TS2307: Cannot find module 'groq-sdk' or its corresponding type declarations.
+[08:56:21.733] 
+[08:56:29.701] Build Completed in /vercel/output [20s]
+[08:56:29.980] Deploying outputs...
+[08:56:36.948] Deployment completed
+[08:56:37.782] Creating build cache...
+[08:56:44.913] Created build cache: 7.127s
+[08:56:44.917] Uploading build cache [41.73 MB]
+[08:56:45.789] Build cache uploaded: 878.94ms

@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { username, password } = req.body;
       console.log('🔐 Login attempt for:', username);
       
-      const result = await loginHandler({ username, password });
+      const result = await loginHandler({ username, password }, storage);
       
       if (result.success) {
         console.log('✅ User logged in successfully:', username);
@@ -304,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { recent } = req.query;
       const incidents = recent === 'true' 
-        ? await storage.getRecentIncidents(24)
+        ? await storage.getRecentIncidents()
         : await storage.getIncidents();
       res.json(incidents);
     } catch (error) {
@@ -551,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI-powered crime pattern analysis
   app.get('/api/crime-patterns', authenticateToken, async (req, res) => {
     try {
-      const recentIncidents = await storage.getRecentIncidents(168); // Last 7 days
+      const recentIncidents = await storage.getRecentIncidents(); // Last 7 days
 
       if (recentIncidents.length === 0) {
         return res.json({
