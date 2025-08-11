@@ -123,9 +123,6 @@ export interface Activity {
 export interface FinancialRecord {
   id: string;
   clientId?: string;
-  type: 'income' | 'expense';
-  amount: number;
-  status: 'pending' | 'paid' | 'overdue';
   recordType: string;
   amount: number;
   description: string;
@@ -191,7 +188,7 @@ class MemoryStorage {
   async upsertUser(userData: Partial<User>): Promise<User> {
     const id = userData.id || uuidv4();
     const now = new Date();
-    
+
     const existingUser = this.users.get(id);
     const user: User = {
       id,
