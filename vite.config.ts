@@ -29,13 +29,18 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    host: "0.0.0.0",
+    port: 5173,
+    hmr: {
+      port: 5173,
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: "http://localhost:5000",
         changeOrigin: true,
       },
     },
