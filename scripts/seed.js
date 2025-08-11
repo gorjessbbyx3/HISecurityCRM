@@ -1,5 +1,5 @@
 
-import { storage } from '../server/supabaseStorage.js';
+import { storage } from '../server/supabaseStorage.ts';
 
 async function seedDatabase() {
   try {
