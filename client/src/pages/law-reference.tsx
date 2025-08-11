@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/layout/header";
 import Sidebar from "@/components/layout/sidebar";
+import Layout from "@/components/layout/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -167,319 +168,111 @@ export default function LawReference() {
     );
   }
 
+  const lawSections = [
+    {
+      title: "Hawaii Revised Statutes Chapter 463",
+      subtitle: "Private Detectives and Guards",
+      description: "Comprehensive regulations for private security services in Hawaii",
+      sections: ["Licensing Requirements", "Duties and Responsibilities", "Prohibited Activities", "Penalties"]
+    },
+    {
+      title: "Use of Force Guidelines",
+      subtitle: "HRS 703-304 through 703-309",
+      description: "Legal framework for justified use of force in security situations",
+      sections: ["Self Defense", "Defense of Others", "Defense of Property", "Citizen's Arrest"]
+    },
+    {
+      title: "Trespassing Laws",
+      subtitle: "HRS 708-813 through 708-815",
+      description: "Criminal trespass definitions and enforcement procedures",
+      sections: ["First Degree Trespass", "Second Degree Trespass", "Warning Procedures", "Removal Authority"]
+    },
+    {
+      title: "Evidence Handling",
+      subtitle: "Hawaii Rules of Evidence",
+      description: "Proper procedures for collecting and preserving evidence",
+      sections: ["Chain of Custody", "Photography Rules", "Witness Statements", "Report Writing"]
+    }
+  ];
+
+  const quickReferences = [
+    { title: "Emergency Contacts", icon: "fas fa-phone", count: "24/7" },
+    { title: "Legal Forms", icon: "fas fa-file-alt", count: "15" },
+    { title: "Court Procedures", icon: "fas fa-gavel", count: "8" },
+    { title: "Case Law Updates", icon: "fas fa-balance-scale", count: "New" }
+  ];
+
   return (
-    <div className="bg-slate-900 text-white min-h-screen">
-      <Header />
-      
-      <div className="flex">
-        <Sidebar />
-        
-        <main className="flex-1 p-6 overflow-y-auto" data-testid="main-law-reference">
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-2xl font-bold text-white" data-testid="text-page-title">
-                  Hawaii Law Reference
-                </h2>
-                <p className="text-slate-400 mt-1" data-testid="text-page-subtitle">
-                  Quick reference to relevant Hawaii state laws and regulations for security operations
-                </p>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <Button 
-                  className="bg-navy-700 hover:bg-navy-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  data-testid="button-print-reference"
-                >
-                  <i className="fas fa-print mr-2"></i>Print Reference
-                </Button>
-                <Button 
-                  className="bg-gold-500 hover:bg-gold-600 text-black px-4 py-2 rounded-lg font-medium transition-colors"
-                  data-testid="button-export-pdf"
-                >
-                  <i className="fas fa-file-pdf mr-2"></i>Export PDF
-                </Button>
-              </div>
-            </div>
+    <Layout>
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-white">Hawaii Law Reference</h1>
+          <Button className="bg-navy-700 hover:bg-navy-600 text-white">
+            <i className="fas fa-search mr-2"></i>
+            Search Laws
+          </Button>
+        </div>
 
-            {/* Search and Filter */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <div className="md:col-span-2">
-                <div className="relative">
-                  <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                  <Input
-                    type="text"
-                    placeholder="Search laws by title, code, or description..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-slate-800 border-slate-700 text-white"
-                    data-testid="input-search-laws"
-                  />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {quickReferences.map((ref, index) => (
+            <Card key={index} className="bg-slate-800 border-slate-700 p-4 cursor-pointer hover:bg-slate-700 transition-colors">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-400">{ref.title}</p>
+                  <p className="text-2xl font-bold text-white">{ref.count}</p>
                 </div>
+                <i className={`${ref.icon} text-gold-500 text-2xl`}></i>
               </div>
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid gap-6">
+          {lawSections.map((section, index) => (
+            <Card key={index} className="bg-slate-800 border-slate-700 p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-white mb-2">{section.title}</h3>
+                  <p className="text-gold-500 font-medium mb-2">{section.subtitle}</p>
+                  <p className="text-slate-300 mb-4">{section.description}</p>
+                </div>
+                <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                  <i className="fas fa-external-link-alt mr-2"></i>
+                  View Full Text
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                {section.sections.map((subsection, subIndex) => (
+                  <div key={subIndex} className="bg-slate-700 p-3 rounded-lg">
+                    <p className="text-sm text-white font-medium">{subsection}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        <Card className="bg-slate-800 border-slate-700 p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Recent Legal Updates</h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-slate-700 rounded-lg">
               <div>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
-                  data-testid="select-category-filter"
-                >
-                  <option value="all">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
+                <p className="text-white font-medium">Updated Security Guard Training Requirements</p>
+                <p className="text-sm text-slate-400">Effective January 2024 - New 40-hour training mandate</p>
               </div>
+              <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">New</span>
             </div>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card className="bg-slate-800 border-slate-700">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-slate-400 text-sm font-medium">Total Laws</p>
-                      <p className="text-2xl font-bold text-white mt-1" data-testid="text-total-laws">
-                        {hawaiiLaws.length}
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                      <i className="fas fa-gavel text-blue-400 text-lg"></i>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-slate-400 text-sm font-medium">Categories</p>
-                      <p className="text-2xl font-bold text-white mt-1" data-testid="text-total-categories">
-                        {categories.length}
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                      <i className="fas fa-list text-green-400 text-lg"></i>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-slate-400 text-sm font-medium">Felony Offenses</p>
-                      <p className="text-2xl font-bold text-white mt-1" data-testid="text-felony-offenses">
-                        {hawaiiLaws.filter(law => law.penalties.toLowerCase().includes('felony')).length}
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
-                      <i className="fas fa-exclamation-triangle text-red-400 text-lg"></i>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-slate-400 text-sm font-medium">Security Related</p>
-                      <p className="text-2xl font-bold text-white mt-1" data-testid="text-security-laws">
-                        {hawaiiLaws.filter(law => 
-                          law.category.toLowerCase().includes('security') || 
-                          law.relevantTo.includes('security_officer')
-                        ).length}
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-gold-500/20 rounded-lg flex items-center justify-center">
-                      <i className="fas fa-shield-alt text-gold-400 text-lg"></i>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="flex items-center justify-between p-3 bg-slate-700 rounded-lg">
+              <div>
+                <p className="text-white font-medium">Body Camera Usage Guidelines</p>
+                <p className="text-sm text-slate-400">Updated privacy and evidence handling procedures</p>
+              </div>
+              <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">Updated</span>
             </div>
           </div>
-
-          {/* Law References */}
-          <div className="space-y-6">
-            {filteredLaws.length === 0 ? (
-              <Card className="bg-slate-800 border-slate-700">
-                <CardContent className="p-12 text-center">
-                  <i className="fas fa-search text-4xl text-slate-400 mb-4"></i>
-                  <h3 className="text-xl font-semibold text-white mb-2">No Laws Found</h3>
-                  <p className="text-slate-400">Try adjusting your search criteria</p>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredLaws.map((law) => (
-                <Card key={law.id} className="bg-slate-800 border-slate-700 hover:border-slate-600 transition-colors">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <CardTitle className="text-white text-lg">{law.title}</CardTitle>
-                          <Badge className="bg-navy-700 text-gold-400 font-mono text-xs">
-                            {law.code}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge className={getCategoryColor(law.category)}>
-                            {law.category}
-                          </Badge>
-                          <span className="text-slate-400 text-sm">
-                            Updated: {new Date(law.lastUpdated).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-slate-400 hover:text-white hover:bg-slate-700"
-                          data-testid="button-bookmark-law"
-                        >
-                          <i className="fas fa-bookmark"></i>
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
-                          data-testid="button-share-law"
-                        >
-                          <i className="fas fa-share"></i>
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-white font-medium mb-2">Description</h4>
-                        <p className="text-slate-300 text-sm leading-relaxed">{law.description}</p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-white font-medium mb-2">Penalties</h4>
-                        <div className="bg-slate-700 p-3 rounded-lg">
-                          <p className="text-slate-300 text-sm">{law.penalties}</p>
-                        </div>
-                      </div>
-
-                      {law.relevantTo.length > 0 && (
-                        <div>
-                          <h4 className="text-white font-medium mb-2">Relevant To</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {law.relevantTo.map((role) => (
-                              <Badge key={role} className="bg-slate-700 text-slate-300 text-xs">
-                                {role.replace('_', ' ').toLowerCase()}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-
-          {/* Important Notes Section */}
-          <Card className="bg-slate-800 border-slate-700 mt-8">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <i className="fas fa-exclamation-triangle text-gold-500 mr-2"></i>
-                Important Legal Disclaimers
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-slate-300 text-sm">
-                <p>
-                  <strong className="text-white">Legal Advice Disclaimer:</strong> This reference material is for 
-                  informational purposes only and does not constitute legal advice. Always consult with qualified 
-                  legal counsel for specific situations.
-                </p>
-                <p>
-                  <strong className="text-white">Currency of Information:</strong> Hawaii state laws are subject 
-                  to change. Always verify current statutes through official channels before taking action.
-                </p>
-                <p>
-                  <strong className="text-white">Jurisdictional Limits:</strong> Security officers have limited 
-                  authority and must operate within the bounds of private security regulations and citizen's rights.
-                </p>
-                <p>
-                  <strong className="text-white">Emergency Situations:</strong> In emergency situations, always 
-                  contact 911 immediately. Do not attempt to detain individuals unless you have proper authority 
-                  and training.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Reference Contact Information */}
-          <Card className="bg-slate-800 border-slate-700 mt-6">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <i className="fas fa-phone text-blue-500 mr-2"></i>
-                Emergency & Important Contacts
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <i className="fas fa-exclamation-circle text-red-500 w-4"></i>
-                    <div>
-                      <p className="text-white font-medium">Emergency Services</p>
-                      <p className="text-slate-400 text-sm">911</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <i className="fas fa-shield-alt text-blue-500 w-4"></i>
-                    <div>
-                      <p className="text-white font-medium">Honolulu Police Department</p>
-                      <p className="text-slate-400 text-sm">(808) 529-3111</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <i className="fas fa-gavel text-gold-500 w-4"></i>
-                    <div>
-                      <p className="text-white font-medium">Hawaii State Capitol</p>
-                      <p className="text-slate-400 text-sm">(808) 586-0329</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <i className="fas fa-id-card text-purple-500 w-4"></i>
-                    <div>
-                      <p className="text-white font-medium">Private Security Licensing</p>
-                      <p className="text-slate-400 text-sm">(808) 586-2700</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <i className="fas fa-book text-green-500 w-4"></i>
-                    <div>
-                      <p className="text-white font-medium">Hawaii Legal Resource</p>
-                      <p className="text-slate-400 text-sm">www.capitol.hawaii.gov</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <i className="fas fa-users text-cyan-500 w-4"></i>
-                    <div>
-                      <p className="text-white font-medium">Security Officer Training</p>
-                      <p className="text-slate-400 text-sm">(808) 586-2700</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </main>
+        </Card>
       </div>
-    </div>
+    </Layout>
   );
 }
