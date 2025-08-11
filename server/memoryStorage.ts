@@ -512,9 +512,9 @@ class MemoryStorage {
   async getFinancialSummary(): Promise<any> {
     const records = Array.from(this.financialRecords.values());
     return {
-      totalIncome: records.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0),
-      totalExpenses: records.filter(r => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0),
-      pendingInvoices: records.filter(r => r.status === 'pending' && r.type === 'income').length,
+      totalIncome: records.filter(r => r.recordType === 'payment').reduce((sum, r) => sum + r.amount, 0),
+      totalExpenses: records.filter(r => r.recordType === 'expense').reduce((sum, r) => sum + r.amount, 0),
+      pendingInvoices: records.filter(r => r.status === 'pending' && r.recordType === 'invoice').length,
       overduePayments: records.filter(r => r.status === 'overdue').length,
     };
   }

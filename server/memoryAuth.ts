@@ -69,7 +69,7 @@ export function generateToken(user: any): string {
   if (!jwtSecret) {
     throw new Error('JWT_SECRET not configured');
   }
-  
+
   return jwt.sign(
     { 
       id: user.id, 
@@ -89,7 +89,7 @@ export async function loginHandler(credentials: { username: string; password: st
   const { username, password } = credentials;
   try {
     console.log('🔐 Attempting login for:', username);
-    
+
     // Check against default credentials first
     if (username === DEFAULT_CREDENTIALS.username && password === DEFAULT_CREDENTIALS.password) {
       const user = {
@@ -100,7 +100,7 @@ export async function loginHandler(credentials: { username: string; password: st
         lastName: DEFAULT_CREDENTIALS.lastName,
         role: DEFAULT_CREDENTIALS.role,
       };
-      
+
       const token = generateToken(user);
       console.log('✅ Default admin login successful');
       return { success: true, token, user };
@@ -120,14 +120,14 @@ export async function loginHandler(credentials: { username: string; password: st
             lastName: user.lastName,
             role: user.role,
           };
-          
+
           const token = generateToken(userForToken);
           console.log('✅ Database user login successful:', username);
           return { success: true, token, user: userForToken };
         }
       }
     }
-    
+
     console.log('❌ Invalid credentials for:', username);
     return { success: false, message: 'Invalid credentials' };
   } catch (error) {
