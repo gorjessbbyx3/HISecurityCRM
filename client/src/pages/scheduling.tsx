@@ -559,3 +559,127 @@ export default function Scheduling() {
     </div>
   );
 }
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+export function Scheduling() {
+  const shifts = [
+    { id: 1, property: "Ala Moana Shopping Center", officer: "John Smith", shift: "Day (6AM-2PM)", date: "2024-01-20", status: "Scheduled" },
+    { id: 2, property: "Waikiki Beach Resort", officer: "Maria Garcia", shift: "Night (10PM-6AM)", date: "2024-01-20", status: "Scheduled" },
+    { id: 3, property: "Downtown Office Complex", officer: "David Johnson", shift: "Evening (2PM-10PM)", date: "2024-01-20", status: "Covered" },
+    { id: 4, property: "Kahala Residential", officer: "Sarah Wilson", shift: "Day (6AM-2PM)", date: "2024-01-21", status: "Open" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-white">Scheduling</h1>
+        <Button className="bg-navy-700 hover:bg-navy-600 text-white">
+          <i className="fas fa-plus mr-2"></i>Create Shift
+        </Button>
+      </div>
+
+      <div className="grid gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-slate-800 border-slate-700">
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="p-3 bg-blue-500/20 rounded-lg">
+                  <i className="fas fa-calendar-check text-blue-400 text-xl"></i>
+                </div>
+                <div className="ml-4">
+                  <p className="text-slate-400 text-sm">Scheduled Shifts</p>
+                  <p className="text-2xl font-bold text-white">24</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800 border-slate-700">
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="p-3 bg-yellow-500/20 rounded-lg">
+                  <i className="fas fa-exclamation-circle text-yellow-400 text-xl"></i>
+                </div>
+                <div className="ml-4">
+                  <p className="text-slate-400 text-sm">Open Shifts</p>
+                  <p className="text-2xl font-bold text-white">3</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800 border-slate-700">
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="p-3 bg-green-500/20 rounded-lg">
+                  <i className="fas fa-users text-green-400 text-xl"></i>
+                </div>
+                <div className="ml-4">
+                  <p className="text-slate-400 text-sm">Available Staff</p>
+                  <p className="text-2xl font-bold text-white">12</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="bg-slate-800 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center">
+              <i className="fas fa-calendar-alt mr-2 text-blue-400"></i>
+              Shift Schedule
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-600">
+                    <th className="text-left p-3 text-slate-300">Property</th>
+                    <th className="text-left p-3 text-slate-300">Officer</th>
+                    <th className="text-left p-3 text-slate-300">Shift</th>
+                    <th className="text-left p-3 text-slate-300">Date</th>
+                    <th className="text-left p-3 text-slate-300">Status</th>
+                    <th className="text-left p-3 text-slate-300">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shifts.map((shift) => (
+                    <tr key={shift.id} className="border-b border-slate-700 hover:bg-slate-700">
+                      <td className="p-3 text-white font-medium">{shift.property}</td>
+                      <td className="p-3 text-slate-300">{shift.officer}</td>
+                      <td className="p-3 text-slate-300">{shift.shift}</td>
+                      <td className="p-3 text-slate-300">{shift.date}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          shift.status === 'Scheduled' ? 'bg-blue-500/20 text-blue-400' :
+                          shift.status === 'Covered' ? 'bg-green-500/20 text-green-400' :
+                          'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {shift.status}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex space-x-2">
+                          <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                            <i className="fas fa-edit"></i>
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                            <i className="fas fa-trash"></i>
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export default Scheduling;

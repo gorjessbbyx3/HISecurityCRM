@@ -701,3 +701,75 @@ export default function Properties() {
     </div>
   );
 }
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+export function Properties() {
+  const properties = [
+    { id: 1, name: "Ala Moana Shopping Center", address: "1450 Ala Moana Blvd, Honolulu", type: "Commercial", status: "Active", guards: 6 },
+    { id: 2, name: "Waikiki Beach Resort", address: "2255 Kalakaua Ave, Honolulu", type: "Resort", status: "Active", guards: 4 },
+    { id: 3, name: "Downtown Office Complex", address: "1001 Bishop St, Honolulu", type: "Office", status: "Active", guards: 3 },
+    { id: 4, name: "Kahala Residential", address: "4614 Kilauea Ave, Honolulu", type: "Residential", status: "Pending", guards: 2 },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-white">Properties</h1>
+        <Button className="bg-navy-700 hover:bg-navy-600 text-white">
+          <i className="fas fa-plus mr-2"></i>Add Property
+        </Button>
+      </div>
+
+      <div className="grid gap-6">
+        <Card className="bg-slate-800 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center">
+              <i className="fas fa-building mr-2 text-blue-400"></i>
+              Property Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              {properties.map((property) => (
+                <div key={property.id} className="border border-slate-600 rounded-lg p-4 hover:bg-slate-700 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-white font-semibold text-lg">{property.name}</h3>
+                      <p className="text-slate-400 text-sm mt-1">{property.address}</p>
+                      <div className="flex items-center space-x-4 mt-2">
+                        <span className="text-xs text-slate-500 bg-slate-700 px-2 py-1 rounded">
+                          {property.type}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          property.status === 'Active' ? 'bg-green-500/20 text-green-400' :
+                          'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {property.status}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          <i className="fas fa-user-shield mr-1"></i>
+                          {property.guards} Guards Assigned
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                        <i className="fas fa-map-marker-alt mr-1"></i>View
+                      </Button>
+                      <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                        <i className="fas fa-edit mr-1"></i>Edit
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export default Properties;

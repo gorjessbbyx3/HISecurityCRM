@@ -33,7 +33,7 @@ function Router() {
     const handleStorageChange = () => {
       checkAuthStatus();
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [checkAuthStatus]);

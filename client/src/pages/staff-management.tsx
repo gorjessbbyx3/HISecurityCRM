@@ -669,3 +669,83 @@ export default function StaffManagement() {
     </div>
   );
 }
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+export function StaffManagement() {
+  const staffMembers = [
+    { id: 1, name: "John Smith", role: "Senior Security Officer", status: "Active", shift: "Day", contact: "(808) 555-0123" },
+    { id: 2, name: "Maria Garcia", role: "Security Supervisor", status: "Active", shift: "Night", contact: "(808) 555-0124" },
+    { id: 3, name: "David Johnson", role: "Security Officer", status: "On Leave", shift: "Evening", contact: "(808) 555-0125" },
+    { id: 4, name: "Sarah Wilson", role: "Security Officer", status: "Active", shift: "Day", contact: "(808) 555-0126" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-white">Staff Management</h1>
+        <Button className="bg-navy-700 hover:bg-navy-600 text-white">
+          <i className="fas fa-plus mr-2"></i>Add Staff Member
+        </Button>
+      </div>
+
+      <div className="grid gap-6">
+        <Card className="bg-slate-800 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center">
+              <i className="fas fa-users-cog mr-2 text-blue-400"></i>
+              Staff Directory
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-600">
+                    <th className="text-left p-3 text-slate-300">Name</th>
+                    <th className="text-left p-3 text-slate-300">Role</th>
+                    <th className="text-left p-3 text-slate-300">Status</th>
+                    <th className="text-left p-3 text-slate-300">Shift</th>
+                    <th className="text-left p-3 text-slate-300">Contact</th>
+                    <th className="text-left p-3 text-slate-300">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {staffMembers.map((member) => (
+                    <tr key={member.id} className="border-b border-slate-700 hover:bg-slate-700">
+                      <td className="p-3 text-white font-medium">{member.name}</td>
+                      <td className="p-3 text-slate-300">{member.role}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          member.status === 'Active' ? 'bg-green-500/20 text-green-400' :
+                          member.status === 'On Leave' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-red-500/20 text-red-400'
+                        }`}>
+                          {member.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-slate-300">{member.shift}</td>
+                      <td className="p-3 text-slate-300">{member.contact}</td>
+                      <td className="p-3">
+                        <div className="flex space-x-2">
+                          <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                            <i className="fas fa-edit"></i>
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                            <i className="fas fa-eye"></i>
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export default StaffManagement;
