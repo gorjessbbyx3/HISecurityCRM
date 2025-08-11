@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 
-export default function Sidebar() {
+export function Sidebar() {
   const [location] = useLocation();
 
   const isActive = (path: string) => {
@@ -101,3 +101,5 @@ export default function Sidebar() {
     </aside>
   );
 }
+
+export default Sidebar;

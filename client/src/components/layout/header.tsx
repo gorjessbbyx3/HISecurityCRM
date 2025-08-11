@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
-export default function Header() {
+export function Header() {
   const { user } = useAuth();
 
   return (
@@ -81,3 +81,5 @@ export default function Header() {
     </header>
   );
 }
+
+export default Header;

@@ -16,10 +16,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertShiftSchema } from "@shared/schema";
+import { insertAppointmentSchema } from "@shared/schema";
 import { z } from "zod";
 
-const shiftFormSchema = insertShiftSchema.extend({
+const shiftFormSchema = insertAppointmentSchema.extend({
   date: z.string(),
 });
 
