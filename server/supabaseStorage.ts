@@ -2,12 +2,30 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing Supabase environment variables');
+console.log('🔍 Checking Supabase environment variables...');
+console.log('SUPABASE_URL:', supabaseUrl ? '✅ Set' : '❌ Missing');
+console.log('SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceKey ? '✅ Set' : '❌ Missing');
+console.log('SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ Set' : '❌ Missing');
+
+if (!supabaseUrl) {
+  throw new Error('SUPABASE_URL environment variable is required. Please add it to your Replit Secrets.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseServiceKey);
+if (!supabaseServiceKey && !supabaseAnonKey) {
+  throw new Error('Either SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY environment variable is required. Please add one to your Replit Secrets.');
+}
+
+// Prefer service role key for backend operations, fallback to anon key
+const apiKey = supabaseServiceKey || supabaseAnonKey;
+
+export const supabase = createClient(supabaseUrl, apiKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 // Types
 export interface User {
@@ -610,7 +628,7 @@ class SupabaseStorage {
   // Initialize database with default data
   async seedDatabase(): Promise<void> {
     console.log('🌱 Seeding Supabase database...');
-    
+
     // Sample clients
     const clients = [
       {
