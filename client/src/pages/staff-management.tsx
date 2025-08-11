@@ -1,17 +1,14 @@
-import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import Header from "@/components/layout/header";
-import Sidebar from "@/components/layout/sidebar";
+import Layout from "@/components/layout/layout";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Plus, 
@@ -234,10 +231,46 @@ export default function StaffManagement() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
-      <Header />
+      <header className="bg-slate-800 p-4 shadow-md">
+        <div className="container mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <img src="/path/to/your/logo.png" alt="Logo" className="h-8 w-auto" />
+            <h1 className="text-xl font-bold text-gold-400">Security Dashboard</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-slate-300">Welcome, {user?.firstName || 'User'}!</span>
+            <Button variant="outline" className="border-gold-500 text-gold-500 hover:bg-gold-500 hover:text-black">
+              Logout
+            </Button>
+          </div>
+        </div>
+      </header>
       
       <div className="flex">
-        <Sidebar />
+        <aside className="w-64 bg-slate-800 p-6 border-r border-slate-700 min-h-screen">
+          <nav className="space-y-4">
+            <a href="/dashboard" className="flex items-center space-x-3 p-3 rounded-md hover:bg-slate-700 text-slate-300 hover:text-white">
+              <Shield className="h-5 w-5" />
+              <span>Dashboard</span>
+            </a>
+            <a href="/staff-management" className="flex items-center space-x-3 p-3 rounded-md bg-gold-500/20 text-gold-400 hover:bg-gold-500/30">
+              <Users className="h-5 w-5" />
+              <span>Staff Management</span>
+            </a>
+            <a href="/events" className="flex items-center space-x-3 p-3 rounded-md hover:bg-slate-700 text-slate-300 hover:text-white">
+              <Clock className="h-5 w-5" />
+              <span>Event Log</span>
+            </a>
+            <a href="/reports" className="flex items-center space-x-3 p-3 rounded-md hover:bg-slate-700 text-slate-300 hover:text-white">
+              <Mail className="h-5 w-5" />
+              <span>Reports</span>
+            </a>
+            <a href="/settings" className="flex items-center space-x-3 p-3 rounded-md hover:bg-slate-700 text-slate-300 hover:text-white">
+              <ShieldQuestion className="h-5 w-5" />
+              <span>Settings</span>
+            </a>
+          </nav>
+        </aside>
         
         <main className="flex-1 p-6 overflow-y-auto" data-testid="main-staff-management">
           <div className="mb-8">
@@ -669,83 +702,3 @@ export default function StaffManagement() {
     </div>
   );
 }
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-
-export function StaffManagement() {
-  const staffMembers = [
-    { id: 1, name: "John Smith", role: "Senior Security Officer", status: "Active", shift: "Day", contact: "(808) 555-0123" },
-    { id: 2, name: "Maria Garcia", role: "Security Supervisor", status: "Active", shift: "Night", contact: "(808) 555-0124" },
-    { id: 3, name: "David Johnson", role: "Security Officer", status: "On Leave", shift: "Evening", contact: "(808) 555-0125" },
-    { id: 4, name: "Sarah Wilson", role: "Security Officer", status: "Active", shift: "Day", contact: "(808) 555-0126" },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white">Staff Management</h1>
-        <Button className="bg-navy-700 hover:bg-navy-600 text-white">
-          <i className="fas fa-plus mr-2"></i>Add Staff Member
-        </Button>
-      </div>
-
-      <div className="grid gap-6">
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <i className="fas fa-users-cog mr-2 text-blue-400"></i>
-              Staff Directory
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-600">
-                    <th className="text-left p-3 text-slate-300">Name</th>
-                    <th className="text-left p-3 text-slate-300">Role</th>
-                    <th className="text-left p-3 text-slate-300">Status</th>
-                    <th className="text-left p-3 text-slate-300">Shift</th>
-                    <th className="text-left p-3 text-slate-300">Contact</th>
-                    <th className="text-left p-3 text-slate-300">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {staffMembers.map((member) => (
-                    <tr key={member.id} className="border-b border-slate-700 hover:bg-slate-700">
-                      <td className="p-3 text-white font-medium">{member.name}</td>
-                      <td className="p-3 text-slate-300">{member.role}</td>
-                      <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          member.status === 'Active' ? 'bg-green-500/20 text-green-400' :
-                          member.status === 'On Leave' ? 'bg-yellow-500/20 text-yellow-400' :
-                          'bg-red-500/20 text-red-400'
-                        }`}>
-                          {member.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-slate-300">{member.shift}</td>
-                      <td className="p-3 text-slate-300">{member.contact}</td>
-                      <td className="p-3">
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                            <i className="fas fa-edit"></i>
-                          </Button>
-                          <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                            <i className="fas fa-eye"></i>
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-export default StaffManagement;

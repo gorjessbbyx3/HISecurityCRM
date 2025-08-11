@@ -18,7 +18,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Test database connection
       const testQuery = await storage.getDashboardStats();
-      
+
       const healthStatus = {
         status: 'healthy',
         timestamp: new Date().toISOString(),
@@ -30,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         version: process.env.npm_package_version || '1.0.0',
         environment: process.env.NODE_ENV || 'development'
       };
-      
+
       res.json(healthStatus);
     } catch (error) {
       console.error('Health check failed:', error);
@@ -50,17 +50,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const authHeader = req.headers['authorization'];
       const token = authHeader && authHeader.split(' ')[1];
-      
+
       if (!token) {
         return res.json({ authenticated: false });
       }
-      
+
       // Verify token and return user info if valid
       const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
       if (!jwtSecret) {
         return res.json({ authenticated: false });
       }
-      
+
       const jwt = await import('jsonwebtoken');
       const user = jwt.default.verify(token, jwtSecret);
       res.json({ authenticated: true, user });
@@ -75,9 +75,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { username, password } = req.body;
       console.log('🔐 Login attempt for:', username);
-      
+
       const result = await loginHandler({ username, password }, storage);
-      
+
       if (result.success) {
         console.log('✅ User logged in successfully:', username);
         res.json(result);
@@ -91,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  
+
 
   // Logout route (JWT tokens are stateless, so this just confirms logout)
   app.post('/api/auth/logout', (req: Request, res: Response) => {
@@ -124,8 +124,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Staff routes
-  app.get('/api/staff', authenticateToken, async (req, res) => {
+  // Staff endpoints
+  app.get("/api/staff", authenticateToken, async (req, res) => {
     try {
       const staff = await storage.getStaffMembers();
       res.json(staff);
@@ -135,36 +135,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/staff/active', authenticateToken, async (req, res) => {
+  app.get("/api/staff/stats", authenticateToken, async (req, res) => {
     try {
-      const activeStaff = await storage.getActiveStaff();
-      res.json(activeStaff);
+      const stats = await storage.getStaffStats();
+      res.json(stats);
     } catch (error) {
-      console.error("Error fetching active staff:", error);
-      res.status(500).json({ message: "Failed to fetch active staff" });
+      console.error("Error fetching staff stats:", error);
+      res.status(500).json({ message: "Failed to fetch staff stats" });
     }
   });
 
-  app.patch('/api/staff/:id/status', authenticateToken, async (req, res) => {
+  app.get("/api/staff/on-duty", authenticateToken, async (req, res) => {
     try {
-      const { id } = req.params;
-      const { status } = req.body;
-      await storage.updateUserStatus(id, status);
-      res.json({ message: "Staff status updated successfully" });
+      const staff = await storage.getOnDutyStaff();
+      res.json(staff);
     } catch (error) {
-      console.error("Error updating staff status:", error);
-      res.status(500).json({ message: "Failed to update staff status" });
+      console.error("Error fetching on-duty staff:", error);
+      res.status(500).json({ message: "Failed to fetch on-duty staff" });
     }
   });
 
-  // Client routes
-  app.get('/api/clients', authenticateToken, async (req, res) => {
+  app.get("/api/staff/schedule/today", authenticateToken, async (req, res) => {
+    try {
+      const schedule = await storage.getTodaysSchedule();
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error fetching today's schedule:", error);
+      res.status(500).json({ message: "Failed to fetch today's schedule" });
+    }
+  });
+
+  app.get("/api/staff/dashboard-stats", authenticateToken, async (req, res) => {
+    try {
+      const stats = await storage.getStaffDashboardStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching staff dashboard stats:", error);
+      res.status(500).json({ message: "Failed to fetch staff dashboard stats" });
+    }
+  });
+
+  app.get("/api/staff/availability", authenticateToken, async (req, res) => {
+    try {
+      const availability = await storage.getStaffAvailability();
+      res.json(availability);
+    } catch (error) {
+      console.error("Error fetching staff availability:", error);
+      res.status(500).json({ message: "Failed to fetch staff availability" });
+    }
+  });
+
+  // Clients endpoints
+  app.get("/api/clients", authenticateToken, async (req, res) => {
     try {
       const clients = await storage.getClients();
       res.json(clients);
     } catch (error) {
       console.error("Error fetching clients:", error);
       res.status(500).json({ message: "Failed to fetch clients" });
+    }
+  });
+
+  app.get("/api/clients/stats", authenticateToken, async (req, res) => {
+    try {
+      const stats = await storage.getClientStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching client stats:", error);
+      res.status(500).json({ message: "Failed to fetch client stats" });
     }
   });
 
@@ -244,17 +282,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Property routes
-  app.get('/api/properties', authenticateToken, async (req, res) => {
+  // Properties endpoints
+  app.get("/api/properties", authenticateToken, async (req, res) => {
     try {
-      const { clientId } = req.query;
-      const properties = clientId 
-        ? await storage.getPropertiesByClient(clientId as string)
-        : await storage.getProperties();
+      const properties = await storage.getProperties();
       res.json(properties);
     } catch (error) {
       console.error("Error fetching properties:", error);
       res.status(500).json({ message: "Failed to fetch properties" });
+    }
+  });
+
+  app.get("/api/properties/stats", authenticateToken, async (req, res) => {
+    try {
+      const stats = await storage.getPropertyStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching property stats:", error);
+      res.status(500).json({ message: "Failed to fetch property stats" });
     }
   });
 
@@ -303,7 +348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/incidents', authenticateToken, async (req, res) => {
     try {
       const { recent } = req.query;
-      const incidents = recent === 'true' 
+      const incidents = recent === 'true'
         ? await storage.getRecentIncidents()
         : await storage.getIncidents();
       res.json(incidents);
@@ -461,7 +506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/appointments', authenticateToken, async (req, res) => {
     try {
       const { today } = req.query;
-      const appointments = today === 'true' 
+      const appointments = today === 'true'
         ? await storage.getTodaysAppointments()
         : await storage.getAppointments();
       res.json(appointments);
@@ -640,21 +685,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/crime-data/live', authenticateToken, async (req, res) => {
     try {
       const { limit = 50, since } = req.query;
-      
+
       // Build the API URL with proper query parameters
       const baseApiUrl = process.env.CRIME_DATA_API_URL || 'https://data.honolulu.gov/resource/vg88-5rn5.json';
       let apiUrl = `${baseApiUrl}?$limit=${limit}&$order=date DESC`;
       if (since) {
         apiUrl += `&$where=date > '${since}'`;
       }
-      
+
       const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`Honolulu API responded with ${response.status}`);
       }
-      
+
       const crimeData = await response.json();
-      
+
       // Transform the data to match our format
       const transformedData = crimeData.map((crime: any) => ({
         id: crime.objectid,
@@ -668,11 +713,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lng: parseFloat(crime.coordinates.longitude)
         } : null
       }));
-      
+
       res.json(transformedData);
     } catch (error) {
       console.error('Error fetching live crime data:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: 'Failed to fetch live crime data',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -685,37 +730,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { days = 30 } = req.query;
       const sinceDate = new Date();
       sinceDate.setDate(sinceDate.getDate() - parseInt(days as string));
-      
+
       const baseApiUrl = process.env.CRIME_DATA_API_URL || 'https://data.honolulu.gov/resource/vg88-5rn5.json';
       const apiUrl = `${baseApiUrl}?$limit=1000&$where=date > '${sinceDate.toISOString()}'&$order=date DESC`;
-      
+
       const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`Honolulu API responded with ${response.status}`);
       }
-      
+
       const crimeData = await response.json();
-      
+
       // Analyze the data
       const typeCount: Record<string, number> = {};
       const locationCount: Record<string, number> = {};
       const hourCount: Record<number, number> = {};
-      
+
       crimeData.forEach((crime: any) => {
         // Count by type
         typeCount[crime.type] = (typeCount[crime.type] || 0) + 1;
-        
+
         // Count by general location (first part of address)
         const location = crime.blockaddress?.split(' ')[0] || 'Unknown';
         locationCount[location] = (locationCount[location] || 0) + 1;
-        
+
         // Count by hour of day
         if (crime.date) {
           const hour = new Date(crime.date).getHours();
           hourCount[hour] = (hourCount[hour] || 0) + 1;
         }
       });
-      
+
       res.json({
         totalIncidents: crimeData.length,
         topCrimeTypes: Object.entries(typeCount)
@@ -733,7 +778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error analyzing crime data:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: 'Failed to analyze crime data',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -781,14 +826,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user?.role !== 'admin') {
         return res.status(403).json({ message: 'Admin access required' });
       }
-      
+
       const userData = {
         ...req.body,
         permissions: req.body.permissions || []
       };
-      
+
       const user = await storage.createUser(userData);
-      
+
       await storage.createActivity({
         userId: req.user?.id,
         activityType: "admin",
@@ -796,7 +841,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityId: user.id,
         description: `Created new user: ${user.email}`,
       });
-      
+
       res.status(201).json(user);
     } catch (error) {
       console.error("Error creating user:", error);
@@ -809,12 +854,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user?.role !== 'admin') {
         return res.status(403).json({ message: 'Admin access required' });
       }
-      
+
       const { id } = req.params;
       const { permissions } = req.body;
-      
+
       await storage.updateUserPermissions(id, permissions);
-      
+
       await storage.createActivity({
         userId: req.user?.id,
         activityType: "admin",
@@ -822,7 +867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityId: id,
         description: `Updated user permissions`,
       });
-      
+
       res.json({ message: 'Permissions updated successfully' });
     } catch (error) {
       console.error("Error updating user permissions:", error);
@@ -841,6 +886,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch activities" });
     }
   });
+
+  // Crime Intelligence endpoints
+  app.get("/api/crime-intelligence", authenticateToken, async (req, res) => {
+    try {
+      const crimeData = await storage.getCrimeIntelligence();
+      res.json(crimeData);
+    } catch (error) {
+      console.error("Error fetching crime intelligence:", error);
+      res.status(500).json({ message: "Failed to fetch crime intelligence" });
+    }
+  });
+
+  app.get("/api/crime-intelligence/stats", authenticateToken, async (req, res) => {
+    try {
+      const stats = await storage.getCrimeStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching crime stats:", error);
+      res.status(500).json({ message: "Failed to fetch crime stats" });
+    }
+  });
+
+  // Scheduling endpoints
+  app.get("/api/schedules", authenticateToken, async (req, res) => {
+    try {
+      const { date } = req.query;
+      const schedules = await storage.getSchedules(date as string);
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching schedules:", error);
+      res.status(500).json({ message: "Failed to fetch schedules" });
+    }
+  });
+
+  app.get("/api/schedules/stats", authenticateToken, async (req, res) => {
+    try {
+      const stats = await storage.getScheduleStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching schedule stats:", error);
+      res.status(500).json({ message: "Failed to fetch schedule stats" });
+    }
+  });
+
 
   const httpServer = createServer(app);
 
