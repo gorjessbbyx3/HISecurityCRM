@@ -30,7 +30,7 @@ This is a full-stack JavaScript application with Express backend and React front
 - Utils: memoizee for caching
 
 ## User Preferences
-- None specified yet
+- Migrate authentication to Supabase for better deployment compatibility
 
 ## Recent Changes
 - 2025-08-11: Successfully migrated from Replit Agent to standard Replit environment
@@ -39,6 +39,7 @@ This is a full-stack JavaScript application with Express backend and React front
 - 2025-08-11: Fixed component export issues (Header/Sidebar components)
 - 2025-08-11: Updated scheduling schema to use insertAppointmentSchema
 - 2025-08-11: Server running successfully on port 5000 with all core functionality
+- 2025-08-11: Migrated authentication from session-based to JWT/Supabase for Vercel compatibility
 - 2025-08-10: Integrated live crime data from Honolulu Police Department API
 - 2025-08-10: Added role-based access control and user management system
 - 2025-08-10: Created admin user credentials (STREETPATROL808/Password3211)

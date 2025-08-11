@@ -1,8 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import passport from "passport";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./localAuth";
+import { setupSupabaseAuth, authenticateToken, loginHandler } from "./supabaseAuth";
 import {
   insertClientSchema,
   insertPropertySchema,
@@ -43,77 +42,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Auth middleware
-  await setupAuth(app);
+  // Supabase Auth setup
+  await setupSupabaseAuth(app);
 
   // Authentication status endpoint
   app.get('/api/auth/status', async (req: Request, res: Response) => {
     try {
-      console.log('Auth status check - Session ID:', req.sessionID);
-      console.log('Auth status check - User in session:', req.user);
-      console.log('Auth status check - isAuthenticated:', req.isAuthenticated?.());
+      const authHeader = req.headers['authorization'];
+      const token = authHeader && authHeader.split(' ')[1];
       
-      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-        return res.json({ authenticated: true, user: req.user });
+      if (!token) {
+        return res.json({ authenticated: false });
       }
-      res.json({ authenticated: false });
+      
+      // Verify token and return user info if valid
+      const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+      if (!jwtSecret) {
+        return res.json({ authenticated: false });
+      }
+      
+      const jwt = await import('jsonwebtoken');
+      const user = jwt.verify(token, jwtSecret);
+      res.json({ authenticated: true, user });
     } catch (error) {
-      console.error('Auth status error:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        sessionID: req.sessionID,
-        timestamp: new Date().toISOString()
-      });
-      res.status(500).json({ authenticated: false, error: 'Authentication check failed' });
+      console.error('Auth status error:', error);
+      res.json({ authenticated: false });
     }
   });
 
-  // Authentication routes - Use passport for login
-  app.post('/api/auth/login', (req: Request, res: Response, next) => {
-    console.log('🔐 Login attempt for:', req.body.username);
-    
-    // Use passport.authenticate directly
-    const authenticate = passport.authenticate('local', (err: any, user: any, info: any) => {
-      if (err) {
-        console.error('Authentication error:', err);
-        return res.status(500).json({ success: false, error: 'Authentication failed' });
-      }
+  // JWT-based login route
+  app.post('/api/auth/login', async (req: Request, res: Response) => {
+    try {
+      const { username, password } = req.body;
+      console.log('🔐 Login attempt for:', username);
       
-      if (!user) {
-        console.log('❌ Login failed for:', req.body.username);
-        return res.status(401).json({ success: false, error: info?.message || 'Invalid credentials' });
-      }
+      const result = await loginHandler(username, password);
       
-      // Log the user in
-      req.logIn(user, (err) => {
-        if (err) {
-          console.error('Login session error:', err);
-          return res.status(500).json({ success: false, error: 'Session error' });
-        }
-        
-        console.log('✅ User logged in successfully:', user.username);
-        res.json({ success: true, user });
-      });
-    });
-    
-    authenticate(req, res, next);
+      if (result.success) {
+        console.log('✅ User logged in successfully:', username);
+        res.json(result);
+      } else {
+        console.log('❌ Login failed for:', username);
+        res.status(401).json(result);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ success: false, message: 'Login failed' });
+    }
   });
 
   
 
-  // Logout route
+  // Logout route (JWT tokens are stateless, so this just confirms logout)
   app.post('/api/auth/logout', (req: Request, res: Response) => {
-    req.logout((err) => {
-      if (err) {
-        console.error('Logout error:', err);
-        return res.status(500).json({ error: 'Logout failed' });
-      }
-      res.json({ success: true });
-    });
+    res.json({ success: true });
   });
 
   // Database initialization route (should be removed in production)
-  app.post('/api/admin/seed-database', isAuthenticated, async (req, res) => {
+  app.post('/api/admin/seed-database', authenticateToken, async (req, res) => {
     try {
       if ((req.user as any).role !== 'admin') {
         return res.status(403).json({ message: 'Admin access required' });
@@ -128,7 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard stats
-  app.get('/api/dashboard/stats', isAuthenticated, async (req, res) => {
+  app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
     try {
       const stats = await storage.getDashboardStats();
       res.json(stats);
@@ -139,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Staff routes
-  app.get('/api/staff', isAuthenticated, async (req, res) => {
+  app.get('/api/staff', authenticateToken, async (req, res) => {
     try {
       const staff = await storage.getStaffMembers();
       res.json(staff);
@@ -149,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/staff/active', isAuthenticated, async (req, res) => {
+  app.get('/api/staff/active', authenticateToken, async (req, res) => {
     try {
       const activeStaff = await storage.getActiveStaff();
       res.json(activeStaff);
@@ -159,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/staff/:id/status', isAuthenticated, async (req, res) => {
+  app.patch('/api/staff/:id/status', authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
@@ -172,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Client routes
-  app.get('/api/clients', isAuthenticated, async (req, res) => {
+  app.get('/api/clients', authenticateToken, async (req, res) => {
     try {
       const clients = await storage.getClients();
       res.json(clients);
@@ -182,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/clients/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/clients/:id', authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
       const client = await storage.getClient(id);
@@ -196,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/clients', isAuthenticated, async (req, res) => {
+  app.post('/api/clients', authenticateToken, async (req, res) => {
     try {
       const clientData = insertClientSchema.parse(req.body);
       const client = await storage.createClient(clientData);
@@ -217,7 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/clients/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/clients/:id', authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
       const updates = insertClientSchema.partial().parse(req.body);
@@ -238,7 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/clients/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/clients/:id', authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
       await storage.deleteClient(id);
@@ -259,7 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Property routes
-  app.get('/api/properties', isAuthenticated, async (req, res) => {
+  app.get('/api/properties', authenticateToken, async (req, res) => {
     try {
       const { clientId } = req.query;
       const properties = clientId 
@@ -272,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/properties', isAuthenticated, async (req, res) => {
+  app.post('/api/properties', authenticateToken, async (req, res) => {
     try {
       const propertyData = insertPropertySchema.parse(req.body);
       const property = await storage.createProperty(propertyData);
@@ -292,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/properties/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/properties/:id', authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
       const updates = insertPropertySchema.partial().parse(req.body);
@@ -314,7 +300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Incident routes
-  app.get('/api/incidents', isAuthenticated, async (req, res) => {
+  app.get('/api/incidents', authenticateToken, async (req, res) => {
     try {
       const { recent } = req.query;
       const incidents = recent === 'true' 
@@ -327,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/incidents', isAuthenticated, async (req, res) => {
+  app.post('/api/incidents', authenticateToken, async (req, res) => {
     try {
       const incidentData = insertIncidentSchema.parse({
         ...req.body,
@@ -383,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/incidents/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/incidents/:id', authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
       const updates = insertIncidentSchema.partial().parse(req.body);
@@ -405,7 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Patrol report routes
-  app.get('/api/patrol-reports', isAuthenticated, async (req, res) => {
+  app.get('/api/patrol-reports', authenticateToken, async (req, res) => {
     try {
       const { today, officerId } = req.query;
       let reports;
@@ -425,7 +411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/patrol-reports', isAuthenticated, async (req, res) => {
+  app.post('/api/patrol-reports', authenticateToken, async (req, res) => {
     try {
       const reportData = insertPatrolReportSchema.parse({
         ...req.body,
@@ -450,7 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/patrol-reports/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/patrol-reports/:id', authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
       const updates = insertPatrolReportSchema.partial().parse(req.body);
@@ -472,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Appointment routes
-  app.get('/api/appointments', isAuthenticated, async (req, res) => {
+  app.get('/api/appointments', authenticateToken, async (req, res) => {
     try {
       const { today } = req.query;
       const appointments = today === 'true' 
@@ -485,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/appointments', isAuthenticated, async (req, res) => {
+  app.post('/api/appointments', authenticateToken, async (req, res) => {
     try {
       const appointmentData = insertAppointmentSchema.parse(req.body);
       const appointment = await storage.createAppointment(appointmentData);
@@ -506,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Financial routes
-  app.get('/api/financial/summary', isAuthenticated, async (req, res) => {
+  app.get('/api/financial/summary', authenticateToken, async (req, res) => {
     try {
       const summary = await storage.getFinancialSummary();
       res.json(summary);
@@ -516,7 +502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/financial/records', isAuthenticated, async (req, res) => {
+  app.get('/api/financial/records', authenticateToken, async (req, res) => {
     try {
       const records = await storage.getFinancialRecords();
       res.json(records);
@@ -526,7 +512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/financial/records', isAuthenticated, async (req, res) => {
+  app.post('/api/financial/records', authenticateToken, async (req, res) => {
     try {
       const recordData = insertFinancialRecordSchema.parse(req.body);
       const record = await storage.createFinancialRecord(recordData);
@@ -538,7 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Evidence routes
-  app.get('/api/evidence', isAuthenticated, async (req, res) => {
+  app.get('/api/evidence', authenticateToken, async (req, res) => {
     try {
       const evidence = await storage.getEvidence();
       res.json(evidence);
@@ -548,7 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/evidence', isAuthenticated, async (req, res) => {
+  app.post('/api/evidence', authenticateToken, async (req, res) => {
     try {
       const evidenceData = {
         ...req.body,
@@ -563,7 +549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI-powered crime pattern analysis
-  app.get('/api/crime-patterns', isAuthenticated, async (req, res) => {
+  app.get('/api/crime-patterns', authenticateToken, async (req, res) => {
     try {
       const recentIncidents = await storage.getRecentIncidents(168); // Last 7 days
 
@@ -602,7 +588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // File upload endpoint
-  app.post('/api/upload', isAuthenticated, async (req, res) => {
+  app.post('/api/upload', authenticateToken, async (req, res) => {
     try {
       // In a production environment, you would integrate with a file storage service
       // like AWS S3, Google Cloud Storage, or similar
@@ -630,7 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Community resources routes
-  app.get('/api/community-resources', isAuthenticated, async (req, res) => {
+  app.get('/api/community-resources', authenticateToken, async (req, res) => {
     try {
       const resources = await storage.getCommunityResources();
       res.json(resources);
@@ -640,7 +626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/community-resources', isAuthenticated, async (req, res) => {
+  app.post('/api/community-resources', authenticateToken, async (req, res) => {
     try {
       const resource = await storage.createCommunityResource(req.body);
       res.status(201).json(resource);
@@ -651,7 +637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Live crime data from Honolulu API
-  app.get('/api/crime-data/live', isAuthenticated, async (req, res) => {
+  app.get('/api/crime-data/live', authenticateToken, async (req, res) => {
     try {
       const { limit = 50, since } = req.query;
       
@@ -694,7 +680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Crime data analytics endpoint
-  app.get('/api/crime-data/analytics', isAuthenticated, async (req, res) => {
+  app.get('/api/crime-data/analytics', authenticateToken, async (req, res) => {
     try {
       const { days = 30 } = req.query;
       const sinceDate = new Date();
@@ -755,7 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Law references routes with guard card requirements
-  app.get('/api/law-references', isAuthenticated, async (req, res) => {
+  app.get('/api/law-references', authenticateToken, async (req, res) => {
     try {
       const { search, category } = req.query;
       const laws = await storage.getLawReferences({
@@ -769,7 +755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/law-references', isAuthenticated, async (req, res) => {
+  app.post('/api/law-references', authenticateToken, async (req, res) => {
     try {
       const lawRef = await storage.createLawReference(req.body);
       res.status(201).json(lawRef);
@@ -780,7 +766,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User management and permissions
-  app.get('/api/users', isAuthenticated, async (req, res) => {
+  app.get('/api/users', authenticateToken, async (req, res) => {
     try {
       if ((req.user as any).role !== 'admin') {
         return res.status(403).json({ message: 'Admin access required' });
@@ -793,7 +779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/users', isAuthenticated, async (req, res) => {
+  app.post('/api/users', authenticateToken, async (req, res) => {
     try {
       if ((req.user as any).role !== 'admin') {
         return res.status(403).json({ message: 'Admin access required' });
@@ -821,7 +807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/users/:id/permissions', isAuthenticated, async (req, res) => {
+  app.put('/api/users/:id/permissions', authenticateToken, async (req, res) => {
     try {
       if ((req.user as any).role !== 'admin') {
         return res.status(403).json({ message: 'Admin access required' });
@@ -848,7 +834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Activity feed
-  app.get('/api/activities', isAuthenticated, async (req, res) => {
+  app.get('/api/activities', authenticateToken, async (req, res) => {
     try {
       const { limit } = req.query;
       const activities = await storage.getActivities(limit ? parseInt(limit as string) : 50);

@@ -5,8 +5,11 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: async ({ queryKey }) => {
         const url = queryKey[0] as string;
+        const token = localStorage.getItem('auth_token');
         const res = await fetch(url, {
-          credentials: 'include', // Important for session cookies
+          headers: {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
         });
         
         if (!res.ok) {
@@ -29,11 +32,12 @@ export const queryClient = new QueryClient({
 });
 
 export async function apiRequest(url: string, options: RequestInit = {}) {
+  const token = localStorage.getItem('auth_token');
   const defaultOptions: RequestInit = {
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
-    credentials: 'include', // Important for session cookies
   };
 
   const mergedOptions = {

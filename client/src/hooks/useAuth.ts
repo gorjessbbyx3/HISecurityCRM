@@ -29,17 +29,39 @@ export function useAuth() {
     setAuthState(prev => ({ ...prev, ...state }));
   };
 
+  // Get token from localStorage
+  const getToken = () => localStorage.getItem('auth_token');
+  
+  // Set token in localStorage
+  const setToken = (token: string) => {
+    localStorage.setItem('auth_token', token);
+  };
+  
+  // Remove token from localStorage
+  const removeToken = () => {
+    localStorage.removeItem('auth_token');
+  };
+
   const checkAuthStatus = useCallback(async () => {
     try {
       console.log('Fetching user authentication status...');
       setAuthStateInternal({ isLoading: true, error: null });
 
+      const token = getToken();
+      if (!token) {
+        setAuthStateInternal({
+          user: null,
+          isLoading: false,
+          isAuthenticated: false,
+          error: null,
+        });
+        return;
+      }
+
       const response = await fetch('/api/auth/status', {
         method: 'GET',
-        credentials: 'include',
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       }).catch(fetchError => {
@@ -64,6 +86,7 @@ export function useAuth() {
           });
         } else {
           console.log('User not authenticated');
+          removeToken(); // Remove invalid token
           setAuthStateInternal({
             user: null,
             isLoading: false,
@@ -73,6 +96,9 @@ export function useAuth() {
         }
       } else {
         console.error('Auth status check failed:', response.status);
+        if (response.status === 401 || response.status === 403) {
+          removeToken(); // Remove invalid token
+        }
         setAuthStateInternal({
           user: null,
           isLoading: false,
@@ -86,12 +112,12 @@ export function useAuth() {
         user: null,
         isLoading: false,
         isAuthenticated: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Authentication check failed',
       });
     }
   }, []);
 
-  const login = async (credentials: { username: string; password: string }) => {
+  const login = async (username: string, password: string) => {
     try {
       setAuthStateInternal({ isLoading: true, error: null });
 
@@ -100,19 +126,13 @@ export function useAuth() {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
-        body: JSON.stringify(credentials),
-      }).catch(fetchError => {
-        console.error('Network error during login:', fetchError);
-        throw new Error('Network connection failed');
+        body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json().catch(jsonError => {
-        console.error('JSON parse error during login:', jsonError);
-        throw new Error('Invalid server response');
-      });
+      const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success && data.token) {
+        setToken(data.token);
         setAuthStateInternal({
           user: data.user,
           isLoading: false,
@@ -121,21 +141,20 @@ export function useAuth() {
         });
         return { success: true };
       } else {
-        const errorMsg = data.error || 'Login failed';
-        console.error('Login failed:', errorMsg);
         setAuthStateInternal({
-          ...authState,
+          user: null,
           isLoading: false,
-          error: errorMsg,
+          isAuthenticated: false,
+          error: data.message || 'Login failed',
         });
-        return { success: false, error: errorMsg };
+        return { success: false, error: data.message || 'Login failed' };
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      console.error('Login error:', errorMessage);
       setAuthStateInternal({
-        ...authState,
+        user: null,
         isLoading: false,
+        isAuthenticated: false,
         error: errorMessage,
       });
       return { success: false, error: errorMessage };
@@ -144,26 +163,21 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      setAuthStateInternal({ isLoading: true });
-
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      }).catch(fetchError => {
-        console.error('Network error during logout:', fetchError);
-        // Continue with local logout even if network fails
-      });
-
-      setAuthStateInternal({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        error: null,
-      });
-      return { success: true };
+      const token = getToken();
+      if (token) {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      }
     } catch (error) {
-      console.error('Logout error:', error);
-      // Even if logout fails on server, clear local state
+      console.error('Logout request failed:', error);
+    } finally {
+      // Always clear local state regardless of API call result
+      removeToken();
       setAuthStateInternal({
         user: null,
         isLoading: false,
@@ -176,7 +190,7 @@ export function useAuth() {
 
   useEffect(() => {
     checkAuthStatus();
-  }, [checkAuthStatus]); // Depend on checkAuthStatus
+  }, [checkAuthStatus]);
 
   console.log('useAuth state:', authState);
 
