@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./memoryStorage";
-import { setupMemoryAuth, authenticateToken, loginHandler } from "./memoryAuth";
+import { storage } from "./supabaseStorage";
+import { setupSupabaseAuth, authenticateToken, loginHandler } from "./supabaseAuth";
 import {
   insertClientSchema,
   insertPropertySchema,
@@ -42,8 +42,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Memory Auth setup
-  await setupMemoryAuth(app);
+  // Supabase Auth setup
+  await setupSupabaseAuth(app);
 
   // Authentication status endpoint
   app.get('/api/auth/status', async (req: Request, res: Response) => {
