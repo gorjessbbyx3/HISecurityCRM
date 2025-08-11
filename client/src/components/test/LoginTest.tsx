@@ -7,7 +7,7 @@ export default function LoginTest() {
   });
 
   const handleTestLogin = async () => {
-    const result = await login(testCredentials.username, testCredentials.password);
+    const result = await login(testCredentials);
     console.log('Test login result:', result);
   };
 

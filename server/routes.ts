@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { username, password } = req.body;
       console.log('🔐 Login attempt for:', username);
       
-      const result = await loginHandler(username, password);
+      const result = await loginHandler({ username, password });
       
       if (result.success) {
         console.log('✅ User logged in successfully:', username);

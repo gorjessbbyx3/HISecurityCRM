@@ -117,7 +117,7 @@ export function useAuth() {
     }
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = async (credentials: { username: string; password: string }) => {
     try {
       setAuthStateInternal({ isLoading: true, error: null });
 
@@ -126,7 +126,7 @@ export function useAuth() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify(credentials),
       });
 
       const data = await response.json();
@@ -139,7 +139,7 @@ export function useAuth() {
           isAuthenticated: true,
           error: null,
         });
-        return { success: true };
+        return true; // Return boolean for success
       } else {
         setAuthStateInternal({
           user: null,
@@ -147,7 +147,7 @@ export function useAuth() {
           isAuthenticated: false,
           error: data.message || 'Login failed',
         });
-        return { success: false, error: data.message || 'Login failed' };
+        return false; // Return boolean for failure
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';

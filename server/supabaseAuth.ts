@@ -85,8 +85,12 @@ export function generateToken(user: any): string {
 }
 
 // Login handler
-export async function loginHandler(username: string, password: string) {
+export async function loginHandler(credentials: { username: string; password: string } | string, passwordParam?: string) {
   try {
+    // Handle both object and string parameter formats
+    const username = typeof credentials === 'string' ? credentials : credentials.username;
+    const password = typeof credentials === 'string' ? passwordParam! : credentials.password;
+    
     console.log('🔐 Attempting Supabase login for:', username);
     
     // Check against default credentials first
