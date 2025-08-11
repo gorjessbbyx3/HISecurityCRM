@@ -31,90 +31,71 @@ export function useAuth() {
 
   // Get token from localStorage
   const getToken = () => localStorage.getItem('auth_token');
-  
+
   // Set token in localStorage
   const setToken = (token: string) => {
     localStorage.setItem('auth_token', token);
   };
-  
+
   // Remove token from localStorage
   const removeToken = () => {
     localStorage.removeItem('auth_token');
   };
 
+  // Renamed setUser, setIsLoading, setIsAuthenticated, setError to match the original hook's internal state management
+  const setUser = (user: User | null) => setAuthStateInternal({ user });
+  const setIsLoading = (isLoading: boolean) => setAuthStateInternal({ isLoading });
+  const setIsAuthenticated = (isAuthenticated: boolean) => setAuthStateInternal({ isAuthenticated });
+  const setError = (error: string | null) => setAuthStateInternal({ error });
+
+
   const checkAuthStatus = useCallback(async () => {
+    console.log('Fetching user authentication status...');
+
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      console.log('Fetching user authentication status...');
-      setAuthStateInternal({ isLoading: true, error: null });
-
-      const token = getToken();
-      if (!token) {
-        setAuthStateInternal({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-          error: null,
-        });
-        return;
-      }
-
+      setIsLoading(true);
       const response = await fetch('/api/auth/status', {
-        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }).catch(fetchError => {
-        console.error('Network error during auth check:', fetchError);
-        throw new Error('Network error');
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
-        const data = await response.json().catch(jsonError => {
-          console.error('JSON parse error:', jsonError);
-          throw new Error('Invalid response format');
-        });
-
-        console.log('Auth status response:', data);
-
+        const data = await response.json();
         if (data.authenticated && data.user) {
-          setAuthStateInternal({
-            user: data.user,
-            isLoading: false,
-            isAuthenticated: true,
-            error: null,
-          });
+          setUser(data.user);
+          setIsAuthenticated(true);
+          setError(null);
         } else {
-          console.log('User not authenticated');
-          removeToken(); // Remove invalid token
-          setAuthStateInternal({
-            user: null,
-            isLoading: false,
-            isAuthenticated: false,
-            error: null,
-          });
+          localStorage.removeItem('auth_token');
+          setUser(null);
+          setIsAuthenticated(false);
+          setError('Session expired');
         }
       } else {
-        console.error('Auth status check failed:', response.status);
-        if (response.status === 401 || response.status === 403) {
-          removeToken(); // Remove invalid token
-        }
-        setAuthStateInternal({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-          error: `Authentication check failed: ${response.status}`,
-        });
+        localStorage.removeItem('auth_token');
+        setUser(null);
+        setIsAuthenticated(false);
+        setError('Authentication failed');
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      setAuthStateInternal({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        error: error instanceof Error ? error.message : 'Authentication check failed',
-      });
+      console.error('Auth status check failed:', error);
+      localStorage.removeItem('auth_token');
+      setUser(null);
+      setIsAuthenticated(false);
+      setError('Network error');
     }
+
+    setIsLoading(false);
   }, []);
 
   const login = async (credentials: { username: string; password: string }) => {

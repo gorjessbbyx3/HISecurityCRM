@@ -62,7 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const jwt = await import('jsonwebtoken');
-      const user = jwt.verify(token, jwtSecret);
+      const user = jwt.default.verify(token, jwtSecret);
       res.json({ authenticated: true, user });
     } catch (error) {
       console.error('Auth status error:', error);
