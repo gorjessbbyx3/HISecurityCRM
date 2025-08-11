@@ -6,9 +6,9 @@ This is a full-stack JavaScript application with Express backend and React front
 
 ### Backend
 - Express.js server with TypeScript
-- Replit OpenID Connect authentication
-- PostgreSQL database with Drizzle ORM
-- Session management with connect-pg-simple
+- JWT-based authentication with bcrypt
+- In-memory storage system (no database)
+- WebSocket support for real-time updates
 
 ### Frontend
 - React with TypeScript
@@ -19,18 +19,19 @@ This is a full-stack JavaScript application with Express backend and React front
 - TanStack Query for data fetching
 - Wouter for routing
 
-### Database
-- PostgreSQL with Drizzle ORM
-- Session storage for authentication
+### Storage
+- Complete in-memory storage system
+- No database dependencies
+- Supports all CRUD operations for clients, properties, staff, incidents, reports
 
 ## Dependencies
-- Authentication: openid-client, passport, passport-local
-- Database: drizzle-orm, drizzle-kit, @neondatabase/serverless
+- Authentication: jsonwebtoken, bcrypt
+- Storage: In-memory maps with TypeScript types
 - UI: @radix-ui components, tailwindcss, lucide-react
-- Utils: memoizee for caching
+- Utils: uuid for ID generation
 
 ## User Preferences
-- Migrate authentication to Supabase for better deployment compatibility
+- Remove all PostgreSQL integrations and use in-memory storage
 
 ## Recent Changes
 - 2025-08-11: Successfully migrated from Replit Agent to standard Replit environment
@@ -40,6 +41,9 @@ This is a full-stack JavaScript application with Express backend and React front
 - 2025-08-11: Updated scheduling schema to use insertAppointmentSchema
 - 2025-08-11: Server running successfully on port 5000 with all core functionality
 - 2025-08-11: Migrated authentication from session-based to JWT/Supabase for Vercel compatibility
+- 2025-08-11: Completed PostgreSQL removal - migrated to in-memory storage system
+- 2025-08-11: Removed all Drizzle ORM and database dependencies
+- 2025-08-11: Implemented JWT-based authentication with bcrypt password hashing
 - 2025-08-10: Integrated live crime data from Honolulu Police Department API
 - 2025-08-10: Added role-based access control and user management system
 - 2025-08-10: Created admin user credentials (STREETPATROL808/Password3211)

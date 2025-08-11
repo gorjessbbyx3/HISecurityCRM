@@ -1,24 +1,14 @@
-import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import type { Express, RequestHandler } from "express";
-import { storage } from "./storage";
+import { storage } from "./memoryStorage";
 
-// Supabase configuration
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// JWT secret - using SESSION_SECRET as fallback for compatibility
 const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('❌ Supabase configuration missing. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
-}
 
 if (!jwtSecret) {
   console.error('❌ JWT_SECRET is missing. Please set JWT_SECRET environment variable');
 }
-
-export const supabase = supabaseUrl && supabaseServiceKey 
-  ? createClient(supabaseUrl, supabaseServiceKey)
-  : null;
 
 // Default admin credentials
 const DEFAULT_CREDENTIALS = {
@@ -97,6 +87,8 @@ export function generateToken(user: any): string {
 // Login handler
 export async function loginHandler(username: string, password: string) {
   try {
+    console.log('🔐 Attempting login for:', username);
+    
     // Check against default credentials first
     if (username === DEFAULT_CREDENTIALS.username && password === DEFAULT_CREDENTIALS.password) {
       const user = {
@@ -109,12 +101,33 @@ export async function loginHandler(username: string, password: string) {
       };
       
       const token = generateToken(user);
+      console.log('✅ Default admin login successful');
       return { success: true, token, user };
     }
 
-    // If Supabase is configured, you could add additional user lookup here
-    // For now, just handle the default admin
+    // Try to find user in storage and verify password
+    const users = await storage.getStaffMembers();
+    for (const user of users) {
+      if ((user.email === username || user.firstName + user.lastName === username) && user.hashedPassword) {
+        const isValidPassword = await bcrypt.compare(password, user.hashedPassword);
+        if (isValidPassword) {
+          const userForToken = {
+            id: user.id,
+            username: user.email || `${user.firstName}${user.lastName}`,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+          };
+          
+          const token = generateToken(userForToken);
+          console.log('✅ Database user login successful:', username);
+          return { success: true, token, user: userForToken };
+        }
+      }
+    }
     
+    console.log('❌ Invalid credentials for:', username);
     return { success: false, message: 'Invalid credentials' };
   } catch (error) {
     console.error('Login error:', error);
@@ -122,29 +135,6 @@ export async function loginHandler(username: string, password: string) {
   }
 }
 
-// Initialize default admin user
-async function initializeAdminUser() {
-  try {
-    const existingUser = await storage.getUser(DEFAULT_CREDENTIALS.userId);
-    if (!existingUser) {
-      await storage.upsertUser({
-        id: DEFAULT_CREDENTIALS.userId,
-        email: DEFAULT_CREDENTIALS.email,
-        firstName: DEFAULT_CREDENTIALS.firstName,
-        lastName: DEFAULT_CREDENTIALS.lastName,
-        role: DEFAULT_CREDENTIALS.role,
-        status: "active",
-      });
-      console.log("✅ Default admin user created");
-    }
-  } catch (error) {
-    console.error("❌ Error initializing admin user:", error);
-  }
-}
-
-export async function setupSupabaseAuth(app: Express) {
-  // Initialize admin user
-  await initializeAdminUser();
-  
-  console.log("✅ Supabase authentication configured");
+export async function setupMemoryAuth(app: Express) {
+  console.log("✅ Memory-based JWT authentication configured");
 }
