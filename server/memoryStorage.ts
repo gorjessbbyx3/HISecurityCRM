@@ -50,6 +50,7 @@ export interface Property {
   coordinates?: string;
   coverageType: string;
   status: string;
+  guardCount?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -305,6 +306,7 @@ class MemoryStorage {
       securityLevel: propertyData.securityLevel || 'standard',
       coverageType: propertyData.coverageType || 'patrol',
       status: propertyData.status || 'active',
+      guardCount: propertyData.guardCount || 1,
       createdAt: now,
       updatedAt: now,
     };
@@ -581,6 +583,36 @@ class MemoryStorage {
       notes: 'Commercial building with evening security needs',
     });
 
+    // Sample properties
+    const clients = await this.getClients();
+    if (clients.length > 0) {
+      await this.createProperty({
+        clientId: clients[0].id,
+        name: 'Honolulu Resort Main Building',
+        address: '123 Waikiki Beach Drive, Honolulu, HI 96815',
+        propertyType: 'resort',
+        zone: 'Waikiki',
+        securityLevel: 'high',
+        coverageType: '24/7',
+        status: 'active',
+        guardCount: 3,
+      });
+
+      if (clients.length > 1) {
+        await this.createProperty({
+          clientId: clients[1].id,
+          name: 'Downtown Plaza Office Building',
+          address: '456 King Street, Honolulu, HI 96813',
+          propertyType: 'commercial',
+          zone: 'Downtown',
+          securityLevel: 'standard',
+          coverageType: 'patrol',
+          status: 'active',
+          guardCount: 2,
+        });
+      }
+    }
+
     console.log('✅ Sample data seeded in memory storage');
   }
 
@@ -653,8 +685,8 @@ class MemoryStorage {
     return {
       total: properties.length,
       active: properties.filter(p => p.status === "active").length,
-      totalGuards: properties.reduce((sum, p) => sum + p.guardCount, 0), // Assuming guardCount exists in Property, which it doesn't in the defined interface. This would need adjustment based on actual Property interface.
-      underReview: properties.filter(p => p.status === "under_review").length // Placeholder status
+      totalGuards: properties.reduce((sum, p) => sum + (p.guardCount || 0), 0),
+      underReview: properties.filter(p => p.status === "under_review").length
     };
   }
 

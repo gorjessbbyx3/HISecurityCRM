@@ -27,6 +27,7 @@ export const insertPropertySchema = z.object({
   coordinates: z.string().optional(),
   coverageType: z.string().default('patrol'),
   status: z.string().default('active'),
+  guardCount: z.number().optional().default(1),
 });
 
 export const insertIncidentSchema = z.object({
