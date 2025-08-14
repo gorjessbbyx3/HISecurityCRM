@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Route, Switch } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -43,12 +42,10 @@ function Router() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 bg-navy-700 rounded-lg flex items-center justify-center mb-4 mx-auto">
-            <i className="fas fa-shield-alt text-gold-500 text-lg animate-pulse"></i>
-          </div>
-          <p className="text-white">Loading Hawaii Security CRM...</p>
+        <div className="w-10 h-10 bg-navy-700 rounded-lg flex items-center justify-center mb-4 mx-auto">
+          <i className="fas fa-shield-alt text-gold-500 text-lg animate-pulse"></i>
         </div>
+        <p className="text-white">Loading Hawaii Security CRM...</p>
       </div>
     );
   }
@@ -85,14 +82,58 @@ function Router() {
 }
 
 function App() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  console.log('🔍 App.tsx - Auth State:', { isAuthenticated, isLoading, user: user?.username });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <i className="fas fa-spinner fa-spin text-2xl mb-4"></i>
+          <p>Loading Hawaii Security CRM...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated, show landing page
+  if (!isAuthenticated) {
+    console.log('🔒 Not authenticated - showing landing page');
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ErrorBoundary>
+          <Landing />
+          <Toaster />
+        </ErrorBoundary>
+      </QueryClientProvider>
+    );
+  }
+
+  // If authenticated, show the main app with routing
+  console.log('✅ Authenticated - showing main app');
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
-        <Router />
+        <Switch>
+          <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/staff" component={Staff} />
+          <Route path="/clients" component={Clients} />
+          <Route path="/properties" component={Properties} />
+          <Route path="/reports" component={Reports} />
+          <Route path="/crime-intelligence" component={CrimeIntelligence} />
+          <Route path="/law-reference" component={LawReference} />
+          <Route path="/community-outreach" component={CommunityOutreach} />
+          <Route path="/accounting" component={Accounting} />
+          <Route path="/staff-management" component={StaffManagement} />
+          <Route path="/scheduling" component={Scheduling} />
+          <Route path="/patrol-reports" component={PatrolReports} />
+          <Route path="/hawaii-law" component={HawaiiLaw} />
+          <Route component={NotFound} />
+        </Switch>
         <Toaster />
       </ErrorBoundary>
     </QueryClientProvider>
   );
 }
-
-export default App;
