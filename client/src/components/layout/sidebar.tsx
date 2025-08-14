@@ -1,14 +1,4 @@
-
 import { Link, useLocation } from "wouter";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
@@ -77,45 +67,31 @@ export function Sidebar() {
           </div>
         </div>
 
-        <NavigationMenu orientation="vertical" className="flex-col items-start max-w-none">
-          <NavigationMenuList className="flex-col space-x-0 space-y-2">
-            {navItems.map((section, sectionIndex) => (
-              <div key={sectionIndex} className="w-full space-y-1">
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-6 mb-3 px-3">
-                  {section.section}
-                </h4>
-                {section.items.map((item, itemIndex) => (
-                  <NavigationMenuItem key={itemIndex} className="w-full">
-                    <Link href={item.path}>
-                      <NavigationMenuLink
-                        className={cn(
-                          navigationMenuTriggerStyle(),
-                          "w-full justify-start h-auto py-3 px-3 text-sm font-medium transition-colors",
-                          isActive(item.path)
-                            ? "bg-navy-700 text-white hover:bg-navy-600"
-                            : "bg-transparent text-slate-300 hover:bg-slate-700 hover:text-white"
-                        )}
-                        data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                      >
-                        <i className={`${item.icon} w-5 mr-3`}></i>
-                        <span>{item.label}</span>
-                        {(item as any).badge && (
-                          <span className={`ml-auto text-xs px-2 py-1 rounded-full ${
-                            (item as any).badge === "12" ? "bg-red-500 text-white" :
-                            (item as any).badge === "3" ? "bg-yellow-500 text-black" :
-                            "bg-blue-500 text-white"
-                          }`}>
-                            {(item as any).badge}
-                          </span>
-                        )}
-                      </NavigationMenuLink>
-                    </Link>
-                  </NavigationMenuItem>
-                ))}
-              </div>
-            ))}
-          </NavigationMenuList>
-        </NavigationMenu>
+        <nav className="space-y-2">
+          {navItems.map((section, sectionIndex) => (
+            <div key={sectionIndex} className="space-y-1">
+              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-6 mb-3 px-3">
+                {section.section}
+              </h4>
+              {section.items.map((item, itemIndex) => (
+                <Link
+                  key={itemIndex}
+                  href={item.path}
+                  className={cn(
+                    "flex items-center w-full px-3 py-3 text-sm font-medium transition-colors rounded-md",
+                    isActive(item.path)
+                      ? "bg-navy-700 text-white hover:bg-navy-600"
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  )}
+                  data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  <i className={`${item.icon} w-5 mr-3`}></i>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          ))}
+        </nav>
       </div>
     </aside>
   );
