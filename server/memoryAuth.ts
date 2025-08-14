@@ -3,8 +3,8 @@ import bcrypt from 'bcrypt';
 import type { Express, RequestHandler } from "express";
 import { storage } from "./memoryStorage";
 
-// JWT secret - using SESSION_SECRET as fallback for compatibility
-const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+// JWT secret - using SUPABASE_JWT_SECRET as primary, with fallbacks for compatibility
+const jwtSecret = process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET || process.env.SESSION_SECRET;
 
 if (!jwtSecret) {
   console.error('❌ JWT_SECRET is missing. Please set JWT_SECRET environment variable');
