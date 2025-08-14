@@ -5,15 +5,27 @@ export function Header() {
   const { user } = useAuth();
 
   return (
-    <header className="border-b border-slate-700/50 bg-gradient-to-r from-slate-800/80 to-slate-900/80 backdrop-blur-xl shadow-lg">
-      <div className="flex h-16 items-center px-6">
+    <header className="glass-effect border-b border-slate-600/50 px-6 py-4 backdrop-blur-xl">
+      <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-gold-500/20 to-gold-600/20 flex items-center justify-center">
-            <i className="fas fa-shield-alt text-xl text-gold-500"></i>
-          </div>
-          <div>
-            <h1 className="font-bold text-white text-lg">Hawaii Security CRM</h1>
-            <p className="text-xs text-gold-400">Professional Crime Watch & Protection</p>
+          <button 
+            onClick={toggleSidebar}
+            className="text-slate-400 hover:text-blue-400 transition-all duration-300 lg:hidden button-glow rounded-lg p-2"
+          >
+            <i className="fas fa-bars text-xl"></i>
+          </button>
+          <div className="animate-fade-in">
+            <h2 className="text-2xl font-bold text-gradient-blue">
+              {getPageTitle()}
+            </h2>
+            <p className="text-sm text-slate-400 font-medium">
+              {new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </p>
           </div>
         </div>
 

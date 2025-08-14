@@ -86,7 +86,7 @@ export default function Dashboard() {
     }
   };
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <div className="bg-slate-900 text-white min-h-screen">

@@ -44,44 +44,56 @@ export default function StatsCards() {
     },
   ];
 
+  // Mocking data if stats are not yet loaded to avoid errors in mapping
+  const displayStats = isLoading ? Array(4).fill({ value: '...', trend: '', title: '', icon: '', color: '' }) : statsData;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      {statsData.map((stat, index) => (
+      {displayStats.map((stat, index) => (
         <div 
           key={index} 
-          className="bg-slate-800 border border-slate-700 rounded-xl p-6"
+          className="glass-card border border-slate-600 rounded-xl p-6 hover:glass-card-hover hover:shadow-xl transition-all duration-300 group animate-scale-in"
+          style={{ animationDelay: `${index * 100}ms` }}
           data-testid={`card-${stat.title.toLowerCase().replace(/\s+/g, '-')}`}
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-slate-400 text-sm font-medium">{stat.title}</p>
-              <p 
-                className="text-2xl font-bold text-white mt-1"
-                data-testid={`text-${stat.title.toLowerCase().replace(/\s+/g, '-')}-value`}
-              >
-                {isLoading ? "..." : stat.value}
-              </p>
-              <p 
-                className={`text-xs mt-2 ${
-                  stat.changeType === "positive" 
-                    ? "text-green-400" 
-                    : stat.changeType === "negative"
-                    ? "text-red-400"
-                    : "text-blue-400"
-                }`}
-              >
-                <i className={`fas ${
-                  stat.changeType === "positive" 
-                    ? "fa-arrow-up" 
-                    : stat.changeType === "negative"
-                    ? "fa-arrow-down"
-                    : "fa-shield-alt"
-                } mr-1`}></i>
-                {stat.change}
-              </p>
-            </div>
-            <div className={`w-12 h-12 ${stat.iconBg} rounded-lg flex items-center justify-center`}>
-              <i className={`${stat.icon} ${stat.iconColor} text-lg`}></i>
+          <div className="relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-20 h-20 premium-gradient rounded-bl-full opacity-20"></div>
+            <div className="flex items-center justify-between relative z-10">
+              <div>
+                <p className="text-slate-400 text-sm font-medium mb-2 uppercase tracking-wide">
+                  {stat.title}
+                </p>
+                <p 
+                  className="text-3xl font-bold text-white mb-1 group-hover:text-gradient transition-all duration-300"
+                  data-testid={`text-${stat.title.toLowerCase().replace(/\s+/g, '-')}-value`}
+                >
+                  {isLoading ? "..." : stat.value}
+                </p>
+                <div className="flex items-center space-x-2">
+                  <p 
+                    className={`text-sm font-semibold px-2 py-1 rounded-full ${
+                      stat.changeType === "positive" 
+                        ? "bg-green-500/20 text-green-400" 
+                        : stat.changeType === "negative"
+                        ? "bg-red-500/20 text-red-400"
+                        : "bg-slate-500/20 text-slate-400"
+                    }`}
+                  >
+                    <i className={`fas ${
+                      stat.changeType === "positive" 
+                        ? "fa-arrow-up" 
+                        : stat.changeType === "negative"
+                        ? "fa-arrow-down"
+                        : "fa-shield-alt"
+                    } mr-1`}></i>
+                    {stat.change}
+                  </p>
+                  <span className="text-xs text-slate-500">vs last period</span>
+                </div>
+              </div>
+              <div className={`text-4xl ${stat.iconColor} group-hover:scale-110 transition-transform duration-300 animate-float`}>
+                <i className={`${stat.icon} ${stat.iconBg} rounded-lg p-3`}></i>
+              </div>
             </div>
           </div>
         </div>
