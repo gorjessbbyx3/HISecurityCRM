@@ -1,8 +1,9 @@
+
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Header() {
-  const { logout, user } = useAuth();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -19,7 +20,7 @@ export default function Header() {
 
         <div className="flex items-center space-x-4">
           <span className="text-sm text-gray-600">
-            Welcome, {user?.firstName || user?.username}
+            Welcome, {user?.firstName || user?.username || 'User'}
           </span>
           <Button
             variant="outline"
