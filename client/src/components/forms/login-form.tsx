@@ -32,8 +32,11 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
       const success = await login({ username, password });
 
       if (success) {
-        console.log('Navigating to dashboard...');
-        onLoginSuccess(); // Use the callback instead of direct navigation
+        console.log('Login successful, calling onLoginSuccess...');
+        // Clear form data on success
+        setUsername('');
+        setPassword('');
+        onLoginSuccess();
       } else {
         setError('Login failed. Please check your credentials.');
       }

@@ -99,6 +99,12 @@ export function useAuth() {
   }, []);
 
   const login = async (credentials: { username: string; password: string }) => {
+    // Prevent multiple simultaneous login attempts
+    if (authState.isLoading) {
+      console.log('Login already in progress, ignoring request');
+      return false;
+    }
+
     try {
       setAuthStateInternal({ isLoading: true, error: null });
 

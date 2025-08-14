@@ -137,5 +137,33 @@ export async function loginHandler(credentials: { username: string; password: st
 }
 
 export async function setupMemoryAuth(app: Express) {
+  // Login route
+  app.post('/api/auth/login', async (req, res) => {
+    console.log('🔐 Login attempt for:', req.body.username);
+    
+    const result = await loginHandler(req.body, { getStaffMembers: async () => [] });
+    
+    if (result.success) {
+      console.log('✅ User logged in successfully:', req.body.username);
+      return res.json(result);
+    } else {
+      console.log('❌ Login failed for:', req.body.username);
+      return res.status(401).json(result);
+    }
+  });
+
+  // Auth status route
+  app.get('/api/auth/status', authenticateToken, (req, res) => {
+    res.json({
+      authenticated: true,
+      user: req.user
+    });
+  });
+
+  // Logout route
+  app.post('/api/auth/logout', (req, res) => {
+    res.json({ success: true, message: 'Logout successful' });
+  });
+
   console.log("✅ Memory-based JWT authentication configured");
 }
