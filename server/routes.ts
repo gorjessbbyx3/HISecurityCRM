@@ -56,7 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verify token and return user info if valid
-      const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+      const jwtSecret = process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET || process.env.SESSION_SECRET;
       if (!jwtSecret) {
         return res.json({ authenticated: false });
       }
@@ -65,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = jwt.default.verify(token, jwtSecret);
       res.json({ authenticated: true, user });
     } catch (error) {
-      console.error('Auth status error:', error);
+      console.error('❌ Auth status error:', error);
       res.json({ authenticated: false });
     }
   });

@@ -138,7 +138,7 @@ export function useAuth() {
         isAuthenticated: false,
         error: errorMessage,
       });
-      return { success: false, error: errorMessage };
+      return false; // Return consistent boolean for failure
     }
   };
 
