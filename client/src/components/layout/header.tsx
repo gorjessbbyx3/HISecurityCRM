@@ -1,12 +1,17 @@
 
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Header() {
   const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -26,6 +31,7 @@ export default function Header() {
             variant="outline"
             size="sm"
             onClick={handleLogout}
+            className="hover:bg-gray-50"
           >
             Logout
           </Button>
