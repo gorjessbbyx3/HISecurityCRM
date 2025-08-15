@@ -21,7 +21,7 @@ externalPort = 5173
 PORT = "5000"
 
 [workflows]
-runButton = "Start application"
+runButton = "Development Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -40,6 +40,19 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Development Server"
+author = 46438814
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
 
 [agent]
 integrations = ["javascript_supabase==1.0.0", "javascript_mem_db==1.0.0"]
