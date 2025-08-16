@@ -8,7 +8,18 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Middleware for parsing JSON and URL-encoded data
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ 
+  limit: '50mb',
+  strict: false,
+  verify: (req, res, buf) => {
+    try {
+      JSON.parse(buf.toString());
+    } catch (e) {
+      console.error('JSON parse error in middleware:', e.message);
+      console.error('Raw body:', buf.toString());
+    }
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // CORS middleware

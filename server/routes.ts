@@ -43,6 +43,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Memory Auth setup
+  // Always use memory auth for now since we're having database issues
+  console.log('🔧 Setting up memory-based authentication...');
   await setupMemoryAuth(app);
 
   // Authentication status endpoint

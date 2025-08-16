@@ -139,16 +139,43 @@ export async function loginHandler(credentials: { username: string; password: st
 export async function setupMemoryAuth(app: Express) {
   // Login route
   app.post('/api/auth/login', async (req, res) => {
-    console.log('🔐 Login attempt for:', req.body.username);
-    
-    const result = await loginHandler(req.body, { getStaffMembers: async () => [] });
-    
-    if (result.success) {
-      console.log('✅ User logged in successfully:', req.body.username);
-      return res.json(result);
-    } else {
-      console.log('❌ Login failed for:', req.body.username);
-      return res.status(401).json(result);
+    try {
+      console.log('Login attempt with body:', req.body);
+      console.log('Content-Type:', req.headers['content-type']);
+
+      let username, password;
+
+      // Handle different content types
+      if (typeof req.body === 'string') {
+        try {
+          const parsed = JSON.parse(req.body);
+          username = parsed.username;
+          password = parsed.password;
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          return res.status(400).json({ message: 'Invalid JSON format' });
+        }
+      } else if (typeof req.body === 'object') {
+        username = req.body.username;
+        password = req.body.password;
+      } else {
+        return res.status(400).json({ message: 'Invalid request format' });
+      }
+
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password required' });
+      }
+
+      const result = await loginHandler({ username, password });
+
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(401).json({ message: result.message });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ message: 'Internal server error' });
     }
   });
 
