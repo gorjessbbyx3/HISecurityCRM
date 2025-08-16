@@ -154,7 +154,7 @@ export default function IncidentForm({ initialData, onSaved, onCancel }: Inciden
         <h3 class="text-white font-semibold mb-4">Add Photo URL</h3>
         <div class="mb-4"></div>
         <div class="flex space-x-3">
-          <button class="add-btn bg-gold-500 hover:bg-gold-600 text-black px-4 py-2 rounded font-medium">Add</button>
+          <button class="add-btn bg-amber-500 hover:bg-amber-600 text-black px-4 py-2 rounded font-medium">Add</button>
           <button class="cancel-btn bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded">Cancel</button>
         </div>
       </div>
@@ -399,7 +399,7 @@ export default function IncidentForm({ initialData, onSaved, onCancel }: Inciden
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
-                    className="border-slate-600 data-[state=checked]:bg-gold-500 data-[state=checked]:border-gold-500"
+                    className="border-slate-600 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
                     data-testid="checkbox-police-notified"
                   />
                 </FormControl>
@@ -445,7 +445,7 @@ export default function IncidentForm({ initialData, onSaved, onCancel }: Inciden
           <Button
             type="submit"
             disabled={createIncidentMutation.isPending || updateIncidentMutation.isPending}
-            className="bg-gold-500 hover:bg-gold-600 text-black"
+            className="bg-amber-500 hover:bg-amber-600 text-black"
             data-testid="button-save-incident"
           >
             {createIncidentMutation.isPending || updateIncidentMutation.isPending ? (

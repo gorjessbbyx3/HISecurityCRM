@@ -47,7 +47,7 @@ export function EvidenceGallery() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
           </div>
         </CardContent>
       </Card>
@@ -84,7 +84,7 @@ export function EvidenceGallery() {
         <CardTitle className="text-white">Evidence Gallery</CardTitle>
         <Button 
           size="sm" 
-          className="bg-gold-500 hover:bg-gold-600 text-black"
+          className="bg-amber-500 hover:bg-amber-600 text-black"
           onClick={() => window.location.href = '/crime-intelligence'}
         >
           View All

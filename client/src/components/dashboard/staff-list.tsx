@@ -66,8 +66,8 @@ export default function StaffList() {
                       className="w-10 h-10 rounded-full object-cover border border-slate-600"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-navy-700 flex items-center justify-center border border-slate-600">
-                      <i className="fas fa-user text-gold-500 text-sm"></i>
+                    <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600">
+                      <i className="fas fa-user text-amber-500 text-sm"></i>
                     </div>
                   )}
                   <div>

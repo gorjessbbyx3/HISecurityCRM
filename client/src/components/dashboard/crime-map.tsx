@@ -75,7 +75,7 @@ export default function CrimeMap() {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent"></div>
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center">
-            <i className="fas fa-map-marked-alt text-4xl text-gold-500 mb-3"></i>
+            <i className="fas fa-map-marked-alt text-4xl text-amber-500 mb-3"></i>
             <p className="text-white font-medium">Interactive Crime Map</p>
             <p className="text-slate-400 text-sm">Real-time incident tracking</p>
           </div>

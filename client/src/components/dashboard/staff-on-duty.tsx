@@ -33,8 +33,8 @@ export default function StaffOnDuty() {
                     className="w-8 h-8 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-navy-700 flex items-center justify-center">
-                    <i className="fas fa-user text-gold-500 text-sm"></i>
+                  <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
+                    <i className="fas fa-user text-amber-500 text-sm"></i>
                   </div>
                 )}
                 <div>

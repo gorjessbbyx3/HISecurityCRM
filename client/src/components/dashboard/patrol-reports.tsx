@@ -13,7 +13,7 @@ export default function PatrolReports() {
           Daily Patrol Reports
         </h3>
         <Button
-          className="bg-navy-700 hover:bg-navy-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+          className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
           data-testid="button-create-patrol-report"
         >
           <i className="fas fa-plus mr-2"></i>New Report
@@ -37,8 +37,8 @@ export default function PatrolReports() {
             <div key={report.id} className="border border-slate-600 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-navy-700 flex items-center justify-center">
-                    <i className="fas fa-user text-gold-500"></i>
+                  <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center">
+                    <i className="fas fa-user text-amber-500"></i>
                   </div>
                   <div>
                     <p className="text-white font-medium text-sm">

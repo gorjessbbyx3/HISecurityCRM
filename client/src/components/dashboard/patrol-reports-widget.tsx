@@ -22,13 +22,13 @@ export default function PatrolReportsWidget() {
   const recentReports = reports?.slice(0, 2) || [];
 
   return (
-    <div className="security-card p-6">
+    <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white" data-testid="text-patrol-reports-title">
           Daily Patrol Reports
         </h3>
         <Button 
-          className="btn-primary-security text-sm font-medium" 
+          className="bg-amber-500 hover:bg-amber-600 text-black text-sm font-medium" 
           data-testid="button-new-patrol-report"
         >
           <Plus className="mr-2 h-4 w-4" />

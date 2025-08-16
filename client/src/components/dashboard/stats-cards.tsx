@@ -52,19 +52,18 @@ export default function StatsCards() {
       {displayStats.map((stat, index) => (
         <div 
           key={index} 
-          className="glass-card border border-slate-600 rounded-xl p-6 hover:glass-card-hover hover:shadow-xl transition-all duration-300 group animate-scale-in"
-          style={{ animationDelay: `${index * 100}ms` }}
+          className="bg-slate-800 border border-slate-600 rounded-xl p-6 hover:bg-slate-700 hover:shadow-xl transition-all duration-300 group"
           data-testid={`card-${stat.title.toLowerCase().replace(/\s+/g, '-')}`}
         >
           <div className="relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-20 h-20 premium-gradient rounded-bl-full opacity-20"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-400/20 to-amber-600/20 rounded-bl-full opacity-50"></div>
             <div className="flex items-center justify-between relative z-10">
               <div>
                 <p className="text-slate-400 text-sm font-medium mb-2 uppercase tracking-wide">
                   {stat.title}
                 </p>
                 <p 
-                  className="text-3xl font-bold text-white mb-1 group-hover:text-gradient transition-all duration-300"
+                  className="text-3xl font-bold text-white mb-1 group-hover:text-amber-400 transition-all duration-300"
                   data-testid={`text-${stat.title.toLowerCase().replace(/\s+/g, '-')}-value`}
                 >
                   {isLoading ? "..." : stat.value}
@@ -91,8 +90,8 @@ export default function StatsCards() {
                   <span className="text-xs text-slate-500">vs last period</span>
                 </div>
               </div>
-              <div className={`text-4xl ${stat.iconColor} group-hover:scale-110 transition-transform duration-300 animate-float`}>
-                <i className={`${stat.icon} ${stat.iconBg} rounded-lg p-3`}></i>
+              <div className={`w-12 h-12 ${stat.iconBg} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                <i className={`${stat.icon} ${stat.iconColor} text-xl`}></i>
               </div>
             </div>
           </div>
