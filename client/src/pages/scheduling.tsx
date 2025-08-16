@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Layout from "@/components/layout/layout";
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,32 +65,32 @@ export default function Scheduling() {
 
   if (isLoading) {
     return (
-      <Layout>
+      
         <div className="p-6 flex items-center justify-center">
           <div className="text-center">
             <i className="fas fa-calendar-alt text-4xl text-gold-500 mb-4 animate-pulse"></i>
             <p className="text-white">Loading schedules...</p>
           </div>
         </div>
-      </Layout>
+      
     );
   }
 
   if (error) {
     return (
-      <Layout>
+      
         <div className="p-6">
           <div className="text-center text-red-400">
             <i className="fas fa-exclamation-triangle text-4xl mb-4"></i>
             <p>Error loading schedule data. Please try again.</p>
           </div>
         </div>
-      </Layout>
+      
     );
   }
 
   return (
-    <Layout>
+    
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-white">Staff Scheduling</h1>
@@ -216,6 +216,6 @@ export default function Scheduling() {
           </Card>
         </div>
       </div>
-    </Layout>
+    
   );
 }

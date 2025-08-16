@@ -1,5 +1,5 @@
 
-import Layout from "@/components/layout/layout";
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -64,7 +64,7 @@ export default function HawaiiLaw() {
   ];
 
   return (
-    <Layout>
+    
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-white">Hawaii Guard Card Law</h1>
@@ -140,6 +140,6 @@ export default function HawaiiLaw() {
           </div>
         </Card>
       </div>
-    </Layout>
+    
   );
 }

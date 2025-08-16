@@ -227,7 +227,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                 >
                   <div className="flex items-center gap-3 w-full">
                     <Avatar className="w-10 h-10 border-2 border-slate-700">
-                      <AvatarImage src={user?.profileImageUrl} />
+                      <AvatarImage src="" />
                       <AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-slate-900 font-semibold">
                         {user?.firstName?.[0] || user?.username?.[0] || 'U'}
                       </AvatarFallback>
@@ -243,9 +243,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                         <Badge variant="secondary" className="text-xs bg-amber-500/20 text-amber-400 border-amber-500/30">
                           {user?.role || 'Officer'}
                         </Badge>
-                        {user?.badge && (
-                          <span className="text-xs text-slate-400">#{user.badge}</span>
-                        )}
+
                       </div>
                     </div>
                   </div>

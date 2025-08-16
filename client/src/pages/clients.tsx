@@ -1,6 +1,5 @@
 
 import { useQuery } from "@tanstack/react-query";
-import Layout from "@/components/layout/layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -42,32 +41,27 @@ export default function Clients() {
 
   if (isLoading) {
     return (
-      <Layout>
-        <div className="p-6 flex items-center justify-center">
-          <div className="text-center">
-            <i className="fas fa-building text-4xl text-gold-500 mb-4 animate-pulse"></i>
-            <p className="text-white">Loading clients...</p>
-          </div>
+      <div className="p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin mb-4"></div>
+          <p className="text-white">Loading clients...</p>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Layout>
-        <div className="p-6">
-          <div className="text-center text-red-400">
-            <i className="fas fa-exclamation-triangle text-4xl mb-4"></i>
-            <p>Error loading client data. Please try again.</p>
-          </div>
+      <div className="p-6">
+        <div className="text-center text-red-400">
+          <p>Error loading client data. Please try again.</p>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout>
+    <div className="p-6 space-y-6">
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-white">Clients</h1>
@@ -157,6 +151,6 @@ export default function Clients() {
           </div>
         </Card>
       </div>
-    </Layout>
+    </div>
   );
 }

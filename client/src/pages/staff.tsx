@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import Layout from "@/components/layout/layout";
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,19 +51,19 @@ export default function Staff() {
 
   if (isLoading) {
     return (
-      <Layout>
+      
         <div className="p-6 flex items-center justify-center">
           <div className="text-center">
             <i className="fas fa-users text-4xl text-gold-500 mb-4 animate-pulse"></i>
             <p className="text-white">Loading staff overview...</p>
           </div>
         </div>
-      </Layout>
+      
     );
   }
 
   return (
-    <Layout>
+    
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-white">Staff Overview</h1>
@@ -207,6 +207,6 @@ export default function Staff() {
           </div>
         </Card>
       </div>
-    </Layout>
+    
   );
 }

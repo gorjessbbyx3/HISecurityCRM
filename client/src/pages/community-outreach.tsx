@@ -1,5 +1,5 @@
 
-import Layout from "@/components/layout/layout";
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -68,7 +68,7 @@ export default function CommunityOutreach() {
   ];
 
   return (
-    <Layout>
+    
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-white">Community Outreach</h1>
@@ -176,6 +176,6 @@ export default function CommunityOutreach() {
           </div>
         </Card>
       </div>
-    </Layout>
+    
   );
 }

@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import Header from "@/components/layout/header";
-import Sidebar from "@/components/layout/sidebar";
-import Layout from "@/components/layout/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -203,7 +200,7 @@ export default function LawReference() {
   ];
 
   return (
-    <Layout>
+    <div className="min-h-screen bg-slate-900">
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-white">Hawaii Law Reference</h1>
@@ -273,6 +270,6 @@ export default function LawReference() {
           </div>
         </Card>
       </div>
-    </Layout>
+    </div>
   );
 }
