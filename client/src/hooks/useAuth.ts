@@ -98,53 +98,67 @@ export function useAuth() {
     setIsLoading(false);
   }, []);
 
-  const login = async (credentials: { username: string; password: string }) => {
-    // Prevent multiple simultaneous login attempts
-    if (authState.isLoading) {
-      console.log('Login already in progress, ignoring request');
-      return false;
-    }
+  const login = async (username: string, password: string) => {
+    console.log('🔐 Attempting login for:', username);
+    setAuthStateInternal({ user: null, isLoading: true, isAuthenticated: false, error: null });
 
     try {
-      setAuthStateInternal({ isLoading: true, error: null });
+      const loginData = { username, password };
+      console.log('Sending login data:', loginData);
 
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(loginData),
       });
 
-      const data = await response.json();
+      console.log('Login response status:', response.status);
+      console.log('Login response headers:', response.headers.get('content-type'));
 
-      if (response.ok && data.success && data.token) {
-        setToken(data.token);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Login error response:', errorText);
+
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: `Login failed (${response.status})` };
+        }
+
+        throw new Error(errorData.message || 'Login failed');
+      }
+
+      const responseText = await response.text();
+      console.log('Login response text:', responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse login response:', parseError);
+        throw new Error('Invalid server response');
+      }
+
+      if (data.success && data.token && data.user) {
+        localStorage.setItem('token', data.token);
         setAuthStateInternal({
           user: data.user,
           isLoading: false,
           isAuthenticated: true,
           error: null,
         });
-        return true; // Return boolean for success
+        console.log('✅ Login successful');
       } else {
-        setAuthStateInternal({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-          error: data.message || 'Login failed',
-        });
-        return false; // Return boolean for failure
+        throw new Error(data.message || 'Login failed');
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      setAuthStateInternal({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        error: errorMessage,
-      });
-      return false; // Return consistent boolean for failure
+    } catch (err) {
+      console.error('❌ Login error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      setAuthStateInternal({ user: null, isLoading: false, isAuthenticated: false, error: errorMessage });
     }
   };
 

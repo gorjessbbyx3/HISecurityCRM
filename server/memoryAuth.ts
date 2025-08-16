@@ -85,10 +85,16 @@ export function generateToken(user: any): string {
 }
 
 // Login handler
-export async function loginHandler(credentials: { username: string; password: string }, storage: any) {
+export async function loginHandler(credentials: { username: string; password: string }, storage?: any) {
   const { username, password } = credentials;
   try {
     console.log('🔐 Attempting login for:', username);
+    console.log('🔐 Credentials received:', { username: username, passwordLength: password?.length });
+
+    if (!username || !password) {
+      console.log('❌ Missing username or password');
+      return { success: false, message: 'Username and password are required' };
+    }
 
     // Check against default credentials first
     if (username === DEFAULT_CREDENTIALS.username && password === DEFAULT_CREDENTIALS.password) {
