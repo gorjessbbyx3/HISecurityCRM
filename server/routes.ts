@@ -47,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log('🔧 Setting up memory-based authentication...');
   await setupMemoryAuth(app);
 
-  // Authentication status endpoint
+  // Authentication status endpoint (handled by memoryAuth)
   app.get('/api/auth/status', async (req: Request, res: Response) => {
     try {
       const authHeader = req.headers['authorization'];

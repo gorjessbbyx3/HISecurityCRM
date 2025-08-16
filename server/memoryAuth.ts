@@ -143,6 +143,37 @@ export async function loginHandler(credentials: { username: string; password: st
 }
 
 export async function setupMemoryAuth(app: Express) {
+  // Auth status route
+  app.get('/api/auth/status', (req, res) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.json({ authenticated: false });
+    }
+
+    if (!jwtSecret) {
+      return res.json({ authenticated: false });
+    }
+
+    jwt.verify(token, jwtSecret, (err: any, user: any) => {
+      if (err) {
+        return res.json({ authenticated: false });
+      }
+      res.json({ 
+        authenticated: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role
+        }
+      });
+    });
+  });
+
   // Login route
   app.post('/api/auth/login', async (req, res) => {
     try {

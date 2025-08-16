@@ -144,7 +144,7 @@ export function useAuth() {
       }
 
       if (data.success && data.token && data.user) {
-        localStorage.setItem('token', data.token);
+        localStorage.setItem('auth_token', data.token);
         setAuthStateInternal({
           user: data.user,
           isLoading: false,
