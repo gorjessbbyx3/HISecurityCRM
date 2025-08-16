@@ -22,11 +22,11 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const result = await login(username, password);
-      if (result.success) {
+      const success = await login({ username, password });
+      if (success) {
         setLocation("/dashboard");
       } else {
-        setError(result.message || "Invalid credentials");
+        setError("Invalid credentials. Please try again.");
       }
     } catch (err) {
       setError("Login failed. Please try again.");
