@@ -9,7 +9,7 @@ import ProfessionalLayout from "@/components/layout/professional-layout";
 
 // Pages
 import Login from "@/pages/login";
-import Dashboard from "@/pages/dashboard";
+import Dashboard from "@/pages/ultimate-dashboard";
 import Staff from "@/pages/staff";
 import Clients from "@/pages/clients";
 import Properties from "@/pages/properties";
