@@ -235,7 +235,7 @@ export default function UltimateDashboard() {
           </div>
       </div>
 
-      {/* Emergency Alerts */}
+        {/* Emergency Alerts */}
         {stats?.emergencyAlerts && stats.emergencyAlerts.length > 0 && (
           <div className="space-y-4">
             <h3 className="font-agency font-bold text-white flex items-center gap-3">
