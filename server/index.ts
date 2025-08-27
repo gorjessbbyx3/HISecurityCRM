@@ -15,7 +15,7 @@ app.use(express.json({
     try {
       JSON.parse(buf.toString());
     } catch (e) {
-      console.error('JSON parse error in middleware:', e.message);
+      console.error('JSON parse error in middleware:', (e as Error).message);
       console.error('Raw body:', buf.toString());
     }
   }
