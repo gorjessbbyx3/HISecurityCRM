@@ -3,6 +3,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* High-tech intelligence theme overrides */
+.bg-slate-950, .bg-slate-900, .bg-slate-800 {
+  background: linear-gradient(135deg, #0c1631 0%, #1a2951 50%, #2d4a6b 100%) !important;
+}
+
+.border-slate-700, .border-slate-600 {
+  border-color: rgba(34, 211, 238, 0.3) !important;
+}
+
+.text-slate-400, .text-slate-300 {
+  color: rgba(34, 211, 238, 0.8) !important;
+}
+
 /* Custom styles for vertical navigation menu */
 [data-orientation="vertical"] [data-radix-navigation-menu-list] {
   flex-direction: column;

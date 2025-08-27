@@ -133,7 +133,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex overflow-hidden">
+    <div className="h-screen flex overflow-hidden" style={{background: 'linear-gradient(135deg, #0c1631 0%, #1a2951 50%, #2d4a6b 100%)'}}>
       {/* Sidebar */}
       <div className={`
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
