@@ -209,9 +209,9 @@ export default function UltimateDashboard() {
           <div>
             <h2 className="mb-2">Tactical Overview</h2>
             <p className="text-slate-400">Real-time security intelligence dashboard</p>
-          </div></div>
-        
-        <div className="flex items-center gap-4">
+          </div>
+          
+          <div className="flex items-center gap-4">
             <select
               value={selectedTimeRange}
               onChange={(e) => setSelectedTimeRange(e.target.value)}
@@ -233,7 +233,7 @@ export default function UltimateDashboard() {
               REFRESH INTEL
             </button>
           </div>
-      </div>
+        </div>
 
         {/* Emergency Alerts */}
         {stats?.emergencyAlerts && stats.emergencyAlerts.length > 0 && (
