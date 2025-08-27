@@ -133,25 +133,25 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
   };
 
   return (
-    <div className="h-screen bg-slate-950 flex overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex overflow-hidden">
       {/* Sidebar */}
       <div className={`
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        fixed inset-y-0 left-0 z-50 w-80 bg-slate-900/95 backdrop-blur-sm border-r border-slate-700/50
+        fixed inset-y-0 left-0 z-50 w-80 bg-gradient-to-b from-blue-900/95 to-indigo-900/95 backdrop-blur-sm border-r border-cyan-500/30 shadow-lg shadow-cyan-500/20
         transform transition-transform duration-300 ease-in-out
         lg:translate-x-0 lg:static lg:inset-0
       `}>
         <div className="flex flex-col h-full">
           {/* Logo Header */}
-          <div className="p-6 border-b border-slate-700/50">
+          <div className="p-6 border-b border-cyan-500/30 bg-gradient-to-r from-blue-800/30 to-cyan-700/30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-slate-900" />
+                <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-400/50">
+                  <Shield className="w-6 h-6 text-blue-900" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white">Hawaii Security</h1>
-                  <p className="text-xs text-slate-400">Command Center</p>
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">Hawaii Security</h1>
+                  <p className="text-xs text-cyan-400">Command Center</p>
                 </div>
               </div>
               <Button
@@ -167,15 +167,15 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
           </div>
 
           {/* Search */}
-          <div className="p-4 border-b border-slate-700/30">
+          <div className="p-4 border-b border-cyan-500/20">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-500 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search features..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 text-sm"
+                className="w-full pl-10 pr-4 py-2 bg-blue-900/50 border border-cyan-500/30 rounded-lg text-cyan-100 placeholder:text-cyan-400/70 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 text-sm focus:bg-blue-800/50 transition-all shadow-inner"
                 data-testid="input-search"
               />
             </div>
@@ -194,41 +194,41 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                   className={`
                     group flex items-center justify-between p-3 rounded-xl transition-all duration-200
                     ${active
-                      ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/30 text-amber-400'
-                      : 'text-slate-300 hover:bg-slate-800/50 hover:text-white border border-transparent'
+                      ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 text-cyan-300 shadow-lg shadow-cyan-500/20'
+                      : 'text-cyan-200 hover:bg-blue-800/40 hover:text-cyan-100 border border-transparent hover:border-cyan-500/20'
                     }
                   `}
                   onClick={() => setSidebarOpen(false)}
                   data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-5 h-5 ${active ? 'text-amber-400' : 'text-slate-400 group-hover:text-white'}`} />
+                    <Icon className={`w-5 h-5 ${active ? 'text-cyan-300' : 'text-cyan-400 group-hover:text-cyan-200'}`} />
                     <div>
                       <div className="font-medium text-sm">{item.name}</div>
-                      <div className={`text-xs ${active ? 'text-amber-300/70' : 'text-slate-500'}`}>
+                      <div className={`text-xs ${active ? 'text-cyan-300/80' : 'text-cyan-500/70'}`}>
                         {item.description}
                       </div>
                     </div>
                   </div>
-                  <ChevronRight className={`w-4 h-4 transition-transform ${active ? 'text-amber-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                  <ChevronRight className={`w-4 h-4 transition-transform ${active ? 'text-cyan-300' : 'text-cyan-500/70 group-hover:text-cyan-400'}`} />
                 </Link>
               );
             })}
           </nav>
 
           {/* User Profile */}
-          <div className="p-4 border-t border-slate-700/50">
+          <div className="p-4 border-t border-cyan-500/30">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost" 
-                  className="w-full p-3 h-auto justify-start hover:bg-slate-800/50"
+                  className="w-full p-3 h-auto justify-start hover:bg-blue-800/40 hover:border-cyan-500/20"
                   data-testid="button-user-menu"
                 >
                   <div className="flex items-center gap-3 w-full">
-                    <Avatar className="w-10 h-10 border-2 border-slate-700">
+                    <Avatar className="w-10 h-10 border-2 border-cyan-500/50">
                       <AvatarImage src="" />
-                      <AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-slate-900 font-semibold">
+                      <AvatarFallback className="bg-gradient-to-br from-cyan-400 to-blue-500 text-blue-900 font-semibold">
                         {user?.firstName?.[0] || user?.username?.[0] || 'U'}
                       </AvatarFallback>
                     </Avatar>
@@ -240,7 +240,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                         }
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs bg-amber-500/20 text-amber-400 border-amber-500/30">
+                        <Badge variant="secondary" className="text-xs bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
                           {user?.role || 'Officer'}
                         </Badge>
 
@@ -249,21 +249,21 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-slate-800 border-slate-700">
-                <DropdownMenuLabel className="text-slate-300">My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-slate-700" />
-                <DropdownMenuItem className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700" data-testid="menu-profile">
+              <DropdownMenuContent align="end" className="w-56 bg-blue-900/95 border-cyan-500/30 backdrop-blur-sm">
+                <DropdownMenuLabel className="text-cyan-300">My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-cyan-500/30" />
+                <DropdownMenuItem className="text-cyan-300 hover:bg-blue-800/50 focus:bg-blue-800/50" data-testid="menu-profile">
                   <Settings className="mr-2 h-4 w-4" />
                   Profile Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700" data-testid="menu-notifications">
+                <DropdownMenuItem className="text-cyan-300 hover:bg-blue-800/50 focus:bg-blue-800/50" data-testid="menu-notifications">
                   <Bell className="mr-2 h-4 w-4" />
                   Notifications
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-slate-700" />
+                <DropdownMenuSeparator className="bg-cyan-500/30" />
                 <DropdownMenuItem 
                   onClick={handleLogout}
-                  className="text-red-400 hover:bg-slate-700 focus:bg-slate-700"
+                  className="text-red-400 hover:bg-blue-800/50 focus:bg-blue-800/50"
                   data-testid="menu-logout"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
@@ -286,7 +286,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="bg-slate-900/50 backdrop-blur-sm border-b border-slate-700/50 px-6 py-4">
+        <header className="bg-gradient-to-r from-blue-900/50 to-indigo-900/50 backdrop-blur-sm border-b border-cyan-500/30 px-6 py-4 shadow-lg shadow-cyan-500/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
@@ -328,7 +328,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto bg-slate-950">
+        <main className="flex-1 overflow-auto bg-gradient-to-br from-blue-950 to-indigo-950">
           {children}
         </main>
       </div>
