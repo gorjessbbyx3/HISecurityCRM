@@ -181,288 +181,305 @@ export default function UltimateDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-slate-950 min-h-screen">
-      {/* Header Controls */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Command Center</h1>
-          <p className="text-slate-400">Real-time security operations overview</p>
+    <div className="min-h-screen">
+      {/* Intelligence Agency Header */}
+      <header className="agency-header">
+        <div className="container-fluid py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="agency-logo">STREET PATROL</div>
+              <div className="h-8 w-px bg-gradient-to-b from-transparent via-green-400 to-transparent"></div>
+              <div>
+                <h1 className="text-2xl font-agency font-bold text-white">COMMAND CENTER</h1>
+                <p className="text-sm text-slate-400 font-medium">Intelligence Operations Division</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="status-indicator status-online">
+                <span>SYSTEM ONLINE</span>
+              </div>
+            </div>
+          </div>
         </div>
+      </header>
+
+      <div className="container-fluid section-padding space-y-8">
+        {/* Header Controls */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="mb-2">Tactical Overview</h2>
+            <p className="text-slate-400">Real-time security intelligence dashboard</p>
+          </div></div>
         
         <div className="flex items-center gap-4">
-          <select
-            value={selectedTimeRange}
-            onChange={(e) => setSelectedTimeRange(e.target.value)}
-            className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
-            data-testid="select-time-range"
-          >
-            <option value="1h">Last Hour</option>
-            <option value="24h">Last 24 Hours</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-          </select>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] })}
-            className="border-slate-700 text-slate-300 hover:bg-slate-800"
-            data-testid="button-refresh"
-          >
-            <Activity className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
+            <select
+              value={selectedTimeRange}
+              onChange={(e) => setSelectedTimeRange(e.target.value)}
+              className="bg-glass border border-glow rounded-lg px-3 py-2 text-white text-sm font-agency backdrop-blur-md"
+              data-testid="select-time-range"
+            >
+              <option value="1h">LAST HOUR</option>
+              <option value="24h">LAST 24 HOURS</option>
+              <option value="7d">LAST 7 DAYS</option>
+              <option value="30d">LAST 30 DAYS</option>
+            </select>
+            
+            <button
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] })}
+              className="btn-secondary px-4 py-2 rounded-lg text-sm font-medium"
+              data-testid="button-refresh"
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              REFRESH INTEL
+            </button>
+          </div>
       </div>
 
       {/* Emergency Alerts */}
-      {stats?.emergencyAlerts && stats.emergencyAlerts.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Siren className="w-5 h-5 text-red-400" />
-            Active Alerts
-          </h2>
-          <div className="grid gap-3">
-            {stats.emergencyAlerts.map((alert) => (
-              <div
-                key={alert.id}
-                className={`p-4 rounded-xl border ${getAlertColor(alert.type)} flex items-center justify-between`}
-                data-testid={`alert-${alert.type}`}
-              >
-                <div className="flex items-center gap-3">
-                  <AlertOctagon className="w-5 h-5" />
-                  <div>
-                    <h4 className="font-semibold">{alert.title}</h4>
-                    <p className="text-sm opacity-80">{alert.description}</p>
-                    {alert.location && (
-                      <p className="text-xs opacity-60 mt-1">📍 {alert.location}</p>
-                    )}
+        {stats?.emergencyAlerts && stats.emergencyAlerts.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="font-agency font-bold text-white flex items-center gap-3">
+              <Siren className="w-6 h-6 text-red-400 animate-pulse" />
+              ACTIVE THREAT ALERTS
+            </h3>
+            <div className="system-grid">
+              {stats.emergencyAlerts.map((alert) => (
+                <div
+                  key={alert.id}
+                  className={`intel-card p-6 ${getAlertColor(alert.type)} animate-fade-in-up`}
+                  data-testid={`alert-${alert.type}`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <AlertOctagon className="w-6 h-6 animate-pulse" />
+                      <div>
+                        <h4 className="font-agency font-bold text-lg">{alert.title}</h4>
+                        <p className="text-sm opacity-90 mt-1">{alert.description}</p>
+                      </div>
+                    </div>
+                    <Badge className={`status-indicator ${alert.type === 'critical' ? 'status-offline' : 'status-degraded'} text-xs font-agency`}>
+                      {alert.status.toUpperCase()}
+                    </Badge>
                   </div>
-                </div>
-                <div className="text-right">
-                  <Badge variant="outline" className="mb-2">
-                    {alert.status.toUpperCase()}
-                  </Badge>
-                  <p className="text-xs opacity-60">
-                    {format(new Date(alert.timestamp), 'HH:mm')}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* System Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <h2 className="lg:col-span-5 text-lg font-semibold text-white flex items-center gap-2">
-          <Shield className="w-5 h-5 text-amber-400" />
-          System Status
-        </h2>
-        
-        {stats?.systemStatus && Object.entries(stats.systemStatus).map(([system, status]) => (
-          <div
-            key={system}
-            className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50"
-            data-testid={`system-${system}`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-slate-300 capitalize">{system}</span>
-              <div className={`w-2 h-2 rounded-full ${getStatusColor(status).split(' ')[1]}`} />
-            </div>
-            <p className={`text-xs ${getStatusColor(status).split(' ')[0]} font-medium uppercase tracking-wide`}>
-              {status}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Active Operations */}
-        <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/70 transition-colors">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-white text-sm font-medium">Active Patrols</CardTitle>
-              <Radio className="w-5 h-5 text-blue-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white mb-1" data-testid="stat-active-patrols">
-              {stats?.activePatrols || 0}
-            </div>
-            <p className="text-xs text-slate-400">Currently deployed</p>
-            <Link href="/patrol-reports">
-              <Button variant="ghost" size="sm" className="w-full mt-3 text-blue-400 hover:bg-blue-400/10">
-                View Patrols
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        {/* Staff Status */}
-        <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/70 transition-colors">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-white text-sm font-medium">On-Duty Staff</CardTitle>
-              <UserCheck className="w-5 h-5 text-green-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white mb-1" data-testid="stat-on-duty-staff">
-              {stats?.onDutyStaff || 0}/{stats?.totalStaff || 0}
-            </div>
-            <p className="text-xs text-slate-400">Personnel available</p>
-            <Link href="/staff">
-              <Button variant="ghost" size="sm" className="w-full mt-3 text-green-400 hover:bg-green-400/10">
-                Manage Staff
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        {/* Incident Management */}
-        <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/70 transition-colors">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-white text-sm font-medium">Open Incidents</CardTitle>
-              <AlertTriangle className="w-5 h-5 text-orange-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white mb-1" data-testid="stat-open-incidents">
-              {stats?.openIncidents || 0}
-            </div>
-            <p className="text-xs text-slate-400">Requiring attention</p>
-            <Link href="/reports">
-              <Button variant="ghost" size="sm" className="w-full mt-3 text-orange-400 hover:bg-orange-400/10">
-                View Incidents
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        {/* Revenue */}
-        <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/70 transition-colors">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-white text-sm font-medium">Monthly Revenue</CardTitle>
-              <DollarSign className="w-5 h-5 text-amber-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white mb-1" data-testid="stat-monthly-revenue">
-              ${(stats?.monthlyRevenue || 0).toLocaleString()}
-            </div>
-            <p className="text-xs text-slate-400">Current month</p>
-            <Link href="/accounting">
-              <Button variant="ghost" size="sm" className="w-full mt-3 text-amber-400 hover:bg-amber-400/10">
-                View Finances
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Performance Metrics */}
-      {stats?.performanceMetrics && (
-        <Card className="bg-slate-800/50 border-slate-700/50">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Target className="w-5 h-5 text-amber-400" />
-              Performance Metrics
-            </CardTitle>
-            <CardDescription className="text-slate-400">
-              Key performance indicators for operational excellence
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-              {Object.entries(stats.performanceMetrics).map(([metric, value]) => (
-                <div key={metric} className="space-y-3" data-testid={`metric-${metric}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-300 capitalize">
-                      {metric.replace(/([A-Z])/g, ' $1').trim()}
+                  {alert.location && (
+                    <div className="flex items-center gap-2 text-sm opacity-80 mb-3">
+                      <MapPin className="w-4 h-4" />
+                      <span className="font-medium">{alert.location}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-agency font-medium">
+                      TIMESTAMP: {format(new Date(alert.timestamp), 'HH:mm:ss')}
                     </span>
-                    <span className="text-lg font-bold text-white">{value}%</span>
-                  </div>
-                  <Progress 
-                    value={value} 
-                    className="h-2 bg-slate-700"
-                  />
-                  <div className="flex items-center gap-1">
-                    {value >= 80 ? (
-                      <TrendingUp className="w-3 h-3 text-green-400" />
-                    ) : value >= 60 ? (
-                      <TrendingDown className="w-3 h-3 text-yellow-400" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3 text-red-400" />
-                    )}
-                    <span className={`text-xs ${
-                      value >= 80 ? 'text-green-400' : 
-                      value >= 60 ? 'text-yellow-400' : 'text-red-400'
-                    }`}>
-                      {value >= 80 ? 'Excellent' : value >= 60 ? 'Good' : 'Needs Improvement'}
+                    <span className="status-indicator status-online">
+                      ACTIVE
                     </span>
                   </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
+
+      {/* System Status */}
+        <div className="space-y-4">
+          <h3 className="font-agency font-bold text-white flex items-center gap-3">
+            <Shield className="w-6 h-6 text-green-400" />
+            SYSTEM STATUS MATRIX
+          </h3>
+          
+          <div className="system-grid">
+            {stats?.systemStatus && Object.entries(stats.systemStatus).map(([system, status]) => (
+              <div
+                key={system}
+                className="intel-card p-6 animate-slide-in"
+                data-testid={`system-${system}`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-lg font-agency font-bold text-white uppercase tracking-wide">{system}</span>
+                  <div className={`w-4 h-4 rounded-full ${getStatusColor(status).split(' ')[1]} animate-pulse`} />
+                </div>
+                <div className={`status-indicator ${
+                  status === 'online' || status === 'connected' || status === 'active' || status === 'operational' || status === 'ready' 
+                    ? 'status-online' 
+                    : status === 'degraded' || status === 'slow' || status === 'limited' || status === 'impaired' || status === 'testing'
+                    ? 'status-degraded'
+                    : 'status-offline'
+                }`}>
+                  <span>{status.toUpperCase()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      {/* Key Metrics Grid */}
+        <div className="space-y-4">
+          <h3 className="font-agency font-bold text-white flex items-center gap-3">
+            <Target className="w-6 h-6 text-amber-400" />
+            OPERATIONAL METRICS
+          </h3>
+          
+          <div className="system-grid">
+            {/* Active Operations */}
+            <div className="intel-card p-6 hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-agency font-bold text-white uppercase tracking-wide">Active Patrols</h4>
+                <Radio className="w-6 h-6 text-blue-400 animate-pulse" />
+              </div>
+              <div className="metric-value mb-2" data-testid="stat-active-patrols">
+                {stats?.activePatrols || 0}
+              </div>
+              <p className="metric-label mb-4">Units Deployed</p>
+              <Link href="/patrol-reports">
+                <button className="btn-secondary w-full py-2 text-sm font-medium">
+                  VIEW PATROLS
+                </button>
+              </Link>
+            </div>
+
+        {/* Staff Status */}
+            <div className="intel-card p-6 hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-agency font-bold text-white uppercase tracking-wide">Personnel</h4>
+                <UserCheck className="w-6 h-6 text-green-400 animate-pulse" />
+              </div>
+              <div className="metric-value mb-2" data-testid="stat-on-duty-staff">
+                {stats?.onDutyStaff || 0}/{stats?.totalStaff || 0}
+              </div>
+              <p className="metric-label mb-4">Active Agents</p>
+              <Link href="/staff">
+                <button className="btn-secondary w-full py-2 text-sm font-medium">
+                  MANAGE STAFF
+                </button>
+              </Link>
+            </div>
+
+            {/* Incident Management */}
+            <div className="intel-card p-6 hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-agency font-bold text-white uppercase tracking-wide">Incidents</h4>
+                <AlertTriangle className="w-6 h-6 text-orange-400 animate-bounce-subtle" />
+              </div>
+              <div className="metric-value mb-2" data-testid="stat-open-incidents">
+                {stats?.openIncidents || 0}
+              </div>
+              <p className="metric-label mb-4">Open Cases</p>
+              <Link href="/reports">
+                <button className="btn-secondary w-full py-2 text-sm font-medium">
+                  VIEW INCIDENTS
+                </button>
+              </Link>
+            </div>
+
+            {/* Revenue */}
+            <div className="intel-card p-6 hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-agency font-bold text-white uppercase tracking-wide">Revenue</h4>
+                <DollarSign className="w-6 h-6 text-amber-400 animate-glow" />
+              </div>
+              <div className="metric-value mb-2" data-testid="stat-monthly-revenue">
+                ${(stats?.monthlyRevenue || 0).toLocaleString()}
+              </div>
+              <p className="metric-label mb-4">Monthly Intake</p>
+              <Link href="/accounting">
+                <button className="btn-secondary w-full py-2 text-sm font-medium">
+                  VIEW FINANCES
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+      {/* Performance Metrics */}
+        {stats?.performanceMetrics && (
+          <div className="intel-card p-8">
+            <div className="mb-6">
+              <h3 className="font-agency font-bold text-white flex items-center gap-3 mb-2">
+                <Target className="w-6 h-6 text-amber-400 animate-glow" />
+                PERFORMANCE MATRIX
+              </h3>
+              <p className="text-slate-400 text-sm">
+                Key performance indicators for operational excellence
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+              {Object.entries(stats.performanceMetrics).map(([metric, value]) => (
+                <div key={metric} className="space-y-4" data-testid={`metric-${metric}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-agency font-medium text-slate-300 uppercase tracking-wide">
+                      {metric.replace(/([A-Z])/g, ' $1').trim()}
+                    </span>
+                    <span className="text-xl font-agency font-bold text-white">{value}%</span>
+                  </div>
+                  
+                  <div className="progress-bar h-3">
+                    <div 
+                      className="progress-fill" 
+                      style={{ width: `${value}%` }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {value >= 80 ? (
+                      <TrendingUp className="w-4 h-4 text-green-400" />
+                    ) : value >= 60 ? (
+                      <TrendingDown className="w-4 h-4 text-yellow-400" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4 text-red-400" />
+                    )}
+                    <span className={`text-xs font-medium ${
+                      value >= 80 ? 'text-green-400' : 
+                      value >= 60 ? 'text-yellow-400' : 'text-red-400'
+                    }`}>
+                      {value >= 80 ? 'OPTIMAL' : value >= 60 ? 'NOMINAL' : 'CRITICAL'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       {/* Quick Actions & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
-        <Card className="bg-slate-800/50 border-slate-700/50">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-400" />
-              Quick Actions
-            </CardTitle>
-            <CardDescription className="text-slate-400">
-              Frequently used operations and emergency procedures
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
+        <div className="system-grid-lg">
+          {/* Quick Actions */}
+          <div className="intel-card p-8">
+            <div className="mb-6">
+              <h3 className="font-agency font-bold text-white flex items-center gap-3 mb-2">
+                <Zap className="w-6 h-6 text-amber-400 animate-glow" />
+                TACTICAL OPERATIONS
+              </h3>
+              <p className="text-slate-400 text-sm">
+                Critical command functions and emergency protocols
+              </p>
+            </div>
+            
+            <div className="quick-actions">
               <Link href="/patrol-reports">
-                <Button 
-                  variant="outline" 
-                  className="w-full border-slate-600 text-slate-300 hover:bg-slate-700 h-20 flex-col gap-2"
-                  data-testid="action-new-report"
-                >
-                  <FileCheck className="w-5 h-5" />
-                  <span className="text-xs">New Report</span>
-                </Button>
+                <div className="quick-action-btn" data-testid="action-new-report">
+                  <FileCheck className="w-8 h-8 text-green-400" />
+                  <span className="text-xs font-agency font-bold">NEW REPORT</span>
+                </div>
               </Link>
               
               <Link href="/reports">
-                <Button 
-                  variant="outline" 
-                  className="w-full border-slate-600 text-slate-300 hover:bg-slate-700 h-20 flex-col gap-2"
-                  data-testid="action-log-incident"
-                >
-                  <AlertTriangle className="w-5 h-5" />
-                  <span className="text-xs">Log Incident</span>
-                </Button>
+                <div className="quick-action-btn" data-testid="action-log-incident">
+                  <AlertTriangle className="w-8 h-8 text-orange-400" />
+                  <span className="text-xs font-agency font-bold">LOG INCIDENT</span>
+                </div>
               </Link>
               
               <Link href="/scheduling">
-                <Button 
-                  variant="outline" 
-                  className="w-full border-slate-600 text-slate-300 hover:bg-slate-700 h-20 flex-col gap-2"
-                  data-testid="action-schedule"
-                >
-                  <Calendar className="w-5 h-5" />
-                  <span className="text-xs">Schedule</span>
-                </Button>
+                <div className="quick-action-btn" data-testid="action-schedule">
+                  <Calendar className="w-8 h-8 text-blue-400" />
+                  <span className="text-xs font-agency font-bold">SCHEDULE</span>
+                </div>
               </Link>
               
-              <Button 
-                variant="outline" 
-                className="w-full border-red-600 text-red-400 hover:bg-red-600/10 h-20 flex-col gap-2"
+              <button 
+                className="quick-action-btn btn-emergency" 
                 data-testid="action-emergency"
                 onClick={() => {
                   if (confirm('This will trigger emergency protocols. Continue?')) {
@@ -470,120 +487,129 @@ export default function UltimateDashboard() {
                   }
                 }}
               >
-                <PhoneCall className="w-5 h-5" />
-                <span className="text-xs">Emergency</span>
-              </Button>
+                <PhoneCall className="w-8 h-8 text-white" />
+                <span className="text-xs font-agency font-bold">EMERGENCY</span>
+              </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
         {/* Recent Activity */}
-        <Card className="bg-slate-800/50 border-slate-700/50">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Activity className="w-5 h-5 text-amber-400" />
-              Recent Activity
-            </CardTitle>
-            <CardDescription className="text-slate-400">
-              Latest system events and operations
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 max-h-80 overflow-y-auto">
+          <div className="intel-card p-8">
+            <div className="mb-6">
+              <h3 className="font-agency font-bold text-white flex items-center gap-3 mb-2">
+                <Activity className="w-6 h-6 text-amber-400 animate-glow" />
+                INTELLIGENCE FEED
+              </h3>
+              <p className="text-slate-400 text-sm">
+                Real-time system events and operational updates
+              </p>
+            </div>
+            
+            <div className="space-y-4 max-h-96 overflow-y-auto">
               {stats?.recentActivities?.length ? (
                 stats.recentActivities.map((activity) => (
                   <div 
                     key={activity.id}
-                    className="flex items-start gap-3 p-3 bg-slate-700/30 rounded-lg"
+                    className="activity-item"
                     data-testid={`activity-${activity.type}`}
                   >
-                    <div className="w-2 h-2 bg-amber-400 rounded-full mt-2 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-sm text-white">{activity.description}</p>
-                      <p className="text-xs text-slate-400 mt-1">
-                        {format(new Date(activity.timestamp), 'MMM dd, HH:mm')}
-                      </p>
+                    <div className="flex items-start gap-4">
+                      <div className="w-3 h-3 bg-green-400 rounded-full mt-2 flex-shrink-0 animate-pulse" />
+                      <div className="flex-1">
+                        <p className="text-sm text-white font-medium">{activity.description}</p>
+                        <p className="text-xs text-slate-400 mt-1 font-agency">
+                          {format(new Date(activity.timestamp), 'MMM dd, HH:mm:ss')} UTC
+                        </p>
+                      </div>
+                      <div className="status-indicator status-online text-xs">
+                        LOGGED
+                      </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 text-slate-400">
-                  <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No recent activity</p>
+                <div className="text-center py-8 text-slate-400">
+                  <Activity className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                  <p className="text-sm font-agency">NO RECENT INTELLIGENCE</p>
+                  <p className="text-xs">All systems monitoring...</p>
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
 
       {/* Property & Client Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-slate-800/50 border-slate-700/50">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-amber-400" />
-              Protected Properties
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-white mb-4" data-testid="stat-active-properties">
+        <div className="system-grid-lg">
+          <div className="intel-card p-8">
+            <div className="mb-6">
+              <h3 className="font-agency font-bold text-white flex items-center gap-3 mb-2">
+                <Building2 className="w-6 h-6 text-amber-400" />
+                SECURED ASSETS
+              </h3>
+            </div>
+            
+            <div className="metric-value mb-4" data-testid="stat-active-properties">
               {stats?.activeProperties || 0}
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">High Security</span>
-                <span className="text-white font-medium">12</span>
+            <p className="metric-label mb-6">Protected Properties</p>
+            
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between items-center p-3 bg-glass-light rounded-lg">
+                <span className="text-slate-300 font-medium">High Security</span>
+                <span className="text-white font-agency font-bold">12</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Standard</span>
-                <span className="text-white font-medium">8</span>
+              <div className="flex justify-between items-center p-3 bg-glass-light rounded-lg">
+                <span className="text-slate-300 font-medium">Standard</span>
+                <span className="text-white font-agency font-bold">8</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Residential</span>
-                <span className="text-white font-medium">5</span>
+              <div className="flex justify-between items-center p-3 bg-glass-light rounded-lg">
+                <span className="text-slate-300 font-medium">Residential</span>
+                <span className="text-white font-agency font-bold">5</span>
               </div>
             </div>
+            
             <Link href="/properties">
-              <Button variant="outline" size="sm" className="w-full mt-4 border-slate-600 text-slate-300 hover:bg-slate-700">
-                Manage Properties
-              </Button>
+              <button className="btn-secondary w-full py-3 font-medium">
+                MANAGE PROPERTIES
+              </button>
             </Link>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card className="bg-slate-800/50 border-slate-700/50">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-amber-400" />
-              Active Clients
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-white mb-4" data-testid="stat-total-clients">
+          <div className="intel-card p-8">
+            <div className="mb-6">
+              <h3 className="font-agency font-bold text-white flex items-center gap-3 mb-2">
+                <Users className="w-6 h-6 text-amber-400" />
+                CLIENT REGISTRY
+              </h3>
+            </div>
+            
+            <div className="metric-value mb-4" data-testid="stat-total-clients">
               {stats?.totalClients || 0}
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Enterprise</span>
-                <span className="text-white font-medium">6</span>
+            <p className="metric-label mb-6">Active Contracts</p>
+            
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between items-center p-3 bg-glass-light rounded-lg">
+                <span className="text-slate-300 font-medium">Enterprise</span>
+                <span className="text-white font-agency font-bold">6</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Commercial</span>
-                <span className="text-white font-medium">12</span>
+              <div className="flex justify-between items-center p-3 bg-glass-light rounded-lg">
+                <span className="text-slate-300 font-medium">Commercial</span>
+                <span className="text-white font-agency font-bold">12</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Residential</span>
-                <span className="text-white font-medium">7</span>
+              <div className="flex justify-between items-center p-3 bg-glass-light rounded-lg">
+                <span className="text-slate-300 font-medium">Residential</span>
+                <span className="text-white font-agency font-bold">7</span>
               </div>
             </div>
+            
             <Link href="/clients">
-              <Button variant="outline" size="sm" className="w-full mt-4 border-slate-600 text-slate-300 hover:bg-slate-700">
-                Manage Clients
-              </Button>
+              <button className="btn-secondary w-full py-3 font-medium">
+                MANAGE CLIENTS
+              </button>
             </Link>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
