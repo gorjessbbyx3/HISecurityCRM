@@ -50,18 +50,20 @@ export function useAuth() {
 
 
   const checkAuthStatus = useCallback(async () => {
-    console.log('Fetching user authentication status...');
+    console.log('Checking authentication status...');
 
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      setUser(null);
-      setIsAuthenticated(false);
-      setIsLoading(false);
+      setAuthStateInternal({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null
+      });
       return;
     }
 
     try {
-      setIsLoading(true);
       const response = await fetch('/api/auth/status', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -72,30 +74,41 @@ export function useAuth() {
       if (response.ok) {
         const data = await response.json();
         if (data.authenticated && data.user) {
-          setUser(data.user);
-          setIsAuthenticated(true);
-          setError(null);
+          setAuthStateInternal({
+            user: data.user,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null
+          });
+          console.log('✅ Authentication status verified');
         } else {
           localStorage.removeItem('auth_token');
-          setUser(null);
-          setIsAuthenticated(false);
-          setError('Session expired');
+          setAuthStateInternal({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: 'Session expired'
+          });
         }
       } else {
         localStorage.removeItem('auth_token');
-        setUser(null);
-        setIsAuthenticated(false);
-        setError('Authentication failed');
+        setAuthStateInternal({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: 'Authentication failed'
+        });
       }
     } catch (error) {
       console.error('Auth status check failed:', error);
       localStorage.removeItem('auth_token');
-      setUser(null);
-      setIsAuthenticated(false);
-      setError('Network error');
+      setAuthStateInternal({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: 'Network error'
+      });
     }
-
-    setIsLoading(false);
   }, []);
 
   const login = async (username: string, password: string) => {
@@ -151,7 +164,12 @@ export function useAuth() {
           isAuthenticated: true,
           error: null,
         });
-        console.log('✅ Login successful');
+        console.log('✅ Login successful - redirecting to dashboard');
+        
+        // Force a small delay to ensure state is updated before redirect
+        setTimeout(() => {
+          console.log('🎯 Authentication state updated');
+        }, 100);
       } else {
         throw new Error(data.message || 'Login failed');
       }
@@ -190,8 +208,19 @@ export function useAuth() {
   };
 
   useEffect(() => {
-    checkAuthStatus();
-  }, [checkAuthStatus]);
+    // Only check auth status on mount if we don't have a current auth state
+    const token = localStorage.getItem('auth_token');
+    if (token && !authState.isAuthenticated) {
+      checkAuthStatus();
+    } else if (!token) {
+      setAuthStateInternal({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null
+      });
+    }
+  }, [checkAuthStatus, authState.isAuthenticated]);
 
   console.log('useAuth state:', authState);
 
