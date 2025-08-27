@@ -39,9 +39,9 @@ export default function Dashboard() {
       <div className="p-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="bg-slate-800/50 border-slate-700/50">
+            <Card key={i} className="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 border-cyan-500/30 shadow-lg shadow-cyan-500/10">
               <CardContent className="p-6">
-                <div className="w-full h-20 bg-slate-700 animate-pulse rounded"></div>
+                <div className="w-full h-20 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 animate-pulse rounded"></div>
               </CardContent>
             </Card>
           ))}
