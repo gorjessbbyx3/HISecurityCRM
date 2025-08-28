@@ -205,7 +205,8 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                     <Icon className={`w-6 h-6 ${active ? 'text-amber-300' : 'text-slate-400 group-hover:text-amber-300'}`} />
                     <div>
                       <div className="font-semibold text-sm">{item.name}</div>
-                      <span className={`text-xs font-medium ${active ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
+                      <span className={`text-xs font-medium ${active ? 'text-white' : 'text-slate-400 group-hover:text-white'}`}></span>
+                    </div>
                 </Link>
               );
             })}
