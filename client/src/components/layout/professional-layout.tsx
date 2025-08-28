@@ -207,6 +207,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                       <div className="font-semibold text-sm">{item.name}</div>
                       <span className={`text-xs font-medium ${active ? 'text-white' : 'text-slate-400 group-hover:text-white'}`}></span>
                     </div>
+                  </div>
                 </Link>
               );
             })}
