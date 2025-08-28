@@ -182,7 +182,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+          <nav className="flex-1 overflow-y-auto p-4 space-y-2">
             {filteredNavItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
@@ -192,20 +192,20 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                   key={item.path}
                   href={item.path}
                   className={`
-                    group flex items-center justify-between p-3 rounded-xl transition-all duration-200
+                    group flex items-center justify-between p-4 rounded-xl transition-all duration-200 border-2
                     ${active
-                      ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 text-cyan-300 shadow-lg shadow-cyan-500/20'
-                      : 'text-cyan-200 hover:bg-blue-800/40 hover:text-cyan-100 border border-transparent hover:border-cyan-500/20'
+                      ? 'bg-gradient-to-r from-amber-500/30 to-orange-500/30 border-amber-400/60 text-amber-200 shadow-lg shadow-amber-500/30'
+                      : 'text-slate-200 bg-slate-800/60 border-slate-600/40 hover:bg-slate-700/80 hover:text-white hover:border-amber-400/40 hover:shadow-md'
                     }
                   `}
                   onClick={() => setSidebarOpen(false)}
                   data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-5 h-5 ${active ? 'text-cyan-300' : 'text-cyan-400 group-hover:text-cyan-200'}`} />
+                  <div className="flex items-center gap-4">
+                    <Icon className={`w-6 h-6 ${active ? 'text-amber-300' : 'text-slate-400 group-hover:text-amber-300'}`} />
                     <div>
-                      <div className="font-medium text-sm">{item.name}</div>
-                      <div className={`text-xs ${active ? 'text-cyan-300/80' : 'text-cyan-500/70'}`}>
+                      <div className="font-semibold text-sm">{item.name}</div>
+                      <div className={`text-xs font-medium ${active ? 'text-amber-300/90' : 'text-slate-400 group-hover:text-slate-300'}`}>
                         {item.description}
                       </div>
                     </div>

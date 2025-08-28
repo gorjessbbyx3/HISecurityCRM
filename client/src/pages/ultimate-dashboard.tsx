@@ -188,10 +188,10 @@ export default function UltimateDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="agency-logo">STREET PATROL</div>
-              <div className="h-8 w-px bg-gradient-to-b from-transparent via-green-400 to-transparent"></div>
+              <div className="h-8 w-px bg-gradient-to-b from-transparent via-amber-400 to-transparent"></div>
               <div>
-                <h1 className="text-2xl font-agency font-bold text-white">COMMAND CENTER</h1>
-                <p className="text-sm text-slate-400 font-medium">Intelligence Operations Division</p>
+                <h1 className="text-2xl font-agency font-bold text-white">SECURITY OPERATIONS</h1>
+                <p className="text-sm text-amber-200 font-medium">Professional Security Services</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -207,8 +207,8 @@ export default function UltimateDashboard() {
         {/* Header Controls */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="mb-2">Tactical Overview</h2>
-            <p className="text-slate-400">Real-time security intelligence dashboard</p>
+            <h2 className="mb-2">Security Operations Overview</h2>
+            <p className="text-slate-300">Real-time monitoring and security management dashboard</p>
           </div>
           
           <div className="flex items-center gap-4">
@@ -447,12 +447,12 @@ export default function UltimateDashboard() {
           {/* Quick Actions */}
           <div className="intel-card p-8">
             <div className="mb-6">
-              <h3 className="font-agency font-bold text-white flex items-center gap-3 mb-2">
+              <h3 className="font-agency font-bold text-amber-300 flex items-center gap-3 mb-2">
                 <Zap className="w-6 h-6 text-amber-400 animate-glow" />
-                TACTICAL OPERATIONS
+                DAILY OPERATIONS
               </h3>
-              <p className="text-slate-400 text-sm">
-                Critical command functions and emergency protocols
+              <p className="text-amber-200/80 text-sm font-medium">
+                Essential security functions and patrol management
               </p>
             </div>
             
@@ -460,21 +460,21 @@ export default function UltimateDashboard() {
               <Link href="/patrol-reports">
                 <div className="quick-action-btn" data-testid="action-new-report">
                   <FileCheck className="w-8 h-8 text-green-400" />
-                  <span className="text-xs font-agency font-bold">NEW REPORT</span>
+                  <span className="text-xs font-agency font-bold text-amber-200">PATROL REPORT</span>
                 </div>
               </Link>
               
               <Link href="/reports">
                 <div className="quick-action-btn" data-testid="action-log-incident">
                   <AlertTriangle className="w-8 h-8 text-orange-400" />
-                  <span className="text-xs font-agency font-bold">LOG INCIDENT</span>
+                  <span className="text-xs font-agency font-bold text-amber-200">INCIDENT LOG</span>
                 </div>
               </Link>
               
               <Link href="/scheduling">
                 <div className="quick-action-btn" data-testid="action-schedule">
                   <Calendar className="w-8 h-8 text-blue-400" />
-                  <span className="text-xs font-agency font-bold">SCHEDULE</span>
+                  <span className="text-xs font-agency font-bold text-amber-200">DUTY ROSTER</span>
                 </div>
               </Link>
               
@@ -482,13 +482,13 @@ export default function UltimateDashboard() {
                 className="quick-action-btn btn-emergency" 
                 data-testid="action-emergency"
                 onClick={() => {
-                  if (confirm('This will trigger emergency protocols. Continue?')) {
-                    alert('Emergency protocols activated. Dispatching response teams.');
+                  if (confirm('This will activate emergency response protocols. Confirm to proceed?')) {
+                    alert('Emergency response activated. Dispatching security units.');
                   }
                 }}
               >
                 <PhoneCall className="w-8 h-8 text-white" />
-                <span className="text-xs font-agency font-bold">EMERGENCY</span>
+                <span className="text-xs font-agency font-bold text-white">EMERGENCY</span>
               </button>
             </div>
           </div>
