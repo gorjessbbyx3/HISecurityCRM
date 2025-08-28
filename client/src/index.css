@@ -36,7 +36,7 @@
     --agency-amber: 43 96% 56%;
     --agency-red: 0 84% 60%;
     --agency-blue: 217 91% 60%;
-    --agency-cyan: 186 100% 50%;
+    --agency-cyan: 0 0% 100%;
     --agency-purple: 263 70% 50%;
     
     /* Status Colors */
@@ -88,11 +88,8 @@
     font-weight: 800;
     font-size: clamp(2.5rem, 5vw, 4rem);
     line-height: 1.1;
-    background: linear-gradient(135deg, hsl(var(--agency-green)) 0%, hsl(var(--agency-cyan)) 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 0 30px rgba(0, 255, 135, 0.3);
+    color: white;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
   }
   
   h2 {
@@ -141,11 +138,8 @@
     font-family: 'Orbitron', monospace;
     font-weight: 900;
     font-size: 1.8rem;
-    background: linear-gradient(135deg, hsl(var(--agency-green)) 0%, hsl(var(--agency-cyan)) 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 0 30px rgba(0, 255, 135, 0.4);
+    color: white;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
     letter-spacing: 0.1em;
   }
   

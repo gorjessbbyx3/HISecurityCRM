@@ -186,7 +186,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
             {filteredNavItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
-              
+
               return (
                 <Link
                   key={item.path}
@@ -205,12 +205,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                     <Icon className={`w-6 h-6 ${active ? 'text-amber-300' : 'text-slate-400 group-hover:text-amber-300'}`} />
                     <div>
                       <div className="font-semibold text-sm">{item.name}</div>
-                      <div className={`text-xs font-medium ${active ? 'text-amber-300/90' : 'text-slate-400 group-hover:text-slate-300'}`}>
-                        {item.description}
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRight className={`w-4 h-4 transition-transform ${active ? 'text-cyan-300' : 'text-cyan-500/70 group-hover:text-cyan-400'}`} />
+                      <span className={`text-xs font-medium ${active ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
                 </Link>
               );
             })}
@@ -298,7 +293,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
               >
                 <Menu className="w-5 h-5" />
               </Button>
-              
+
               <div>
                 <h2 className="text-xl font-semibold text-white">
                   {navigationItems.find(item => isActive(item.path))?.name || 'Dashboard'}
