@@ -1867,12 +1867,130 @@ class MemoryStorage {
 
   async getStaffAvailability(): Promise<any[]> {
     const staff = await this.getStaff();
-    // Placeholder logic for availability
-    return staff.map((s, index) => ({
-      name: `${s.firstName} ${s.lastName}`,
-      role: s.role,
-      available: index % 2 === 0 // Placeholder: alternates availability
-    }));
+    const now = new Date();
+    const endOfToday = new Date(now);
+    endOfToday.setHours(23, 59, 59, 999);
+    
+    const availabilityData = await Promise.all(
+      staff.map(async (s) => {
+        // Check if staff member is active
+        if (s.status !== 'active') {
+          return {
+            id: s.id,
+            name: `${s.firstName} ${s.lastName}`,
+            role: s.role,
+            status: s.status,
+            available: false,
+            reason: 'Staff member is not active',
+            currentSchedule: null,
+            nextSchedule: null
+          };
+        }
+
+        // Get current schedule (if any)
+        const currentSchedules = Array.from(this.schedules.values())
+          .filter(schedule => 
+            schedule.staffId === s.id &&
+            schedule.status !== 'cancelled' &&
+            new Date(schedule.startTime) <= now &&
+            new Date(schedule.endTime) > now
+          );
+
+        // Get today's remaining schedules
+        const todaySchedules = Array.from(this.schedules.values())
+          .filter(schedule => 
+            schedule.staffId === s.id &&
+            schedule.status !== 'cancelled' &&
+            new Date(schedule.startTime) > now &&
+            new Date(schedule.startTime) <= endOfToday
+          )
+          .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+        const currentSchedule = currentSchedules.length > 0 ? currentSchedules[0] : null;
+        const nextSchedule = todaySchedules.length > 0 ? todaySchedules[0] : null;
+
+        // Determine availability status
+        let available = false;
+        let availabilityStatus = 'off-duty';
+        let reason = '';
+
+        if (currentSchedule) {
+          // Staff is currently on duty
+          availabilityStatus = 'on-duty';
+          available = false;
+          reason = `Currently on duty at ${currentSchedule.location || 'assigned location'}`;
+        } else {
+          // Check for conflicts in the next few hours (default check for next 8 hours)
+          const checkUntil = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+          const availability = await this.checkStaffAvailability(s.id, now, checkUntil);
+          
+          if (availability.available) {
+            available = true;
+            availabilityStatus = 'available';
+            if (nextSchedule) {
+              const nextStart = new Date(nextSchedule.startTime);
+              const hoursUntilNext = Math.round((nextStart.getTime() - now.getTime()) / (1000 * 60 * 60) * 10) / 10;
+              reason = `Available until next shift in ${hoursUntilNext} hours`;
+            } else {
+              reason = 'Available for assignment';
+            }
+          } else {
+            available = false;
+            availabilityStatus = 'unavailable';
+            if (availability.conflicts.length > 0) {
+              const nextConflict = availability.conflicts[0];
+              const conflictStart = new Date(nextConflict.startTime);
+              const hoursUntilConflict = Math.round((conflictStart.getTime() - now.getTime()) / (1000 * 60 * 60) * 10) / 10;
+              reason = `Scheduled in ${hoursUntilConflict} hours`;
+            } else {
+              reason = availability.reason || 'Not available';
+            }
+          }
+        }
+
+        return {
+          id: s.id,
+          name: `${s.firstName} ${s.lastName}`,
+          role: s.role,
+          status: s.status,
+          available,
+          availabilityStatus,
+          reason,
+          currentSchedule: currentSchedule ? {
+            id: currentSchedule.id,
+            title: currentSchedule.title,
+            location: currentSchedule.location,
+            startTime: currentSchedule.startTime,
+            endTime: currentSchedule.endTime,
+            shiftType: currentSchedule.shiftType
+          } : null,
+          nextSchedule: nextSchedule ? {
+            id: nextSchedule.id,
+            title: nextSchedule.title,
+            location: nextSchedule.location,
+            startTime: nextSchedule.startTime,
+            endTime: nextSchedule.endTime,
+            shiftType: nextSchedule.shiftType
+          } : null
+        };
+      })
+    );
+
+    // Sort by availability status and name for better organization
+    return availabilityData.sort((a, b) => {
+      // First sort by availability (available first)
+      if (a.available && !b.available) return -1;
+      if (!a.available && b.available) return 1;
+      
+      // Then by status (on-duty first, then available, then unavailable)
+      const statusOrder = { 'on-duty': 0, 'available': 1, 'unavailable': 2, 'off-duty': 3 };
+      const aOrder = statusOrder[a.availabilityStatus] || 4;
+      const bOrder = statusOrder[b.availabilityStatus] || 4;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      
+      // Finally by name
+      return a.name.localeCompare(b.name);
+    });
   }
 
   async getClientStats(): Promise<any> {
