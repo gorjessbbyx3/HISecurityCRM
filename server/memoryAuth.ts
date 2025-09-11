@@ -96,8 +96,9 @@ export async function loginHandler(credentials: { username: string; password: st
       return { success: false, message: 'Username and password are required' };
     }
 
-    // Check against default credentials first
-    if (username === DEFAULT_CREDENTIALS.username && password === DEFAULT_CREDENTIALS.password) {
+    // Check against default credentials first (allow login with username or email)
+    if ((username === DEFAULT_CREDENTIALS.username || username === DEFAULT_CREDENTIALS.email) && 
+        password === DEFAULT_CREDENTIALS.password) {
       const user = {
         id: DEFAULT_CREDENTIALS.userId,
         username: DEFAULT_CREDENTIALS.username,
@@ -112,24 +113,26 @@ export async function loginHandler(credentials: { username: string; password: st
       return { success: true, token, user };
     }
 
-    // Try to find user in storage and verify password  
-    const users = await storage.getStaffMembers();
-    for (const user of users) {
-      if ((user.email === username || user.firstName + user.lastName === username) && user.hashedPassword) {
-        const isValidPassword = await bcrypt.compare(password, user.hashedPassword);
-        if (isValidPassword) {
-          const userForToken = {
-            id: user.id,
-            username: user.email || `${user.firstName}${user.lastName}`,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-          };
+    // Try to find user in storage and verify password (only if storage is provided)
+    if (storage) {
+      const users = await storage.getStaffMembers();
+      for (const user of users) {
+        if ((user.email === username || user.firstName + user.lastName === username) && user.hashedPassword) {
+          const isValidPassword = await bcrypt.compare(password, user.hashedPassword);
+          if (isValidPassword) {
+            const userForToken = {
+              id: user.id,
+              username: user.email || `${user.firstName}${user.lastName}`,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              role: user.role,
+            };
 
-          const token = generateToken(userForToken);
-          console.log('✅ Database user login successful:', username);
-          return { success: true, token, user: userForToken };
+            const token = generateToken(userForToken);
+            console.log('✅ Database user login successful:', username);
+            return { success: true, token, user: userForToken };
+          }
         }
       }
     }

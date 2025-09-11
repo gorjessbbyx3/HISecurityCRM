@@ -21,7 +21,23 @@ import {
   insertLawReferenceSchema,
   updateLawReferenceInputSchema,
   updateLawReferenceSchema,
+  createScheduleInputSchema,
+  insertScheduleSchema,
+  updateScheduleInputSchema,
+  updateScheduleSchema,
+  createShiftTemplateInputSchema,
+  insertShiftTemplateSchema,
+  updateShiftTemplateInputSchema,
+  scheduleConflictCheckSchema,
+  staffAvailabilityCheckSchema,
+  applyShiftTemplateSchema,
+  generateRecurringScheduleSchema,
+  createCrimeIntelligenceInputSchema,
+  updateCrimeIntelligenceInputSchema,
+  patternAnalysisRequestSchema,
+  threatAssessmentRequestSchema,
 } from "@shared/schema";
+import { z } from "zod";
 import { WebSocketServer, WebSocket } from "ws";
 
 // Role-based access control for evidence
@@ -70,6 +86,73 @@ function getRequiredClearanceLevel(accessLevel: string): number {
 
 function filterEvidenceByPermissions(evidenceList: any[], user: any): any[] {
   return evidenceList.filter(evidence => checkEvidencePermissions(user, evidence, 'read'));
+}
+
+// Role-based access control for crime intelligence
+function checkCrimeIntelligencePermissions(user: any, crimeIntelligence: any, action: 'read' | 'write' | 'delete'): boolean {
+  if (!user) return false;
+  
+  // Admin and supervisor can do everything
+  if (user.role === 'admin' || user.role === 'supervisor') {
+    return true;
+  }
+  
+  // Check classification level permissions
+  const userClearanceLevel = getUserClearanceLevel(user.role);
+  const requiredClearanceLevel = getCrimeIntelligenceRequiredClearanceLevel(crimeIntelligence.classification);
+  
+  if (userClearanceLevel < requiredClearanceLevel) {
+    return false;
+  }
+  
+  // For write/delete operations, user must be assigned analyst or have elevated privileges
+  if (action === 'write' || action === 'delete') {
+    return crimeIntelligence.assignedAnalyst === user.id || 
+           user.role === 'supervisor' || 
+           user.role === 'admin';
+  }
+  
+  // For read access, check distribution list if specified
+  if (crimeIntelligence.distributionList && crimeIntelligence.distributionList.length > 0) {
+    return crimeIntelligence.distributionList.includes(user.id) || 
+           user.role === 'supervisor' || 
+           user.role === 'admin';
+  }
+  
+  return true;
+}
+
+function getCrimeIntelligenceRequiredClearanceLevel(classification: string): number {
+  switch (classification) {
+    case 'public': return 1;
+    case 'restricted': return 2;
+    case 'confidential': return 3;
+    case 'secret': return 3; // Highest clearance required for secret intelligence
+    default: return 2; // Default to restricted level
+  }
+}
+
+function filterCrimeIntelligenceByPermissions(intelligenceList: any[], user: any): any[] {
+  return intelligenceList.filter(intelligence => checkCrimeIntelligencePermissions(user, intelligence, 'read'));
+}
+
+// Filter confidential notes based on clearance level
+function sanitizeCrimeIntelligenceForUser(intelligence: any, user: any): any {
+  const sanitized = { ...intelligence };
+  
+  // Remove confidential notes if user doesn't have sufficient clearance
+  if (intelligence.confidentialNotes && 
+      getCrimeIntelligenceRequiredClearanceLevel('confidential') > getUserClearanceLevel(user.role)) {
+    delete sanitized.confidentialNotes;
+  }
+  
+  // Remove distribution list for non-privileged users
+  if (intelligence.distributionList && 
+      user.role !== 'admin' && user.role !== 'supervisor') {
+    delete sanitized.distributionList;
+  }
+  
+  return sanitized;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1219,7 +1302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         relevanceToSecurity: relevanceToSecurity as string,
       };
 
-      const lawReferences = await storage.getLawReferencesByCategory(category, filters);
+      const lawReferences = await storage.getLawReferencesByCategory(category);
       res.json(lawReferences);
     } catch (error) {
       console.error("Error fetching law references by category:", error);
@@ -1427,6 +1510,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileType,
         fileSize: fileData ? fileData.length : 0,
         uploadedBy: req.user?.id as string,
+        status: 'active',
+        accessLevel: 'restricted',
       });
 
       res.status(201).json(fileUpload);
@@ -1666,8 +1751,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Crime Intelligence endpoints
   app.get("/api/crime-intelligence", authenticateToken, async (req, res) => {
     try {
-      const crimeData = await storage.getCrimeIntelligence();
-      res.json(crimeData);
+      const filter = {
+        status: req.query.status as string,
+        threatLevel: req.query.threatLevel as string,
+        priority: req.query.priority as string,
+        analysisType: req.query.analysisType as string,
+        classification: req.query.classification as string,
+        assignedAnalyst: req.query.assignedAnalyst as string,
+        searchTerm: req.query.search as string,
+        dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
+        dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined,
+        tags: req.query.tags ? (req.query.tags as string).split(',') : undefined,
+      };
+      
+      // Filter out undefined values
+      const cleanFilter = Object.fromEntries(
+        Object.entries(filter).filter(([_, value]) => value !== undefined)
+      );
+      
+      const allCrimeIntelligence = await storage.getCrimeIntelligence(cleanFilter);
+      
+      // Apply RBAC filtering based on user clearance and permissions
+      const authorizedCrimeIntelligence = filterCrimeIntelligenceByPermissions(allCrimeIntelligence, req.user);
+      
+      // Sanitize data based on user clearance level
+      const sanitizedCrimeIntelligence = authorizedCrimeIntelligence.map(intelligence => 
+        sanitizeCrimeIntelligenceForUser(intelligence, req.user)
+      );
+      
+      res.json(sanitizedCrimeIntelligence);
     } catch (error) {
       console.error("Error fetching crime intelligence:", error);
       res.status(500).json({ message: "Failed to fetch crime intelligence" });
@@ -1681,6 +1793,413 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching crime stats:", error);
       res.status(500).json({ message: "Failed to fetch crime stats" });
+    }
+  });
+
+  app.get("/api/crime-intelligence/:id", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const crimeIntelligence = await storage.getCrimeIntelligenceById(id);
+      if (!crimeIntelligence) {
+        return res.status(404).json({ message: "Crime intelligence not found" });
+      }
+      
+      // Check if user has permission to read this intelligence
+      if (!checkCrimeIntelligencePermissions(req.user, crimeIntelligence, 'read')) {
+        return res.status(403).json({ message: "Insufficient clearance to access this intelligence" });
+      }
+      
+      // Sanitize data based on user clearance level
+      const sanitizedCrimeIntelligence = sanitizeCrimeIntelligenceForUser(crimeIntelligence, req.user);
+      
+      res.json(sanitizedCrimeIntelligence);
+    } catch (error) {
+      console.error("Error fetching crime intelligence:", error);
+      res.status(500).json({ message: "Failed to fetch crime intelligence" });
+    }
+  });
+
+  app.post("/api/crime-intelligence", authenticateToken, async (req, res) => {
+    try {
+      const validatedData = createCrimeIntelligenceInputSchema.parse(req.body);
+      
+      // Validate user can create intelligence with the specified classification level
+      const userClearanceLevel = getUserClearanceLevel(req.user?.role);
+      const requiredClearanceLevel = getCrimeIntelligenceRequiredClearanceLevel(validatedData.classification || 'restricted');
+      
+      if (userClearanceLevel < requiredClearanceLevel) {
+        return res.status(403).json({ 
+          message: `Insufficient clearance to create ${validatedData.classification || 'restricted'} intelligence` 
+        });
+      }
+      
+      // Set server-controlled fields
+      const dataWithServerFields = {
+        ...validatedData,
+        assignedAnalyst: validatedData.assignedAnalyst || req.user?.id,
+        classification: validatedData.classification || 'restricted', // Ensure classification is set
+      };
+      
+      const crimeIntelligence = await storage.createCrimeIntelligence(dataWithServerFields);
+      
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "crime_intelligence_created",
+        entityType: "crime_intelligence",
+        entityId: crimeIntelligence.id,
+        description: `Created crime intelligence: ${crimeIntelligence.title}`,
+        metadata: { 
+          caseNumber: crimeIntelligence.caseNumber,
+          threatLevel: crimeIntelligence.threatLevel,
+          classification: crimeIntelligence.classification
+        }
+      });
+      
+      // Sanitize response based on user clearance
+      const sanitizedResponse = sanitizeCrimeIntelligenceForUser(crimeIntelligence, req.user);
+      
+      res.status(201).json(sanitizedResponse);
+    } catch (error) {
+      console.error("Error creating crime intelligence:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create crime intelligence" });
+    }
+  });
+
+  app.put("/api/crime-intelligence/:id", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = updateCrimeIntelligenceInputSchema.parse(req.body);
+      
+      // Check if user has permission to update
+      const existing = await storage.getCrimeIntelligenceById(id);
+      if (!existing) {
+        return res.status(404).json({ message: "Crime intelligence not found" });
+      }
+      
+      // Use RBAC permission system
+      if (!checkCrimeIntelligencePermissions(req.user, existing, 'write')) {
+        return res.status(403).json({ message: "Insufficient permissions to update this intelligence" });
+      }
+      
+      // If classification is being updated, validate user has clearance for new classification
+      if (updates.classification) {
+        const userClearanceLevel = getUserClearanceLevel(req.user?.role);
+        const requiredClearanceLevel = getCrimeIntelligenceRequiredClearanceLevel(updates.classification);
+        
+        if (userClearanceLevel < requiredClearanceLevel) {
+          return res.status(403).json({ 
+            message: `Insufficient clearance to set classification to ${updates.classification}` 
+          });
+        }
+      }
+      
+      const updatedCrimeIntelligence = await storage.updateCrimeIntelligence(id, updates);
+      
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "crime_intelligence_updated",
+        entityType: "crime_intelligence",
+        entityId: id,
+        description: `Updated crime intelligence: ${existing.title}`,
+        metadata: { 
+          caseNumber: existing.caseNumber,
+          updatedFields: Object.keys(updates),
+          classification: updatedCrimeIntelligence.classification
+        }
+      });
+      
+      // Sanitize response based on user clearance
+      const sanitizedResponse = sanitizeCrimeIntelligenceForUser(updatedCrimeIntelligence, req.user);
+      
+      res.json(sanitizedResponse);
+    } catch (error) {
+      console.error("Error updating crime intelligence:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update crime intelligence" });
+    }
+  });
+
+  app.delete("/api/crime-intelligence/:id", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Check if user has permission to delete
+      const existing = await storage.getCrimeIntelligenceById(id);
+      if (!existing) {
+        return res.status(404).json({ message: "Crime intelligence not found" });
+      }
+      
+      // Use RBAC permission system
+      if (!checkCrimeIntelligencePermissions(req.user, existing, 'delete')) {
+        return res.status(403).json({ message: "Insufficient permissions to delete crime intelligence" });
+      }
+      
+      const success = await storage.deleteCrimeIntelligence(id);
+      if (!success) {
+        return res.status(404).json({ message: "Crime intelligence not found" });
+      }
+      
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "crime_intelligence_deleted",
+        entityType: "crime_intelligence",
+        entityId: id,
+        description: `Archived crime intelligence: ${existing.title}`,
+        metadata: { 
+          caseNumber: existing.caseNumber,
+          classification: existing.classification
+        }
+      });
+      
+      res.json({ message: "Crime intelligence archived successfully" });
+    } catch (error) {
+      console.error("Error deleting crime intelligence:", error);
+      res.status(500).json({ message: "Failed to delete crime intelligence" });
+    }
+  });
+
+  // Search crime intelligence
+  app.get("/api/crime-intelligence/search/:query", authenticateToken, async (req, res) => {
+    try {
+      const { query } = req.params;
+      const options = {
+        analysisType: req.query.analysisType as string,
+        threatLevel: req.query.threatLevel as string,
+        classification: req.query.classification as string,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
+      };
+      
+      const allResults = await storage.searchCrimeIntelligence(query, options);
+      
+      // Apply RBAC filtering
+      const authorizedResults = filterCrimeIntelligenceByPermissions(allResults, req.user);
+      const sanitizedResults = authorizedResults.map(intelligence => 
+        sanitizeCrimeIntelligenceForUser(intelligence, req.user)
+      );
+      
+      res.json(sanitizedResults);
+    } catch (error) {
+      console.error("Error searching crime intelligence:", error);
+      res.status(500).json({ message: "Failed to search crime intelligence" });
+    }
+  });
+
+  // Get crime intelligence by incident
+  app.get("/api/crime-intelligence/incident/:incidentId", authenticateToken, async (req, res) => {
+    try {
+      const { incidentId } = req.params;
+      const allCrimeIntelligence = await storage.getCrimeIntelligenceByIncident(incidentId);
+      
+      // Apply RBAC filtering
+      const authorizedIntelligence = filterCrimeIntelligenceByPermissions(allCrimeIntelligence, req.user);
+      const sanitizedIntelligence = authorizedIntelligence.map(intelligence => 
+        sanitizeCrimeIntelligenceForUser(intelligence, req.user)
+      );
+      
+      res.json(sanitizedIntelligence);
+    } catch (error) {
+      console.error("Error fetching crime intelligence by incident:", error);
+      res.status(500).json({ message: "Failed to fetch crime intelligence for incident" });
+    }
+  });
+
+  // Get crime intelligence by threat level
+  app.get("/api/crime-intelligence/threat/:threatLevel", authenticateToken, async (req, res) => {
+    try {
+      const { threatLevel } = req.params;
+      const allCrimeIntelligence = await storage.getCrimeIntelligenceByThreatLevel(threatLevel);
+      
+      // Apply RBAC filtering
+      const authorizedIntelligence = filterCrimeIntelligenceByPermissions(allCrimeIntelligence, req.user);
+      const sanitizedIntelligence = authorizedIntelligence.map(intelligence => 
+        sanitizeCrimeIntelligenceForUser(intelligence, req.user)
+      );
+      
+      res.json(sanitizedIntelligence);
+    } catch (error) {
+      console.error("Error fetching crime intelligence by threat level:", error);
+      res.status(500).json({ message: "Failed to fetch crime intelligence by threat level" });
+    }
+  });
+
+  // Get crime intelligence requiring review
+  app.get("/api/crime-intelligence/review/required", authenticateToken, async (req, res) => {
+    try {
+      const allCrimeIntelligence = await storage.getCrimeIntelligenceRequiringReview();
+      
+      // Apply RBAC filtering
+      const authorizedIntelligence = filterCrimeIntelligenceByPermissions(allCrimeIntelligence, req.user);
+      const sanitizedIntelligence = authorizedIntelligence.map(intelligence => 
+        sanitizeCrimeIntelligenceForUser(intelligence, req.user)
+      );
+      
+      res.json(sanitizedIntelligence);
+    } catch (error) {
+      console.error("Error fetching crime intelligence requiring review:", error);
+      res.status(500).json({ message: "Failed to fetch crime intelligence requiring review" });
+    }
+  });
+
+  // Pattern analysis endpoint
+  app.post("/api/crime-intelligence/analyze/patterns", authenticateToken, async (req, res) => {
+    try {
+      const options = patternAnalysisRequestSchema.parse(req.body);
+      const analysis = await storage.analyzeCrimePatterns(options);
+      
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "pattern_analysis_performed",
+        entityType: "crime_intelligence",
+        description: "Performed crime pattern analysis",
+        metadata: { analysisOptions: options, resultCount: analysis.patterns.length }
+      });
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error performing pattern analysis:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to perform pattern analysis" });
+    }
+  });
+
+  // Threat assessment endpoint
+  app.post("/api/crime-intelligence/assess/threat", authenticateToken, async (req, res) => {
+    try {
+      const params = threatAssessmentRequestSchema.parse(req.body);
+      const assessment = await storage.assessThreat(params);
+      
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "threat_assessment_performed",
+        entityType: "crime_intelligence",
+        description: `Performed threat assessment: ${assessment.threatLevel} threat level`,
+        metadata: { 
+          assessmentParams: params, 
+          threatLevel: assessment.threatLevel,
+          confidence: assessment.confidence
+        }
+      });
+      
+      res.json(assessment);
+    } catch (error) {
+      console.error("Error performing threat assessment:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to perform threat assessment" });
+    }
+  });
+
+  // ===============================================
+  // DATA INTEGRATION AND CORRELATION ENDPOINTS
+  // ===============================================
+
+  // External data correlation endpoint
+  app.post("/api/crime-intelligence/correlate/external", authenticateToken, async (req, res) => {
+    try {
+      // Require supervisor+ clearance for external data integration
+      const userClearanceLevel = getUserClearanceLevel(req.user?.role);
+      if (userClearanceLevel < 3) {
+        return res.status(403).json({ 
+          message: "Insufficient clearance for external data integration operations" 
+        });
+      }
+
+      const options = req.body;
+      const correlation = await storage.correlateExternalCrimeData(options);
+      
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "external_data_correlation",
+        entityType: "crime_intelligence",
+        description: `Performed external data correlation with ${correlation.integrationSummary.totalExternalIncidents} incidents`,
+        metadata: { 
+          correlationSummary: correlation.integrationSummary,
+          options: options
+        }
+      });
+      
+      res.json(correlation);
+    } catch (error) {
+      console.error("Error performing external data correlation:", error);
+      res.status(500).json({ message: "Failed to perform external data correlation" });
+    }
+  });
+
+  // Sync external data endpoint
+  app.post("/api/crime-intelligence/sync/external", authenticateToken, async (req, res) => {
+    try {
+      // Require supervisor+ clearance for data synchronization
+      const userClearanceLevel = getUserClearanceLevel(req.user?.role);
+      if (userClearanceLevel < 3) {
+        return res.status(403).json({ 
+          message: "Insufficient clearance for external data synchronization" 
+        });
+      }
+
+      const options = req.body;
+      const syncResult = await storage.syncExternalData(options);
+      
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "external_data_sync",
+        entityType: "crime_intelligence",
+        description: `Synchronized external data: ${syncResult.processed} processed, ${syncResult.created} created`,
+        metadata: { 
+          syncResult: syncResult,
+          options: options
+        }
+      });
+      
+      res.json(syncResult);
+    } catch (error) {
+      console.error("Error syncing external data:", error);
+      res.status(500).json({ message: "Failed to sync external data" });
+    }
+  });
+
+  // Get integration status endpoint
+  app.get("/api/crime-intelligence/integration/status", authenticateToken, async (req, res) => {
+    try {
+      // Require security officer+ clearance to view integration status
+      const userClearanceLevel = getUserClearanceLevel(req.user?.role);
+      if (userClearanceLevel < 2) {
+        return res.status(403).json({ 
+          message: "Insufficient clearance to view integration status" 
+        });
+      }
+
+      // Mock integration status (in production, this would show real connection status)
+      const status = {
+        lastSync: new Date(),
+        connectionStatus: 'connected',
+        dataSources: [
+          {
+            name: 'Honolulu Police Department',
+            status: 'active',
+            lastUpdate: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+            recordsProcessed: 247,
+            accuracy: 0.92
+          }
+        ],
+        syncSchedule: 'Every 4 hours',
+        nextScheduledSync: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+        errorCount: 0,
+        totalCorrelations: 89,
+        highConfidenceMatches: 34
+      };
+      
+      res.json(status);
+    } catch (error) {
+      console.error("Error fetching integration status:", error);
+      res.status(500).json({ message: "Failed to fetch integration status" });
     }
   });
 
@@ -1703,6 +2222,406 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching schedule stats:", error);
       res.status(500).json({ message: "Failed to fetch schedule stats" });
+    }
+  });
+
+  app.get("/api/schedules/today", authenticateToken, async (req, res) => {
+    try {
+      const schedules = await storage.getTodaysSchedule();
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching today's schedules:", error);
+      res.status(500).json({ message: "Failed to fetch today's schedules" });
+    }
+  });
+
+  app.get('/api/schedules/:id', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const schedule = await storage.getScheduleById(id);
+      if (!schedule) {
+        return res.status(404).json({ message: "Schedule not found" });
+      }
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error fetching schedule:", error);
+      res.status(500).json({ message: "Failed to fetch schedule" });
+    }
+  });
+
+  app.post('/api/schedules', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Parse and validate request body
+      const clientData = createScheduleInputSchema.parse(req.body);
+      
+      // Add server-controlled fields
+      const fullScheduleData = {
+        ...clientData,
+        scheduledBy: req.user.id,
+      };
+
+      // Validate with full schema and ensure duration is calculated
+      const validatedData = insertScheduleSchema.parse(fullScheduleData);
+      
+      // Ensure duration is calculated if not provided
+      const finalScheduleData = {
+        ...validatedData,
+        duration: validatedData.duration || 
+          Math.round((new Date(validatedData.endTime).getTime() - new Date(validatedData.startTime).getTime()) / (1000 * 60)),
+        scheduledBy: req.user.id, // Ensure scheduledBy is included
+      };
+      
+      const schedule = await storage.createSchedule(finalScheduleData);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "schedule_created",
+        entityType: "schedule",
+        entityId: schedule.id,
+        description: `Created schedule: ${schedule.title} for ${schedule.staffId}`,
+        metadata: { 
+          scheduleId: schedule.id, 
+          staffId: schedule.staffId,
+          propertyId: schedule.propertyId,
+          shiftType: schedule.shiftType,
+          scheduleType: schedule.scheduleType
+        }
+      });
+
+      res.status(201).json(schedule);
+    } catch (error) {
+      console.error("Error creating schedule:", error);
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: (error as any).errors 
+        });
+      }
+      if (error instanceof Error && error.message?.includes('conflict')) {
+        return res.status(409).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to create schedule" });
+    }
+  });
+
+  app.put('/api/schedules/:id', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Parse and validate request body
+      const updates = updateScheduleInputSchema.parse(req.body);
+      
+      // Add server-controlled fields
+      const fullUpdates = {
+        ...updates,
+        modifiedBy: req.user.id,
+      };
+
+      const schedule = await storage.updateSchedule(id, fullUpdates);
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "schedule_updated",
+        entityType: "schedule",
+        entityId: id,
+        description: `Updated schedule: ${schedule.title}`,
+        metadata: { 
+          scheduleId: id, 
+          updatedFields: Object.keys(updates)
+        }
+      });
+
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error updating schedule:", error);
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: (error as any).errors 
+        });
+      }
+      if (error instanceof Error && error.message?.includes('not found')) {
+        return res.status(404).json({ message: "Schedule not found" });
+      }
+      if (error instanceof Error && error.message?.includes('conflict')) {
+        return res.status(409).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to update schedule" });
+    }
+  });
+
+  app.delete('/api/schedules/:id', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteSchedule(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Schedule not found" });
+      }
+
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "schedule_deleted",
+        entityType: "schedule",
+        entityId: id,
+        description: "Deleted schedule",
+      });
+
+      res.json({ message: "Schedule deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting schedule:", error);
+      res.status(500).json({ message: "Failed to delete schedule" });
+    }
+  });
+
+  // Schedule utility endpoints
+  app.post('/api/schedules/check-conflicts', authenticateToken, async (req, res) => {
+    try {
+      const conflictData = scheduleConflictCheckSchema.parse(req.body);
+      const conflicts = await storage.checkScheduleConflicts(
+        conflictData.staffId,
+        conflictData.startTime,
+        conflictData.endTime,
+        conflictData.excludeScheduleId
+      );
+      res.json({ conflicts: conflicts.length > 0, scheduleConflicts: conflicts });
+    } catch (error) {
+      console.error("Error checking schedule conflicts:", error);
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: (error as any).errors 
+        });
+      }
+      res.status(500).json({ message: "Failed to check schedule conflicts" });
+    }
+  });
+
+  app.post('/api/schedules/check-staff-availability', authenticateToken, async (req, res) => {
+    try {
+      const availabilityData = staffAvailabilityCheckSchema.parse(req.body);
+      const isAvailable = await storage.checkStaffAvailability(
+        availabilityData.staffId,
+        availabilityData.startTime,
+        availabilityData.endTime
+      );
+      res.json({ available: isAvailable });
+    } catch (error) {
+      console.error("Error checking staff availability:", error);
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: (error as any).errors 
+        });
+      }
+      res.status(500).json({ message: "Failed to check staff availability" });
+    }
+  });
+
+  app.get('/api/schedules/staff/:staffId', authenticateToken, async (req, res) => {
+    try {
+      const { staffId } = req.params;
+      const { startDate, endDate } = req.query;
+      const schedules = await storage.getSchedulesByStaff(
+        staffId, 
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined
+      );
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching staff schedules:", error);
+      res.status(500).json({ message: "Failed to fetch staff schedules" });
+    }
+  });
+
+  app.get('/api/schedules/property/:propertyId', authenticateToken, async (req, res) => {
+    try {
+      const { propertyId } = req.params;
+      const { startDate, endDate } = req.query;
+      const schedules = await storage.getSchedulesByProperty(
+        propertyId,
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined
+      );
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching property schedules:", error);
+      res.status(500).json({ message: "Failed to fetch property schedules" });
+    }
+  });
+
+  app.get('/api/schedules/analytics', authenticateToken, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const analytics = await storage.getScheduleAnalytics(
+        startDate ? new Date(startDate as string) : new Date(),
+        endDate ? new Date(endDate as string) : new Date()
+      );
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching schedule analytics:", error);
+      res.status(500).json({ message: "Failed to fetch schedule analytics" });
+    }
+  });
+
+  // Shift Template CRUD endpoints
+  app.get("/api/shift-templates", authenticateToken, async (req, res) => {
+    try {
+      const templates = await storage.getShiftTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching shift templates:", error);
+      res.status(500).json({ message: "Failed to fetch shift templates" });
+    }
+  });
+
+  app.get('/api/shift-templates/:id', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const template = await storage.getShiftTemplateById(id);
+      if (!template) {
+        return res.status(404).json({ message: "Shift template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching shift template:", error);
+      res.status(500).json({ message: "Failed to fetch shift template" });
+    }
+  });
+
+  app.post('/api/shift-templates', authenticateToken, async (req, res) => {
+    try {
+      const templateData = createShiftTemplateInputSchema.parse(req.body);
+      const template = await storage.createShiftTemplate(templateData);
+
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "template_created",
+        entityType: "shift_template",
+        entityId: template.id,
+        description: `Created shift template: ${template.name}`,
+      });
+
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error creating shift template:", error);
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: (error as any).errors 
+        });
+      }
+      res.status(500).json({ message: "Failed to create shift template" });
+    }
+  });
+
+  app.put('/api/shift-templates/:id', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = updateShiftTemplateInputSchema.parse(req.body);
+      const template = await storage.updateShiftTemplate(id, updates);
+
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "template_updated",
+        entityType: "shift_template",
+        entityId: id,
+        description: `Updated shift template: ${template.name}`,
+      });
+
+      res.json(template);
+    } catch (error) {
+      console.error("Error updating shift template:", error);
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: (error as any).errors 
+        });
+      }
+      if (error instanceof Error && error.message?.includes('not found')) {
+        return res.status(404).json({ message: "Shift template not found" });
+      }
+      res.status(500).json({ message: "Failed to update shift template" });
+    }
+  });
+
+  app.delete('/api/shift-templates/:id', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteShiftTemplate(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Shift template not found" });
+      }
+
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "template_deleted",
+        entityType: "shift_template",
+        entityId: id,
+        description: "Deleted shift template",
+      });
+
+      res.json({ message: "Shift template deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting shift template:", error);
+      res.status(500).json({ message: "Failed to delete shift template" });
+    }
+  });
+
+  // Apply shift template to create schedules
+  app.post('/api/shift-templates/:id/apply', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const applicationData = applyShiftTemplateSchema.parse({
+        ...req.body,
+        templateId: id
+      });
+      
+      const schedules = await storage.applyShiftTemplate(
+        applicationData.templateId,
+        applicationData.startDate,
+        applicationData.endDate,
+        applicationData.staffId
+      );
+
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "template_applied",
+        entityType: "shift_template",
+        entityId: id,
+        description: `Applied shift template to create ${schedules.length} schedules`,
+        metadata: {
+          templateId: id,
+          staffId: applicationData.staffId,
+          schedulesCreated: schedules.length
+        }
+      });
+
+      res.json({ 
+        message: `Successfully created ${schedules.length} schedules from template`,
+        schedules 
+      });
+    } catch (error) {
+      console.error("Error applying shift template:", error);
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: (error as any).errors 
+        });
+      }
+      if (error instanceof Error && error.message?.includes('not found')) {
+        return res.status(404).json({ message: "Shift template not found" });
+      }
+      res.status(500).json({ message: "Failed to apply shift template" });
     }
   });
 

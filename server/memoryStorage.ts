@@ -235,6 +235,147 @@ export interface LawReference {
   updatedAt: Date;
 }
 
+export interface Schedule {
+  id: string;
+  title: string;
+  description?: string;
+  staffId: string; // assigned staff member
+  propertyId?: string; // assigned property/location
+  shiftType: string; // 'day', 'evening', 'night', 'overnight', 'split'
+  scheduleType: string; // 'regular', 'overtime', 'emergency', 'training', 'meeting', 'patrol'
+  startTime: Date;
+  endTime: Date;
+  duration: number; // in minutes
+  status: string; // 'scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show'
+  priority: string; // 'critical', 'high', 'medium', 'low'
+  recurring: boolean;
+  recurrencePattern?: string; // 'daily', 'weekly', 'monthly', 'custom'
+  recurrenceEndDate?: Date;
+  parentScheduleId?: string; // for recurring schedules
+  location?: string; // specific location details
+  coordinates?: string;
+  requiredSkills?: string[]; // required certifications/skills
+  equipment?: string[]; // required equipment
+  specialInstructions?: string;
+  checkpoints?: string[]; // for patrol schedules
+  estimatedMileage?: number; // for patrol/mobile schedules
+  weatherConsiderations?: string;
+  backupStaffId?: string; // backup staff member
+  supervisorId?: string; // supervising officer
+  clientNotificationRequired?: boolean;
+  clientNotificationSent?: boolean;
+  clientNotificationTime?: Date;
+  actualStartTime?: Date;
+  actualEndTime?: Date;
+  actualDuration?: number;
+  completionNotes?: string;
+  incidentsReported?: number;
+  scheduledBy: string; // user ID who created the schedule
+  modifiedBy?: string; // user ID who last modified
+  confirmedBy?: string; // user ID who confirmed
+  completedBy?: string; // user ID who marked complete
+  tags?: string[];
+  metadata?: any; // additional custom data
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ShiftTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  shiftType: string; // 'day', 'evening', 'night', 'overnight'
+  startTime: string; // HH:MM format
+  endTime: string; // HH:MM format
+  duration: number; // in minutes
+  daysOfWeek: number[]; // 0=Sunday, 1=Monday, etc.
+  propertyId?: string;
+  requiredSkills?: string[];
+  equipment?: string[];
+  checkpoints?: string[];
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CrimeIntelligence {
+  id: string;
+  incidentId?: string; // Link to related incident
+  caseNumber: string; // Internal case tracking number
+  title: string;
+  analysisType: string; // 'threat_assessment', 'pattern_analysis', 'intelligence_report', 'investigation', 'surveillance'
+  threatLevel: string; // 'low', 'medium', 'high', 'critical'
+  priority: string; // 'low', 'medium', 'high', 'urgent'
+  status: string; // 'active', 'monitoring', 'closed', 'archived', 'escalated'
+  classification: string; // 'public', 'restricted', 'confidential', 'secret'
+  source: string; // 'field_report', 'surveillance', 'informant', 'public_tip', 'law_enforcement', 'analysis'
+  description: string;
+  summary: string;
+  keyFindings?: string[];
+  evidenceIds?: string[]; // Links to evidence
+  suspectInfo?: {
+    name?: string;
+    description?: string;
+    lastKnownLocation?: string;
+    vehicleInfo?: string;
+    associates?: string[];
+  };
+  location?: string;
+  coordinates?: string; // latitude,longitude
+  timeframe?: {
+    startDate?: Date;
+    endDate?: Date;
+    specificTime?: string;
+  };
+  involvedProperties?: string[]; // Property IDs
+  relatedIncidents?: string[]; // Related incident IDs
+  patterns?: {
+    crimeType?: string;
+    methodology?: string;
+    timing?: string;
+    targetProfile?: string;
+    geographicArea?: string;
+  };
+  riskAssessment?: {
+    probabilityOfReoccurrence?: string; // 'low', 'medium', 'high'
+    potentialImpact?: string; // 'minor', 'moderate', 'significant', 'severe'
+    recommendedActions?: string[];
+    mitigation?: string[];
+  };
+  intelligence?: {
+    sources?: string[];
+    reliability?: string; // 'unknown', 'poor', 'fair', 'good', 'excellent'
+    credibility?: string; // 'unconfirmed', 'possible', 'probable', 'confirmed'
+    additionalInfo?: string;
+  };
+  actionsTaken?: string[];
+  assignedAnalyst?: string; // User ID
+  reviewedBy?: string; // User ID
+  approvedBy?: string; // User ID
+  tags?: string[];
+  alerts?: {
+    type: string;
+    message: string;
+    isActive: boolean;
+    expiresAt?: Date;
+  }[];
+  followUpRequired: boolean;
+  nextReviewDate?: Date;
+  lastActivityDate: Date;
+  externalReferences?: {
+    policeReportNumber?: string;
+    fbiCaseNumber?: string;
+    courtCaseNumber?: string;
+    insuranceClaimNumber?: string;
+    mediaReferences?: string[];
+  };
+  confidentialNotes?: string; // Only visible to authorized personnel
+  distributionList?: string[]; // User IDs who should have access
+  metadata?: any; // Additional flexible data
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // In-memory storage
 class MemoryStorage {
   private users: Map<string, User> = new Map();
@@ -248,6 +389,9 @@ class MemoryStorage {
   private evidence: Map<string, Evidence> = new Map();
   private communityResources: Map<string, CommunityResource> = new Map();
   private lawReferences: Map<string, LawReference> = new Map();
+  private schedules: Map<string, Schedule> = new Map();
+  private shiftTemplates: Map<string, ShiftTemplate> = new Map();
+  private crimeIntelligence: Map<string, CrimeIntelligence> = new Map();
 
   constructor() {
     this.initializeDefaultData();
@@ -1309,7 +1453,363 @@ class MemoryStorage {
       }
     }
 
-    console.log('✅ Sample data seeded in memory storage');
+    // Sample Crime Intelligence Data
+    const incidents = await this.getIncidents();
+    const properties = await this.getProperties();
+    
+    // High-priority threat assessment
+    await this.createCrimeIntelligence({
+      caseNumber: 'CI-2024-000001',
+      title: 'Organized Theft Ring Operating in Waikiki Resort Area',
+      analysisType: 'threat_assessment',
+      threatLevel: 'high',
+      priority: 'urgent',
+      status: 'active',
+      classification: 'confidential',
+      source: 'surveillance',
+      description: 'Intelligence indicates coordinated theft operations targeting high-end resort guests. Multiple properties affected with similar modus operandi.',
+      summary: 'Organized crime group targeting resort guests using distraction techniques and inside information. Estimated 15+ incidents in past month.',
+      keyFindings: [
+        'Coordinated timing between multiple suspects',
+        'Inside knowledge of guest schedules and room layouts',
+        'Professional-grade surveillance equipment detected',
+        'Targeting guests with expensive jewelry and electronics'
+      ],
+      location: 'Waikiki Beach Resort Area',
+      coordinates: '21.2793,-157.8311',
+      timeframe: {
+        startDate: new Date('2024-01-15'),
+        endDate: new Date('2024-02-28'),
+        specificTime: 'Primarily evening hours (6-10 PM)'
+      },
+      involvedProperties: properties.length > 0 ? [properties[0].id] : [],
+      relatedIncidents: incidents.length > 0 ? [incidents[0]?.id].filter(Boolean) : [],
+      patterns: {
+        crimeType: 'theft',
+        methodology: 'Distraction techniques, inside information',
+        timing: 'Evening hours during peak guest activity',
+        targetProfile: 'High-value guests, jewelry and electronics',
+        geographicArea: 'Waikiki resort corridor'
+      },
+      riskAssessment: {
+        probabilityOfReoccurrence: 'high',
+        potentialImpact: 'significant',
+        recommendedActions: [
+          'Increase surveillance in target areas',
+          'Review staff background checks',
+          'Implement guest awareness program',
+          'Coordinate with other resort security'
+        ],
+        mitigation: [
+          'Enhanced screening protocols',
+          'Real-time intelligence sharing',
+          'Undercover security deployment'
+        ]
+      },
+      intelligence: {
+        sources: ['surveillance footage', 'informant reports', 'police intelligence'],
+        reliability: 'good',
+        credibility: 'confirmed',
+        additionalInfo: 'Group believed to have connections to mainland operations'
+      },
+      actionsTaken: [
+        'Increased patrol frequency',
+        'Staff security briefing conducted',
+        'Guest advisory notices distributed'
+      ],
+      assignedAnalyst: 'admin-001',
+      tags: ['organized_crime', 'theft', 'waikiki', 'resort_security'],
+      alerts: [
+        {
+          type: 'active_threat',
+          message: 'Ongoing organized theft operations - heightened vigilance required',
+          isActive: true,
+          expiresAt: new Date('2024-03-30')
+        }
+      ],
+      followUpRequired: true,
+      nextReviewDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      externalReferences: {
+        policeReportNumber: 'HPD-2024-001234',
+        mediaReferences: ['Local news coverage of resort thefts']
+      },
+      confidentialNotes: 'Suspected inside accomplice - investigation ongoing',
+      distributionList: ['admin-001']
+    });
+
+    // Pattern analysis for vehicle break-ins
+    await this.createCrimeIntelligence({
+      caseNumber: 'CI-2024-000002',
+      title: 'Vehicle Break-in Pattern Analysis - Downtown Parking Areas',
+      analysisType: 'pattern_analysis',
+      threatLevel: 'medium',
+      priority: 'high',
+      status: 'monitoring',
+      classification: 'restricted',
+      source: 'field_report',
+      description: 'Analysis of recent vehicle break-ins shows clear pattern in timing, location, and methodology targeting downtown business district.',
+      summary: 'Systematic vehicle break-ins occurring during lunch hours (11AM-2PM) in downtown parking structures.',
+      keyFindings: [
+        'Consistent timing pattern during business lunch hours',
+        'Targeting vehicles with visible electronics/bags',
+        'Entry method: window smashing, quick grab technique',
+        'Average incident duration under 2 minutes'
+      ],
+      location: 'Downtown Honolulu Business District',
+      coordinates: '21.3099,-157.8581',
+      timeframe: {
+        startDate: new Date('2024-02-01'),
+        endDate: new Date('2024-02-15'),
+        specificTime: '11:00 AM - 2:00 PM weekdays'
+      },
+      involvedProperties: properties.length > 1 ? [properties[1].id] : [],
+      patterns: {
+        crimeType: 'vehicle_break_in',
+        methodology: 'Window smashing, targeting visible valuables',
+        timing: 'Weekday lunch hours when foot traffic is high',
+        targetProfile: 'Vehicles with visible electronics, purses, laptops',
+        geographicArea: 'Downtown parking structures and street parking'
+      },
+      riskAssessment: {
+        probabilityOfReoccurrence: 'medium',
+        potentialImpact: 'moderate',
+        recommendedActions: [
+          'Increase patrol presence during lunch hours',
+          'Install additional surveillance cameras',
+          'Public awareness campaign about securing valuables',
+          'Coordinate with parking structure security'
+        ],
+        mitigation: [
+          'Enhanced lighting in parking areas',
+          'Security signage installation',
+          'Regular patrol schedule adjustments'
+        ]
+      },
+      intelligence: {
+        sources: ['police reports', 'security footage', 'witness statements'],
+        reliability: 'good',
+        credibility: 'probable',
+        additionalInfo: 'Suspect(s) appear to be working systematically through each level of parking structures'
+      },
+      actionsTaken: [
+        'Coordinated with building security managers',
+        'Distributed advisory to business tenants'
+      ],
+      assignedAnalyst: 'admin-001',
+      tags: ['vehicle_crime', 'downtown', 'pattern_analysis', 'prevention'],
+      followUpRequired: true,
+      nextReviewDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+      externalReferences: {
+        policeReportNumber: 'HPD-2024-005678'
+      }
+    });
+
+    // Surveillance intelligence report
+    await this.createCrimeIntelligence({
+      caseNumber: 'CI-2024-000003',
+      title: 'Suspicious Activity Surveillance - Beach Park Drug Activity',
+      analysisType: 'surveillance',
+      threatLevel: 'medium',
+      priority: 'medium',
+      status: 'active',
+      classification: 'restricted',
+      source: 'surveillance',
+      description: 'Ongoing surveillance of suspicious activities in Keeaumoku Beach Park indicating possible drug trafficking operations.',
+      summary: 'Regular patterns of suspicious meetings and exchanges observed in beach park during specific timeframes.',
+      keyFindings: [
+        'Consistent daily meetings between 4-6 individuals',
+        'Brief exchanges suggesting transaction activity',
+        'Use of coded communication patterns',
+        'Multiple lookouts positioned strategically'
+      ],
+      suspectInfo: {
+        description: 'Group of 4-6 males, ages approximately 20-35',
+        lastKnownLocation: 'Keeaumoku Beach Park pavilion area',
+        vehicleInfo: 'Blue sedan, older model Honda Civic, partial plate: H7X-???',
+        associates: ['Known to associate with individuals from Kalihi area']
+      },
+      location: 'Keeaumoku Beach Park',
+      coordinates: '21.3089,-157.8583',
+      timeframe: {
+        startDate: new Date('2024-02-10'),
+        specificTime: 'Daily 2:00-4:00 PM and 7:00-9:00 PM'
+      },
+      patterns: {
+        crimeType: 'suspected_drug_activity',
+        methodology: 'Brief meetups, quick exchanges, lookout system',
+        timing: 'Consistent daily schedule in afternoon and evening',
+        geographicArea: 'Beach park pavilion and surrounding areas'
+      },
+      riskAssessment: {
+        probabilityOfReoccurrence: 'high',
+        potentialImpact: 'moderate',
+        recommendedActions: [
+          'Continue surveillance operations',
+          'Coordinate with narcotics division',
+          'Document all activities and participants',
+          'Consider undercover operation'
+        ],
+        mitigation: [
+          'Increased uniformed presence in area',
+          'Community outreach programs',
+          'Youth intervention initiatives'
+        ]
+      },
+      intelligence: {
+        sources: ['direct surveillance', 'community reports'],
+        reliability: 'fair',
+        credibility: 'possible',
+        additionalInfo: 'Activity appears to be expanding to nearby locations'
+      },
+      actionsTaken: [
+        'Initiated daily surveillance logs',
+        'Coordinated with local patrol units'
+      ],
+      assignedAnalyst: 'admin-001',
+      tags: ['surveillance', 'drug_activity', 'beach_park', 'ongoing'],
+      alerts: [
+        {
+          type: 'surveillance_active',
+          message: 'Active surveillance operation - maintain operational security',
+          isActive: true
+        }
+      ],
+      followUpRequired: true,
+      nextReviewDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+      confidentialNotes: 'Surveillance team Alpha assigned - maintain covert observation protocols'
+    });
+
+    // Investigation report
+    await this.createCrimeIntelligence({
+      caseNumber: 'CI-2024-000004',
+      title: 'Internal Security Breach Investigation - Unauthorized Access',
+      analysisType: 'investigation',
+      threatLevel: 'critical',
+      priority: 'urgent',
+      status: 'escalated',
+      classification: 'secret',
+      source: 'analysis',
+      description: 'Investigation into unauthorized access to secure areas revealing potential security protocol violations and insider threat.',
+      summary: 'Evidence suggests unauthorized personnel gained access to restricted areas using compromised credentials.',
+      keyFindings: [
+        'Access logs show unusual after-hours entry patterns',
+        'Security badge cloning suspected',
+        'Multiple secure areas compromised',
+        'No corresponding authorized personnel records'
+      ],
+      location: 'Multiple secure facilities - Downtown Complex',
+      timeframe: {
+        startDate: new Date('2024-01-20'),
+        endDate: new Date('2024-02-05'),
+        specificTime: 'Between 11:00 PM - 3:00 AM'
+      },
+      patterns: {
+        crimeType: 'security_breach',
+        methodology: 'Credential compromise, badge cloning',
+        timing: 'Late night/early morning hours',
+        targetProfile: 'High-security areas with sensitive information'
+      },
+      riskAssessment: {
+        probabilityOfReoccurrence: 'high',
+        potentialImpact: 'severe',
+        recommendedActions: [
+          'Immediate credential system audit',
+          'Enhanced access monitoring protocols',
+          'Full background re-verification of personnel',
+          'Upgrade to biometric access systems'
+        ],
+        mitigation: [
+          'Emergency credential reset for all personnel',
+          'Temporary increased security presence',
+          'Implementation of dual-factor authentication'
+        ]
+      },
+      intelligence: {
+        sources: ['access logs', 'surveillance footage', 'forensic analysis'],
+        reliability: 'excellent',
+        credibility: 'confirmed',
+        additionalInfo: 'Investigation indicates sophisticated operation requiring inside knowledge'
+      },
+      actionsTaken: [
+        'Immediately revoked all compromised credentials',
+        'Initiated full forensic investigation',
+        'Implemented emergency security protocols'
+      ],
+      assignedAnalyst: 'admin-001',
+      tags: ['insider_threat', 'security_breach', 'investigation', 'critical'],
+      alerts: [
+        {
+          type: 'security_alert',
+          message: 'CRITICAL: Active security breach investigation - heightened protocols in effect',
+          isActive: true,
+          expiresAt: new Date('2024-04-01')
+        }
+      ],
+      followUpRequired: true,
+      nextReviewDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 day from now
+      externalReferences: {
+        policeReportNumber: 'HPD-2024-009876',
+        fbiCaseNumber: 'FBI-HN-2024-001'
+      },
+      confidentialNotes: 'Coordinating with federal authorities - maintain strict operational security',
+      distributionList: ['admin-001']
+    });
+
+    // Intelligence report linking incidents
+    await this.createCrimeIntelligence({
+      caseNumber: 'CI-2024-000005',
+      title: 'Cross-Reference Analysis - Multiple Property Incidents',
+      analysisType: 'intelligence_report',
+      threatLevel: 'medium',
+      priority: 'medium',
+      status: 'closed',
+      classification: 'restricted',
+      source: 'analysis',
+      description: 'Comprehensive analysis of incidents across multiple properties revealing potential connections and shared threat indicators.',
+      summary: 'Analysis of 12 incidents over 30 days shows possible coordinated activities affecting multiple client properties.',
+      keyFindings: [
+        'Timing correlations between incidents at different properties',
+        'Similar entry methods across multiple locations',
+        'Potential intelligence gathering phase identified',
+        'Evidence of advance reconnaissance activities'
+      ],
+      location: 'Multiple properties - Honolulu Metropolitan Area',
+      timeframe: {
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-01-31')
+      },
+      involvedProperties: properties.map(p => p.id),
+      relatedIncidents: incidents.map(i => i.id),
+      patterns: {
+        crimeType: 'coordinated_activity',
+        methodology: 'Reconnaissance followed by targeted actions',
+        timing: 'Weekend evenings and holiday periods',
+        geographicArea: 'Metropolitan Honolulu area'
+      },
+      riskAssessment: {
+        probabilityOfReoccurrence: 'low',
+        potentialImpact: 'moderate',
+        recommendedActions: [
+          'Enhanced information sharing between properties',
+          'Standardized incident reporting protocols',
+          'Regular threat briefings for security personnel'
+        ]
+      },
+      intelligence: {
+        sources: ['incident reports', 'pattern analysis', 'surveillance data'],
+        reliability: 'good',
+        credibility: 'probable'
+      },
+      actionsTaken: [
+        'Distributed comprehensive threat briefing',
+        'Enhanced coordination protocols established',
+        'Updated security procedures across all properties'
+      ],
+      assignedAnalyst: 'admin-001',
+      tags: ['analysis', 'multi_property', 'coordination', 'closed_case']
+    });
+
+    console.log('✅ Sample data seeded in memory storage including comprehensive crime intelligence');
   }
 
   async getStaff(): Promise<any[]> {
@@ -1341,9 +1841,18 @@ class MemoryStorage {
     return staff.slice(0, Math.ceil(staff.length / 2));
   }
 
-  async getTodaysSchedule(): Promise<any[]> {
-    // Placeholder for actual schedule data
-    return [];
+  async getTodaysSchedule(): Promise<Schedule[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return Array.from(this.schedules.values())
+      .filter(schedule => {
+        const startTime = new Date(schedule.startTime);
+        return startTime >= today && startTime < tomorrow && schedule.status !== 'cancelled';
+      })
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
   }
 
   async getStaffDashboardStats(): Promise<any> {
@@ -1386,34 +1895,1818 @@ class MemoryStorage {
     };
   }
 
-  async getCrimeIntelligence(): Promise<any[]> {
-    // Placeholder for crime intelligence data
-    return [];
+  // Crime Intelligence methods
+  async getCrimeIntelligence(filter?: {
+    status?: string;
+    threatLevel?: string;
+    priority?: string;
+    analysisType?: string;
+    classification?: string;
+    assignedAnalyst?: string;
+    tags?: string[];
+    dateFrom?: Date;
+    dateTo?: Date;
+    searchTerm?: string;
+  }): Promise<CrimeIntelligence[]> {
+    let intelligenceList = Array.from(this.crimeIntelligence.values());
+    
+    if (filter) {
+      if (filter.status) {
+        intelligenceList = intelligenceList.filter(ci => ci.status === filter.status);
+      }
+      if (filter.threatLevel) {
+        intelligenceList = intelligenceList.filter(ci => ci.threatLevel === filter.threatLevel);
+      }
+      if (filter.priority) {
+        intelligenceList = intelligenceList.filter(ci => ci.priority === filter.priority);
+      }
+      if (filter.analysisType) {
+        intelligenceList = intelligenceList.filter(ci => ci.analysisType === filter.analysisType);
+      }
+      if (filter.classification) {
+        intelligenceList = intelligenceList.filter(ci => ci.classification === filter.classification);
+      }
+      if (filter.assignedAnalyst) {
+        intelligenceList = intelligenceList.filter(ci => ci.assignedAnalyst === filter.assignedAnalyst);
+      }
+      if (filter.tags && filter.tags.length > 0) {
+        intelligenceList = intelligenceList.filter(ci => 
+          filter.tags!.some(tag => ci.tags?.includes(tag))
+        );
+      }
+      if (filter.dateFrom) {
+        intelligenceList = intelligenceList.filter(ci => ci.createdAt >= filter.dateFrom!);
+      }
+      if (filter.dateTo) {
+        intelligenceList = intelligenceList.filter(ci => ci.createdAt <= filter.dateTo!);
+      }
+      if (filter.searchTerm) {
+        const term = filter.searchTerm.toLowerCase();
+        intelligenceList = intelligenceList.filter(ci => 
+          ci.title.toLowerCase().includes(term) ||
+          ci.description.toLowerCase().includes(term) ||
+          ci.summary.toLowerCase().includes(term) ||
+          ci.caseNumber.toLowerCase().includes(term)
+        );
+      }
+    }
+    
+    return intelligenceList.sort((a, b) => {
+      // Sort by priority first
+      const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+      const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+      const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+      if (aPriority !== bPriority) return bPriority - aPriority;
+      
+      // Then by threat level
+      const threatOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+      const aThreat = threatOrder[a.threatLevel as keyof typeof threatOrder] || 0;
+      const bThreat = threatOrder[b.threatLevel as keyof typeof threatOrder] || 0;
+      if (aThreat !== bThreat) return bThreat - aThreat;
+      
+      // Finally by last activity date
+      return b.lastActivityDate.getTime() - a.lastActivityDate.getTime();
+    });
   }
 
   async getCrimeStats(): Promise<any> {
-    // Placeholder for crime statistics
+    const intelligenceList = Array.from(this.crimeIntelligence.values());
+    const activeIntelligence = intelligenceList.filter(ci => ci.status === 'active');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Get recent incidents for comparison
+    const recentIncidents = await this.getRecentIncidents();
+    
+    const threatLevelStats: { [key: string]: number } = {};
+    const analysisTypeStats: { [key: string]: number } = {};
+    const statusStats: { [key: string]: number } = {};
+    
+    intelligenceList.forEach(ci => {
+      threatLevelStats[ci.threatLevel] = (threatLevelStats[ci.threatLevel] || 0) + 1;
+      analysisTypeStats[ci.analysisType] = (analysisTypeStats[ci.analysisType] || 0) + 1;
+      statusStats[ci.status] = (statusStats[ci.status] || 0) + 1;
+    });
+    
     return {
-      total: 0,
-      active: 0,
-      resolvedToday: 0,
-      highPriority: 0
+      total: intelligenceList.length,
+      active: activeIntelligence.length,
+      critical: intelligenceList.filter(ci => ci.threatLevel === 'critical').length,
+      highPriority: intelligenceList.filter(ci => ci.priority === 'high' || ci.priority === 'urgent').length,
+      monitoring: intelligenceList.filter(ci => ci.status === 'monitoring').length,
+      escalated: intelligenceList.filter(ci => ci.status === 'escalated').length,
+      requiresFollowUp: intelligenceList.filter(ci => ci.followUpRequired).length,
+      overdueReview: intelligenceList.filter(ci => 
+        ci.nextReviewDate && ci.nextReviewDate < new Date()
+      ).length,
+      createdToday: intelligenceList.filter(ci => 
+        ci.createdAt >= today && ci.createdAt < tomorrow
+      ).length,
+      updatedToday: intelligenceList.filter(ci => 
+        ci.updatedAt >= today && ci.updatedAt < tomorrow
+      ).length,
+      recentActivity: intelligenceList.filter(ci => {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        return ci.lastActivityDate >= sevenDaysAgo;
+      }).length,
+      linkedToIncidents: intelligenceList.filter(ci => ci.incidentId).length,
+      withEvidence: intelligenceList.filter(ci => ci.evidenceIds && ci.evidenceIds.length > 0).length,
+      byThreatLevel: threatLevelStats,
+      byAnalysisType: analysisTypeStats,
+      byStatus: statusStats,
+      totalIncidents: recentIncidents.length,
+      incidentTrends: {
+        thisWeek: recentIncidents.length,
+        critical: recentIncidents.filter(i => i.severity === 'critical').length,
+        resolved: recentIncidents.filter(i => i.status === 'resolved').length
+      }
     };
   }
 
-  async getSchedules(date?: string): Promise<any[]> {
-    // Placeholder for schedule data, potentially filtered by date
-    return [];
+  async getCrimeIntelligenceById(id: string): Promise<CrimeIntelligence | null> {
+    return this.crimeIntelligence.get(id) || null;
+  }
+
+  async createCrimeIntelligence(data: Omit<CrimeIntelligence, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityDate'>): Promise<CrimeIntelligence> {
+    const id = uuidv4();
+    const now = new Date();
+    
+    // Generate case number if not provided
+    const caseNumber = data.caseNumber || `CI-${new Date().getFullYear()}-${String(this.crimeIntelligence.size + 1).padStart(6, '0')}`;
+    
+    const crimeIntelligence: CrimeIntelligence = {
+      id,
+      ...data,
+      caseNumber,
+      status: data.status || 'active',
+      priority: data.priority || 'medium',
+      threatLevel: data.threatLevel || 'medium',
+      classification: data.classification || 'restricted',
+      followUpRequired: data.followUpRequired || false,
+      lastActivityDate: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    this.crimeIntelligence.set(id, crimeIntelligence);
+    
+    // Log activity
+    await this.createActivity({
+      userId: data.assignedAnalyst || 'system',
+      activityType: 'crime_intelligence_created',
+      entityType: 'crime_intelligence',
+      entityId: id,
+      description: `Created crime intelligence report: ${data.title} (${caseNumber})`,
+      metadata: { 
+        crimeIntelligenceId: id, 
+        caseNumber,
+        threatLevel: data.threatLevel,
+        analysisType: data.analysisType,
+        incidentId: data.incidentId
+      }
+    });
+    
+    return crimeIntelligence;
+  }
+
+  async updateCrimeIntelligence(id: string, updates: Partial<CrimeIntelligence>): Promise<CrimeIntelligence> {
+    const crimeIntelligence = this.crimeIntelligence.get(id);
+    if (!crimeIntelligence) {
+      throw new Error(`Crime intelligence with id ${id} not found`);
+    }
+    
+    const now = new Date();
+    const updatedCrimeIntelligence = { 
+      ...crimeIntelligence, 
+      ...updates, 
+      lastActivityDate: now,
+      updatedAt: now 
+    };
+    this.crimeIntelligence.set(id, updatedCrimeIntelligence);
+    
+    // Log activity
+    await this.createActivity({
+      userId: updates.assignedAnalyst || crimeIntelligence.assignedAnalyst || 'system',
+      activityType: 'crime_intelligence_updated',
+      entityType: 'crime_intelligence',
+      entityId: id,
+      description: `Updated crime intelligence: ${crimeIntelligence.title}`,
+      metadata: { 
+        crimeIntelligenceId: id,
+        caseNumber: crimeIntelligence.caseNumber,
+        updatedFields: Object.keys(updates),
+        previousStatus: crimeIntelligence.status,
+        newStatus: updates.status
+      }
+    });
+    
+    return updatedCrimeIntelligence;
+  }
+
+  async deleteCrimeIntelligence(id: string): Promise<boolean> {
+    const crimeIntelligence = this.crimeIntelligence.get(id);
+    if (!crimeIntelligence) {
+      return false;
+    }
+    
+    // Soft delete by archiving
+    await this.updateCrimeIntelligence(id, { status: 'archived' });
+    
+    // Log activity
+    await this.createActivity({
+      userId: crimeIntelligence.assignedAnalyst || 'system',
+      activityType: 'crime_intelligence_deleted',
+      entityType: 'crime_intelligence',
+      entityId: id,
+      description: `Archived crime intelligence: ${crimeIntelligence.title}`,
+      metadata: { 
+        crimeIntelligenceId: id,
+        caseNumber: crimeIntelligence.caseNumber
+      }
+    });
+    
+    return true;
+  }
+
+  async getCrimeIntelligenceByIncident(incidentId: string): Promise<CrimeIntelligence[]> {
+    return Array.from(this.crimeIntelligence.values())
+      .filter(ci => ci.incidentId === incidentId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async searchCrimeIntelligence(query: string, options?: {
+    analysisType?: string;
+    threatLevel?: string;
+    classification?: string;
+    limit?: number;
+  }): Promise<CrimeIntelligence[]> {
+    const filter = {
+      searchTerm: query,
+      ...options
+    };
+    const results = await this.getCrimeIntelligence(filter);
+    return options?.limit ? results.slice(0, options.limit) : results;
+  }
+
+  async getCrimeIntelligenceByThreatLevel(threatLevel: string): Promise<CrimeIntelligence[]> {
+    return this.getCrimeIntelligence({ threatLevel, status: 'active' });
+  }
+
+  async getCrimeIntelligenceRequiringReview(): Promise<CrimeIntelligence[]> {
+    const now = new Date();
+    return Array.from(this.crimeIntelligence.values())
+      .filter(ci => 
+        ci.followUpRequired || 
+        (ci.nextReviewDate && ci.nextReviewDate <= now) ||
+        ci.status === 'monitoring'
+      )
+      .sort((a, b) => {
+        // Prioritize by urgency
+        if (a.priority === 'urgent' && b.priority !== 'urgent') return -1;
+        if (b.priority === 'urgent' && a.priority !== 'urgent') return 1;
+        return a.nextReviewDate && b.nextReviewDate 
+          ? a.nextReviewDate.getTime() - b.nextReviewDate.getTime()
+          : 0;
+      });
+  }
+
+  // Pattern Analysis Methods
+  async analyzeCrimePatterns(options?: {
+    timeframe?: { start: Date; end: Date };
+    location?: string;
+    crimeType?: string;
+  }): Promise<{
+    patterns: any[];
+    trends: any[];
+    recommendations: string[];
+    riskAreas: any[];
+  }> {
+    const incidents = await this.getIncidents();
+    const intelligence = Array.from(this.crimeIntelligence.values());
+    
+    let filteredIncidents = incidents;
+    let filteredIntelligence = intelligence;
+    
+    if (options?.timeframe) {
+      filteredIncidents = incidents.filter(i => 
+        i.occuredAt >= options.timeframe!.start && i.occuredAt <= options.timeframe!.end
+      );
+      filteredIntelligence = intelligence.filter(ci => 
+        ci.createdAt >= options.timeframe!.start && ci.createdAt <= options.timeframe!.end
+      );
+    }
+    
+    if (options?.location) {
+      const location = options.location.toLowerCase();
+      filteredIncidents = filteredIncidents.filter(i => 
+        i.location?.toLowerCase().includes(location)
+      );
+      filteredIntelligence = filteredIntelligence.filter(ci => 
+        ci.location?.toLowerCase().includes(location)
+      );
+    }
+    
+    if (options?.crimeType) {
+      filteredIncidents = filteredIncidents.filter(i => 
+        i.incidentType === options.crimeType
+      );
+    }
+    
+    // Analyze patterns
+    const patterns = this.identifyPatterns(filteredIncidents, filteredIntelligence);
+    const trends = this.analyzeTrends(filteredIncidents);
+    const recommendations = this.generateRecommendations(patterns, trends);
+    const riskAreas = this.identifyRiskAreas(filteredIncidents, filteredIntelligence);
+    
+    return { patterns, trends, recommendations, riskAreas };
+  }
+
+  private identifyPatterns(incidents: Incident[], intelligence: CrimeIntelligence[]): any[] {
+    const patterns: any[] = [];
+    
+    // Time-based patterns
+    const timePatterns = this.analyzeTimePatterns(incidents);
+    if (timePatterns.length > 0) {
+      patterns.push({
+        type: 'temporal',
+        description: 'Time-based incident patterns detected',
+        patterns: timePatterns,
+        confidence: 'medium'
+      });
+    }
+    
+    // Location-based patterns
+    const locationPatterns = this.analyzeLocationPatterns(incidents);
+    if (locationPatterns.length > 0) {
+      patterns.push({
+        type: 'geographic',
+        description: 'Geographic clustering of incidents',
+        patterns: locationPatterns,
+        confidence: 'high'
+      });
+    }
+    
+    // Method patterns from intelligence
+    const methodPatterns = this.analyzeMethodPatterns(intelligence);
+    if (methodPatterns.length > 0) {
+      patterns.push({
+        type: 'methodology',
+        description: 'Similar methods or approaches detected',
+        patterns: methodPatterns,
+        confidence: 'medium'
+      });
+    }
+    
+    return patterns;
+  }
+
+  private analyzeTimePatterns(incidents: Incident[]): any[] {
+    const hourCounts: { [hour: number]: number } = {};
+    const dayOfWeekCounts: { [day: number]: number } = {};
+    
+    incidents.forEach(incident => {
+      const date = new Date(incident.occuredAt);
+      const hour = date.getHours();
+      const dayOfWeek = date.getDay();
+      
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+      dayOfWeekCounts[dayOfWeek] = (dayOfWeekCounts[dayOfWeek] || 0) + 1;
+    });
+    
+    const patterns: any[] = [];
+    
+    // Find peak hours
+    const peakHours = Object.entries(hourCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 3)
+      .map(([hour, count]) => ({ hour: parseInt(hour), count }));
+    
+    if (peakHours.length > 0 && peakHours[0].count > 1) {
+      patterns.push({
+        type: 'peak_hours',
+        data: peakHours,
+        description: `Most incidents occur between ${peakHours[0].hour}:00-${peakHours[0].hour + 1}:00`
+      });
+    }
+    
+    // Find peak days
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const peakDays = Object.entries(dayOfWeekCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 2)
+      .map(([day, count]) => ({ day: dayNames[parseInt(day)], count }));
+    
+    if (peakDays.length > 0 && peakDays[0].count > 1) {
+      patterns.push({
+        type: 'peak_days',
+        data: peakDays,
+        description: `Most incidents occur on ${peakDays[0].day}`
+      });
+    }
+    
+    return patterns;
+  }
+
+  private analyzeLocationPatterns(incidents: Incident[]): any[] {
+    const locationCounts: { [location: string]: number } = {};
+    
+    incidents.forEach(incident => {
+      if (incident.location) {
+        locationCounts[incident.location] = (locationCounts[incident.location] || 0) + 1;
+      }
+    });
+    
+    const hotspots = Object.entries(locationCounts)
+      .filter(([, count]) => count > 1)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([location, count]) => ({ location, count }));
+    
+    return hotspots.length > 0 ? [{
+      type: 'hotspots',
+      data: hotspots,
+      description: `Crime hotspots identified: ${hotspots.map(h => h.location).join(', ')}`
+    }] : [];
+  }
+
+  private analyzeMethodPatterns(intelligence: CrimeIntelligence[]): any[] {
+    const methodCounts: { [method: string]: number } = {};
+    
+    intelligence.forEach(ci => {
+      if (ci.patterns?.methodology) {
+        methodCounts[ci.patterns.methodology] = (methodCounts[ci.patterns.methodology] || 0) + 1;
+      }
+    });
+    
+    const commonMethods = Object.entries(methodCounts)
+      .filter(([, count]) => count > 1)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 3)
+      .map(([method, count]) => ({ method, count }));
+    
+    return commonMethods.length > 0 ? [{
+      type: 'common_methods',
+      data: commonMethods,
+      description: `Common methodologies detected: ${commonMethods.map(m => m.method).join(', ')}`
+    }] : [];
+  }
+
+  private analyzeTrends(incidents: Incident[]): any[] {
+    const trends: any[] = [];
+    
+    // Analyze incident frequency over time
+    const last30Days = new Date();
+    last30Days.setDate(last30Days.getDate() - 30);
+    const last7Days = new Date();
+    last7Days.setDate(last7Days.getDate() - 7);
+    
+    const recent7Days = incidents.filter(i => i.occuredAt >= last7Days).length;
+    const recent30Days = incidents.filter(i => i.occuredAt >= last30Days).length;
+    const previous7Days = incidents.filter(i => {
+      const date = i.occuredAt;
+      const twoWeeksAgo = new Date();
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+      return date >= twoWeeksAgo && date < last7Days;
+    }).length;
+    
+    const weeklyChange = previous7Days > 0 ? ((recent7Days - previous7Days) / previous7Days) * 100 : 0;
+    
+    if (Math.abs(weeklyChange) > 20) {
+      trends.push({
+        type: 'frequency_trend',
+        direction: weeklyChange > 0 ? 'increasing' : 'decreasing',
+        percentage: Math.abs(weeklyChange),
+        description: `Incident frequency ${weeklyChange > 0 ? 'increased' : 'decreased'} by ${Math.round(Math.abs(weeklyChange))}% this week`
+      });
+    }
+    
+    // Analyze severity trends
+    const recentSevere = incidents.filter(i => 
+      i.occuredAt >= last7Days && (i.severity === 'high' || i.severity === 'critical')
+    ).length;
+    
+    if (recentSevere > 0) {
+      trends.push({
+        type: 'severity_trend',
+        count: recentSevere,
+        description: `${recentSevere} high-severity incidents in the past week`
+      });
+    }
+    
+    return trends;
+  }
+
+  private generateRecommendations(patterns: any[], trends: any[]): string[] {
+    const recommendations: string[] = [];
+    
+    patterns.forEach(pattern => {
+      if (pattern.type === 'temporal' && pattern.patterns.length > 0) {
+        const peakHour = pattern.patterns.find((p: any) => p.type === 'peak_hours');
+        if (peakHour) {
+          recommendations.push(`Increase patrol presence during peak hours (${peakHour.data[0]?.hour}:00-${peakHour.data[0]?.hour + 1}:00)`);
+        }
+      }
+      
+      if (pattern.type === 'geographic' && pattern.patterns.length > 0) {
+        const hotspots = pattern.patterns.find((p: any) => p.type === 'hotspots');
+        if (hotspots && hotspots.data.length > 0) {
+          recommendations.push(`Deploy additional security resources to hotspot areas: ${hotspots.data[0]?.location}`);
+        }
+      }
+    });
+    
+    trends.forEach(trend => {
+      if (trend.type === 'frequency_trend' && trend.direction === 'increasing') {
+        recommendations.push('Consider implementing additional preventive measures due to increasing incident frequency');
+      }
+      
+      if (trend.type === 'severity_trend' && trend.count > 2) {
+        recommendations.push('Review and strengthen security protocols due to recent high-severity incidents');
+      }
+    });
+    
+    if (recommendations.length === 0) {
+      recommendations.push('Continue current security protocols and maintain regular monitoring');
+    }
+    
+    return recommendations;
+  }
+
+  private identifyRiskAreas(incidents: Incident[], intelligence: CrimeIntelligence[]): any[] {
+    const riskAreas: any[] = [];
+    
+    // Combine incident locations and intelligence locations
+    const locationRisk: { [location: string]: { score: number; incidents: number; intelligence: number } } = {};
+    
+    incidents.forEach(incident => {
+      if (incident.location) {
+        if (!locationRisk[incident.location]) {
+          locationRisk[incident.location] = { score: 0, incidents: 0, intelligence: 0 };
+        }
+        locationRisk[incident.location].incidents++;
+        locationRisk[incident.location].score += incident.severity === 'critical' ? 3 : 
+                                                    incident.severity === 'high' ? 2 : 1;
+      }
+    });
+    
+    intelligence.forEach(ci => {
+      if (ci.location) {
+        if (!locationRisk[ci.location]) {
+          locationRisk[ci.location] = { score: 0, incidents: 0, intelligence: 0 };
+        }
+        locationRisk[ci.location].intelligence++;
+        locationRisk[ci.location].score += ci.threatLevel === 'critical' ? 3 : 
+                                             ci.threatLevel === 'high' ? 2 : 1;
+      }
+    });
+    
+    // Convert to risk areas array and sort by risk score
+    const areas = Object.entries(locationRisk)
+      .map(([location, data]) => ({
+        location,
+        riskScore: data.score,
+        incidentCount: data.incidents,
+        intelligenceCount: data.intelligence,
+        riskLevel: data.score >= 6 ? 'high' : data.score >= 3 ? 'medium' : 'low'
+      }))
+      .sort((a, b) => b.riskScore - a.riskScore)
+      .slice(0, 10); // Top 10 risk areas
+    
+    return areas;
+  }
+
+  // Threat Assessment Methods
+  async assessThreat(params: {
+    incidentId?: string;
+    location?: string;
+    timeframe?: { start: Date; end: Date };
+    threatType?: string;
+  }): Promise<{
+    threatLevel: string;
+    confidence: string;
+    factors: string[];
+    recommendations: string[];
+    nextReviewDate: Date;
+  }> {
+    const factors: string[] = [];
+    let threatScore = 0;
+    
+    // Analyze recent incidents in the area
+    const incidents = await this.getIncidents();
+    const recentIncidents = incidents.filter(i => {
+      let matches = true;
+      if (params.location) {
+        matches = matches && i.location?.toLowerCase().includes(params.location.toLowerCase());
+      }
+      if (params.timeframe) {
+        matches = matches && i.occuredAt >= params.timeframe.start && i.occuredAt <= params.timeframe.end;
+      }
+      return matches;
+    });
+    
+    if (recentIncidents.length > 0) {
+      threatScore += recentIncidents.length * 0.5;
+      factors.push(`${recentIncidents.length} recent incidents in the area`);
+    }
+    
+    // Analyze related intelligence
+    const intelligence = Array.from(this.crimeIntelligence.values()).filter(ci => {
+      let matches = true;
+      if (params.location) {
+        matches = matches && ci.location?.toLowerCase().includes(params.location.toLowerCase());
+      }
+      return matches && ci.status === 'active';
+    });
+    
+    if (intelligence.length > 0) {
+      const highThreatIntel = intelligence.filter(ci => ci.threatLevel === 'high' || ci.threatLevel === 'critical');
+      threatScore += highThreatIntel.length * 2;
+      if (highThreatIntel.length > 0) {
+        factors.push(`${highThreatIntel.length} high-threat intelligence reports`);
+      }
+    }
+    
+    // Determine threat level
+    let threatLevel = 'low';
+    let confidence = 'medium';
+    
+    if (threatScore >= 8) {
+      threatLevel = 'critical';
+      confidence = 'high';
+    } else if (threatScore >= 5) {
+      threatLevel = 'high';
+      confidence = 'high';
+    } else if (threatScore >= 2) {
+      threatLevel = 'medium';
+      confidence = 'medium';
+    }
+    
+    // Generate recommendations
+    const recommendations: string[] = [];
+    if (threatLevel === 'critical') {
+      recommendations.push('Immediate security response required');
+      recommendations.push('Coordinate with law enforcement');
+      recommendations.push('Implement emergency security protocols');
+    } else if (threatLevel === 'high') {
+      recommendations.push('Increase security presence in the area');
+      recommendations.push('Enhanced monitoring and surveillance');
+      recommendations.push('Brief security personnel on specific threats');
+    } else if (threatLevel === 'medium') {
+      recommendations.push('Maintain current security levels with increased vigilance');
+      recommendations.push('Regular patrol schedule adjustments');
+    } else {
+      recommendations.push('Continue standard security protocols');
+      recommendations.push('Regular monitoring and assessment');
+    }
+    
+    // Set next review date based on threat level
+    const nextReviewDate = new Date();
+    switch (threatLevel) {
+      case 'critical':
+        nextReviewDate.setHours(nextReviewDate.getHours() + 4); // 4 hours
+        break;
+      case 'high':
+        nextReviewDate.setDate(nextReviewDate.getDate() + 1); // 1 day
+        break;
+      case 'medium':
+        nextReviewDate.setDate(nextReviewDate.getDate() + 3); // 3 days
+        break;
+      default:
+        nextReviewDate.setDate(nextReviewDate.getDate() + 7); // 1 week
+    }
+    
+    return {
+      threatLevel,
+      confidence,
+      factors,
+      recommendations,
+      nextReviewDate
+    };
+  }
+
+  async getSchedules(date?: string): Promise<Schedule[]> {
+    let schedulesList = Array.from(this.schedules.values());
+    
+    if (date) {
+      const targetDate = new Date(date);
+      targetDate.setHours(0, 0, 0, 0);
+      const nextDay = new Date(targetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      schedulesList = schedulesList.filter(schedule => {
+        const startTime = new Date(schedule.startTime);
+        return startTime >= targetDate && startTime < nextDay;
+      });
+    }
+    
+    return schedulesList
+      .filter(schedule => schedule.status !== 'cancelled')
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
   }
 
   async getScheduleStats(): Promise<any> {
-    // Placeholder for schedule statistics
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const todaysSchedules = await this.getTodaysSchedule();
+    const allStaff = await this.getActiveStaff();
+    const scheduledStaffIds = new Set(todaysSchedules.map(s => s.staffId));
+    const availableStaff = allStaff.filter(staff => !scheduledStaffIds.has(staff.id));
+    
+    const openShifts = todaysSchedules.filter(s => s.status === 'scheduled' && !s.staffId).length;
+    const totalRequiredShifts = todaysSchedules.length;
+    const filledShifts = todaysSchedules.filter(s => s.staffId && s.status !== 'cancelled').length;
+    const coveragePercentage = totalRequiredShifts > 0 ? Math.round((filledShifts / totalRequiredShifts) * 100) : 100;
+    
     return {
-      scheduledToday: 0,
-      availableStaff: 0,
-      openShifts: 0,
-      coveragePercentage: 0
+      scheduledToday: todaysSchedules.length,
+      availableStaff: availableStaff.length,
+      openShifts,
+      coveragePercentage,
+      inProgress: todaysSchedules.filter(s => s.status === 'in_progress').length,
+      completed: todaysSchedules.filter(s => s.status === 'completed').length,
+      confirmed: todaysSchedules.filter(s => s.status === 'confirmed').length,
+      totalStaff: allStaff.length,
+      scheduledStaff: scheduledStaffIds.size
     };
+  }
+
+  // Core Schedule CRUD operations
+  async getScheduleById(id: string): Promise<Schedule | null> {
+    return this.schedules.get(id) || null;
+  }
+
+  async createSchedule(scheduleData: Omit<Schedule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Schedule> {
+    const id = uuidv4();
+    const now = new Date();
+    
+    // Validate required fields
+    if (!scheduleData.staffId || !scheduleData.startTime || !scheduleData.endTime) {
+      throw new Error('Missing required fields: staffId, startTime, and endTime are required');
+    }
+    
+    // Check for schedule conflicts
+    const conflicts = await this.checkScheduleConflicts(scheduleData.staffId, scheduleData.startTime, scheduleData.endTime);
+    if (conflicts.length > 0) {
+      throw new Error(`Schedule conflict detected with existing schedules: ${conflicts.map(c => c.id).join(', ')}`);
+    }
+    
+    // Calculate duration if not provided
+    const duration = scheduleData.duration || 
+      Math.round((new Date(scheduleData.endTime).getTime() - new Date(scheduleData.startTime).getTime()) / (1000 * 60));
+    
+    const schedule: Schedule = {
+      id,
+      ...scheduleData,
+      duration,
+      status: scheduleData.status || 'scheduled',
+      priority: scheduleData.priority || 'medium',
+      recurring: scheduleData.recurring || false,
+      clientNotificationRequired: scheduleData.clientNotificationRequired || false,
+      clientNotificationSent: scheduleData.clientNotificationSent || false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    this.schedules.set(id, schedule);
+    
+    // Log activity
+    await this.createActivity({
+      userId: scheduleData.scheduledBy,
+      activityType: 'schedule_created',
+      entityType: 'schedule',
+      entityId: id,
+      description: `Created schedule: ${scheduleData.title} for ${scheduleData.staffId}`,
+      metadata: { 
+        scheduleId: id, 
+        staffId: scheduleData.staffId,
+        propertyId: scheduleData.propertyId,
+        shiftType: scheduleData.shiftType,
+        scheduleType: scheduleData.scheduleType
+      }
+    });
+    
+    // Generate recurring schedules if needed
+    if (schedule.recurring && schedule.recurrencePattern && schedule.recurrenceEndDate) {
+      await this.generateRecurringSchedules(schedule);
+    }
+    
+    return schedule;
+  }
+
+  async updateSchedule(id: string, updates: Partial<Schedule>): Promise<Schedule> {
+    const schedule = this.schedules.get(id);
+    if (!schedule) {
+      throw new Error(`Schedule with id ${id} not found`);
+    }
+    
+    // Check for conflicts if time or staff changes
+    if ((updates.staffId && updates.staffId !== schedule.staffId) || 
+        updates.startTime || updates.endTime) {
+      const staffId = updates.staffId || schedule.staffId;
+      const startTime = updates.startTime || schedule.startTime;
+      const endTime = updates.endTime || schedule.endTime;
+      
+      const conflicts = await this.checkScheduleConflicts(staffId, startTime, endTime, id);
+      if (conflicts.length > 0) {
+        throw new Error(`Schedule conflict detected with existing schedules: ${conflicts.map(c => c.id).join(', ')}`);
+      }
+    }
+    
+    // Recalculate duration if times change
+    if (updates.startTime || updates.endTime) {
+      const startTime = updates.startTime || schedule.startTime;
+      const endTime = updates.endTime || schedule.endTime;
+      updates.duration = Math.round((new Date(endTime).getTime() - new Date(startTime).getTime()) / (1000 * 60));
+    }
+    
+    const updatedSchedule = { 
+      ...schedule, 
+      ...updates, 
+      modifiedBy: updates.modifiedBy || schedule.scheduledBy,
+      updatedAt: new Date() 
+    };
+    this.schedules.set(id, updatedSchedule);
+    
+    // Log activity
+    await this.createActivity({
+      userId: updates.modifiedBy || schedule.scheduledBy,
+      activityType: 'schedule_updated',
+      entityType: 'schedule',
+      entityId: id,
+      description: `Updated schedule: ${schedule.title}`,
+      metadata: { 
+        scheduleId: id, 
+        updatedFields: Object.keys(updates),
+        previousStatus: schedule.status,
+        newStatus: updates.status
+      }
+    });
+    
+    return updatedSchedule;
+  }
+
+  async deleteSchedule(id: string): Promise<boolean> {
+    const schedule = this.schedules.get(id);
+    if (!schedule) {
+      return false;
+    }
+    
+    // Soft delete by marking as cancelled
+    await this.updateSchedule(id, { status: 'cancelled' });
+    
+    // Log activity
+    await this.createActivity({
+      userId: schedule.scheduledBy,
+      activityType: 'schedule_deleted',
+      entityType: 'schedule',
+      entityId: id,
+      description: `Deleted schedule: ${schedule.title}`,
+      metadata: { scheduleId: id }
+    });
+    
+    return true;
+  }
+
+  // Schedule filtering methods
+  async getSchedulesByStaff(staffId: string, startDate?: Date, endDate?: Date): Promise<Schedule[]> {
+    let schedules = Array.from(this.schedules.values())
+      .filter(schedule => schedule.staffId === staffId && schedule.status !== 'cancelled');
+    
+    if (startDate) {
+      schedules = schedules.filter(schedule => new Date(schedule.startTime) >= startDate);
+    }
+    
+    if (endDate) {
+      schedules = schedules.filter(schedule => new Date(schedule.endTime) <= endDate);
+    }
+    
+    return schedules.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+  }
+
+  async getSchedulesByProperty(propertyId: string, startDate?: Date, endDate?: Date): Promise<Schedule[]> {
+    let schedules = Array.from(this.schedules.values())
+      .filter(schedule => schedule.propertyId === propertyId && schedule.status !== 'cancelled');
+    
+    if (startDate) {
+      schedules = schedules.filter(schedule => new Date(schedule.startTime) >= startDate);
+    }
+    
+    if (endDate) {
+      schedules = schedules.filter(schedule => new Date(schedule.endTime) <= endDate);
+    }
+    
+    return schedules.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+  }
+
+  async getSchedulesByDateRange(startDate: Date, endDate: Date, filters?: {
+    staffId?: string;
+    propertyId?: string;
+    status?: string;
+    shiftType?: string;
+    scheduleType?: string;
+  }): Promise<Schedule[]> {
+    let schedules = Array.from(this.schedules.values())
+      .filter(schedule => {
+        const scheduleStart = new Date(schedule.startTime);
+        const scheduleEnd = new Date(schedule.endTime);
+        return (scheduleStart >= startDate && scheduleStart <= endDate) ||
+               (scheduleEnd >= startDate && scheduleEnd <= endDate) ||
+               (scheduleStart <= startDate && scheduleEnd >= endDate);
+      });
+    
+    if (filters) {
+      if (filters.staffId) {
+        schedules = schedules.filter(s => s.staffId === filters.staffId);
+      }
+      if (filters.propertyId) {
+        schedules = schedules.filter(s => s.propertyId === filters.propertyId);
+      }
+      if (filters.status) {
+        schedules = schedules.filter(s => s.status === filters.status);
+      }
+      if (filters.shiftType) {
+        schedules = schedules.filter(s => s.shiftType === filters.shiftType);
+      }
+      if (filters.scheduleType) {
+        schedules = schedules.filter(s => s.scheduleType === filters.scheduleType);
+      }
+    }
+    
+    return schedules.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+  }
+
+  // Schedule conflict detection
+  async checkScheduleConflicts(staffId: string, startTime: Date, endTime: Date, excludeScheduleId?: string): Promise<Schedule[]> {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    
+    return Array.from(this.schedules.values())
+      .filter(schedule => {
+        if (schedule.id === excludeScheduleId) return false;
+        if (schedule.staffId !== staffId) return false;
+        if (schedule.status === 'cancelled') return false;
+        
+        const scheduleStart = new Date(schedule.startTime);
+        const scheduleEnd = new Date(schedule.endTime);
+        
+        // Check for overlap
+        return (start < scheduleEnd && end > scheduleStart);
+      });
+  }
+
+  async checkStaffAvailability(staffId: string, startTime: Date, endTime: Date): Promise<{
+    available: boolean;
+    conflicts: Schedule[];
+    reason?: string;
+  }> {
+    const staff = await this.getUser(staffId);
+    if (!staff) {
+      return { available: false, conflicts: [], reason: 'Staff member not found' };
+    }
+    
+    if (staff.status !== 'active') {
+      return { available: false, conflicts: [], reason: 'Staff member is not active' };
+    }
+    
+    const conflicts = await this.checkScheduleConflicts(staffId, startTime, endTime);
+    
+    return {
+      available: conflicts.length === 0,
+      conflicts,
+      reason: conflicts.length > 0 ? 'Schedule conflicts exist' : undefined
+    };
+  }
+
+  // Backup staff assignment
+  async assignBackupStaff(scheduleId: string, backupStaffId: string): Promise<Schedule> {
+    const schedule = this.schedules.get(scheduleId);
+    if (!schedule) {
+      throw new Error(`Schedule with id ${scheduleId} not found`);
+    }
+    
+    const availability = await this.checkStaffAvailability(backupStaffId, schedule.startTime, schedule.endTime);
+    if (!availability.available) {
+      throw new Error(`Backup staff member is not available: ${availability.reason}`);
+    }
+    
+    return await this.updateSchedule(scheduleId, { backupStaffId });
+  }
+
+  async findAvailableStaff(startTime: Date, endTime: Date, options?: {
+    requiredSkills?: string[];
+    propertyId?: string;
+    excludeStaffIds?: string[];
+  }): Promise<User[]> {
+    const allStaff = await this.getActiveStaff();
+    const availableStaff: User[] = [];
+    
+    for (const staff of allStaff) {
+      if (options?.excludeStaffIds?.includes(staff.id)) continue;
+      
+      const availability = await this.checkStaffAvailability(staff.id, startTime, endTime);
+      if (availability.available) {
+        // Check required skills if specified
+        if (options?.requiredSkills && options.requiredSkills.length > 0) {
+          // For now, assume all staff have all skills - this could be enhanced
+          // with a staff skills system
+        }
+        
+        availableStaff.push(staff);
+      }
+    }
+    
+    return availableStaff;
+  }
+
+  // Recurring schedule generation
+  async generateRecurringSchedules(parentSchedule: Schedule): Promise<Schedule[]> {
+    if (!parentSchedule.recurring || !parentSchedule.recurrencePattern || !parentSchedule.recurrenceEndDate) {
+      return [];
+    }
+    
+    const generatedSchedules: Schedule[] = [];
+    const startDate = new Date(parentSchedule.startTime);
+    const endDate = new Date(parentSchedule.recurrenceEndDate);
+    let currentDate = new Date(startDate);
+    
+    // Calculate increment based on pattern
+    let incrementDays = 0;
+    switch (parentSchedule.recurrencePattern) {
+      case 'daily':
+        incrementDays = 1;
+        break;
+      case 'weekly':
+        incrementDays = 7;
+        break;
+      case 'monthly':
+        // Handle monthly separately
+        break;
+      default:
+        return [];
+    }
+    
+    while (currentDate <= endDate) {
+      if (parentSchedule.recurrencePattern === 'monthly') {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      } else {
+        currentDate.setDate(currentDate.getDate() + incrementDays);
+      }
+      
+      if (currentDate > endDate) break;
+      
+      const scheduleStart = new Date(currentDate);
+      const scheduleEnd = new Date(currentDate);
+      scheduleEnd.setTime(scheduleEnd.getTime() + parentSchedule.duration * 60 * 1000);
+      
+      try {
+        const newSchedule = await this.createSchedule({
+          ...parentSchedule,
+          startTime: scheduleStart,
+          endTime: scheduleEnd,
+          parentScheduleId: parentSchedule.id,
+          recurring: false, // Child schedules are not recursive
+          recurrencePattern: undefined,
+          recurrenceEndDate: undefined
+        });
+        
+        generatedSchedules.push(newSchedule);
+      } catch (error) {
+        // Log conflicts but continue generating other schedules
+        console.warn(`Failed to create recurring schedule for ${scheduleStart}: ${error}`);
+      }
+    }
+    
+    return generatedSchedules;
+  }
+
+  async getRecurringSchedules(parentScheduleId: string): Promise<Schedule[]> {
+    return Array.from(this.schedules.values())
+      .filter(schedule => schedule.parentScheduleId === parentScheduleId)
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+  }
+
+  // Shift Template Management
+  async createShiftTemplate(templateData: Omit<ShiftTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<ShiftTemplate> {
+    const id = uuidv4();
+    const now = new Date();
+    
+    const template: ShiftTemplate = {
+      id,
+      ...templateData,
+      isActive: templateData.isActive !== undefined ? templateData.isActive : true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    this.shiftTemplates.set(id, template);
+    return template;
+  }
+
+  async getShiftTemplates(filters?: {
+    isActive?: boolean;
+    shiftType?: string;
+    propertyId?: string;
+  }): Promise<ShiftTemplate[]> {
+    let templates = Array.from(this.shiftTemplates.values());
+    
+    if (filters) {
+      if (filters.isActive !== undefined) {
+        templates = templates.filter(t => t.isActive === filters.isActive);
+      }
+      if (filters.shiftType) {
+        templates = templates.filter(t => t.shiftType === filters.shiftType);
+      }
+      if (filters.propertyId) {
+        templates = templates.filter(t => t.propertyId === filters.propertyId);
+      }
+    }
+    
+    return templates.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getShiftTemplateById(id: string): Promise<ShiftTemplate | null> {
+    return this.shiftTemplates.get(id) || null;
+  }
+
+  async updateShiftTemplate(id: string, updates: Partial<ShiftTemplate>): Promise<ShiftTemplate> {
+    const template = this.shiftTemplates.get(id);
+    if (!template) {
+      throw new Error(`Shift template with id ${id} not found`);
+    }
+    
+    const updatedTemplate = { ...template, ...updates, updatedAt: new Date() };
+    this.shiftTemplates.set(id, updatedTemplate);
+    return updatedTemplate;
+  }
+
+  async deleteShiftTemplate(id: string): Promise<boolean> {
+    return this.shiftTemplates.delete(id);
+  }
+
+  async applyShiftTemplate(templateId: string, startDate: Date, endDate: Date, staffId: string): Promise<Schedule[]> {
+    const template = await this.getShiftTemplateById(templateId);
+    if (!template) {
+      throw new Error(`Shift template with id ${templateId} not found`);
+    }
+    
+    const generatedSchedules: Schedule[] = [];
+    const currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+      const dayOfWeek = currentDate.getDay();
+      
+      if (template.daysOfWeek.includes(dayOfWeek)) {
+        const [startHour, startMinute] = template.startTime.split(':').map(Number);
+        const [endHour, endMinute] = template.endTime.split(':').map(Number);
+        
+        const scheduleStart = new Date(currentDate);
+        scheduleStart.setHours(startHour, startMinute, 0, 0);
+        
+        const scheduleEnd = new Date(currentDate);
+        scheduleEnd.setHours(endHour, endMinute, 0, 0);
+        
+        // Handle overnight shifts
+        if (scheduleEnd <= scheduleStart) {
+          scheduleEnd.setDate(scheduleEnd.getDate() + 1);
+        }
+        
+        try {
+          const schedule = await this.createSchedule({
+            title: `${template.name} - ${currentDate.toLocaleDateString()}`,
+            description: template.description,
+            staffId,
+            propertyId: template.propertyId,
+            shiftType: template.shiftType,
+            scheduleType: 'regular',
+            startTime: scheduleStart,
+            endTime: scheduleEnd,
+            duration: template.duration,
+            status: 'scheduled',
+            priority: 'medium',
+            recurring: false,
+            requiredSkills: template.requiredSkills,
+            equipment: template.equipment,
+            checkpoints: template.checkpoints,
+            scheduledBy: 'system'
+          });
+          
+          generatedSchedules.push(schedule);
+        } catch (error) {
+          console.warn(`Failed to apply template for ${currentDate}: ${error}`);
+        }
+      }
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return generatedSchedules;
+  }
+
+  // Schedule optimization
+  async optimizeSchedules(startDate: Date, endDate: Date, options?: {
+    minimizeOvertime?: boolean;
+    balanceWorkload?: boolean;
+    respectPreferences?: boolean;
+  }): Promise<{
+    optimizedSchedules: Schedule[];
+    recommendations: string[];
+    conflicts: string[];
+  }> {
+    const schedules = await this.getSchedulesByDateRange(startDate, endDate);
+    const allStaff = await this.getActiveStaff();
+    
+    const recommendations: string[] = [];
+    const conflicts: string[] = [];
+    
+    // Basic optimization logic
+    const staffWorkload = new Map<string, number>();
+    
+    schedules.forEach(schedule => {
+      if (schedule.staffId) {
+        const current = staffWorkload.get(schedule.staffId) || 0;
+        staffWorkload.set(schedule.staffId, current + schedule.duration);
+      }
+    });
+    
+    // Check for workload imbalance
+    if (options?.balanceWorkload) {
+      const workloads = Array.from(staffWorkload.values());
+      const avgWorkload = workloads.reduce((sum, w) => sum + w, 0) / workloads.length;
+      const maxDeviation = avgWorkload * 0.2; // 20% deviation threshold
+      
+      workloads.forEach((workload, index) => {
+        if (Math.abs(workload - avgWorkload) > maxDeviation) {
+          const staffId = Array.from(staffWorkload.keys())[index];
+          recommendations.push(`Consider rebalancing workload for staff ${staffId}`);
+        }
+      });
+    }
+    
+    // Check for overtime
+    if (options?.minimizeOvertime) {
+      const weeklyHourLimit = 40 * 60; // 40 hours in minutes
+      
+      staffWorkload.forEach((workload, staffId) => {
+        if (workload > weeklyHourLimit) {
+          recommendations.push(`Staff ${staffId} is scheduled for ${Math.round(workload/60)} hours (overtime)`);
+        }
+      });
+    }
+    
+    return {
+      optimizedSchedules: schedules,
+      recommendations,
+      conflicts
+    };
+  }
+
+  // Schedule analytics
+  async getScheduleAnalytics(startDate: Date, endDate: Date): Promise<{
+    totalScheduledHours: number;
+    averageShiftLength: number;
+    mostActiveStaff: string;
+    peakHours: { hour: number; count: number; }[];
+    shiftTypeDistribution: { [key: string]: number };
+    propertyDistribution: { [key: string]: number };
+    statusDistribution: { [key: string]: number };
+    overtimeHours: number;
+    noShowRate: number;
+  }> {
+    const schedules = await this.getSchedulesByDateRange(startDate, endDate);
+    
+    const totalScheduledHours = schedules.reduce((sum, s) => sum + (s.duration / 60), 0);
+    const averageShiftLength = schedules.length > 0 ? totalScheduledHours / schedules.length : 0;
+    
+    // Staff activity
+    const staffActivity = new Map<string, number>();
+    schedules.forEach(s => {
+      if (s.staffId) {
+        staffActivity.set(s.staffId, (staffActivity.get(s.staffId) || 0) + 1);
+      }
+    });
+    const mostActiveStaff = Array.from(staffActivity.entries())
+      .sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+    
+    // Peak hours analysis
+    const hourCounts = new Map<number, number>();
+    schedules.forEach(s => {
+      const hour = new Date(s.startTime).getHours();
+      hourCounts.set(hour, (hourCounts.get(hour) || 0) + 1);
+    });
+    const peakHours = Array.from(hourCounts.entries())
+      .map(([hour, count]) => ({ hour, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    
+    // Distributions
+    const shiftTypeDistribution: { [key: string]: number } = {};
+    const propertyDistribution: { [key: string]: number } = {};
+    const statusDistribution: { [key: string]: number } = {};
+    
+    schedules.forEach(s => {
+      shiftTypeDistribution[s.shiftType] = (shiftTypeDistribution[s.shiftType] || 0) + 1;
+      if (s.propertyId) {
+        propertyDistribution[s.propertyId] = (propertyDistribution[s.propertyId] || 0) + 1;
+      }
+      statusDistribution[s.status] = (statusDistribution[s.status] || 0) + 1;
+    });
+    
+    // Calculate overtime (assuming 8 hours is standard)
+    const overtimeHours = schedules
+      .filter(s => s.duration > 8 * 60)
+      .reduce((sum, s) => sum + ((s.duration - 8 * 60) / 60), 0);
+    
+    // No-show rate
+    const noShows = schedules.filter(s => s.status === 'no_show').length;
+    const noShowRate = schedules.length > 0 ? (noShows / schedules.length) * 100 : 0;
+    
+    return {
+      totalScheduledHours,
+      averageShiftLength,
+      mostActiveStaff,
+      peakHours,
+      shiftTypeDistribution,
+      propertyDistribution,
+      statusDistribution,
+      overtimeHours,
+      noShowRate
+    };
+  }
+
+  // ===============================================
+  // DATA INTEGRATION AND CORRELATION CAPABILITIES
+  // ===============================================
+
+  // External data integration for live Honolulu PD data correlation
+  async correlateExternalCrimeData(options?: {
+    timeframe?: { start: Date; end: Date };
+    location?: string;
+    radius?: number; // miles
+    crimeTypes?: string[];
+    autoCreateIntelligence?: boolean;
+  }): Promise<{
+    matches: any[];
+    newCorrelations: any[];
+    updateSuggestions: any[];
+    riskAssessments: any[];
+    integrationSummary: {
+      totalExternalIncidents: number;
+      matchedIncidents: number;
+      newIntelligenceCreated: number;
+      correlationAccuracy: number;
+    };
+  }> {
+    // Mock external data source (in production, this would connect to real PD APIs)
+    const externalIncidents = await this.generateMockHonoluluPDData(options);
+    
+    const matches: any[] = [];
+    const newCorrelations: any[] = [];
+    const updateSuggestions: any[] = [];
+    const riskAssessments: any[] = [];
+    
+    // Get internal incidents and intelligence for correlation
+    const internalIncidents = await this.getIncidents();
+    const internalIntelligence = Array.from(this.crimeIntelligence.values());
+    
+    for (const externalIncident of externalIncidents) {
+      // Geographic correlation (within specified radius)
+      const geographicMatches = this.findGeographicMatches(
+        externalIncident, 
+        internalIncidents, 
+        options?.radius || 0.5
+      );
+      
+      // Temporal correlation (within 48 hours)
+      const temporalMatches = this.findTemporalMatches(
+        externalIncident, 
+        internalIncidents, 
+        48 // hours
+      );
+      
+      // Pattern-based correlation
+      const patternMatches = this.findPatternMatches(
+        externalIncident, 
+        internalIntelligence
+      );
+      
+      if (geographicMatches.length > 0 || temporalMatches.length > 0 || patternMatches.length > 0) {
+        const correlation = {
+          externalIncident,
+          internalMatches: {
+            geographic: geographicMatches,
+            temporal: temporalMatches,
+            pattern: patternMatches
+          },
+          correlationScore: this.calculateCorrelationScore(geographicMatches, temporalMatches, patternMatches),
+          confidence: this.calculateCorrelationConfidence(externalIncident, geographicMatches, temporalMatches),
+          riskLevel: this.assessCorrelationRisk(externalIncident, geographicMatches, temporalMatches)
+        };
+        
+        matches.push(correlation);
+        
+        // Auto-create intelligence if option enabled and confidence is high
+        if (options?.autoCreateIntelligence && correlation.confidence >= 0.8) {
+          const newIntelligence = await this.createIntelligenceFromCorrelation(correlation);
+          newCorrelations.push(newIntelligence);
+        }
+        
+        // Generate update suggestions for existing intelligence
+        const suggestions = this.generateUpdateSuggestions(correlation);
+        updateSuggestions.push(...suggestions);
+        
+        // Perform risk assessment
+        const riskAssessment = await this.assessExternalIncidentRisk(externalIncident, correlation);
+        riskAssessments.push(riskAssessment);
+      }
+    }
+    
+    const integrationSummary = {
+      totalExternalIncidents: externalIncidents.length,
+      matchedIncidents: matches.length,
+      newIntelligenceCreated: newCorrelations.length,
+      correlationAccuracy: matches.length > 0 ? matches.reduce((sum, m) => sum + m.confidence, 0) / matches.length : 0
+    };
+    
+    return {
+      matches,
+      newCorrelations,
+      updateSuggestions,
+      riskAssessments,
+      integrationSummary
+    };
+  }
+
+  // Generate mock Honolulu PD data for testing and demonstration
+  private async generateMockHonoluluPDData(options?: any): Promise<any[]> {
+    const incidents = [
+      {
+        pdIncidentId: 'HPD-2024-001234',
+        type: 'theft',
+        location: '123 Waikiki Beach Walk, Honolulu, HI',
+        coordinates: '21.2793,-157.8293',
+        dateTime: new Date('2024-01-15T14:30:00Z'),
+        description: 'Vehicle break-in reported at beach parking area',
+        severity: 'medium',
+        status: 'investigating',
+        officerBadge: 'HPD-5678',
+        caseNumber: 'HPD-24-001234',
+        witnesses: 2,
+        evidence: ['surveillance_footage', 'fingerprints'],
+        suspect: {
+          description: 'Male, approximately 25-30 years, 5\'8" height',
+          lastSeen: '2024-01-15T14:45:00Z',
+          direction: 'heading towards Kalakaua Avenue'
+        }
+      },
+      {
+        pdIncidentId: 'HPD-2024-001235',
+        type: 'vandalism',
+        location: '456 Kapiolani Boulevard, Honolulu, HI',
+        coordinates: '21.2956,-157.8459',
+        dateTime: new Date('2024-01-15T22:15:00Z'),
+        description: 'Graffiti and property damage at commercial building',
+        severity: 'low',
+        status: 'report_filed',
+        officerBadge: 'HPD-9012',
+        caseNumber: 'HPD-24-001235',
+        damages: '$500 estimated',
+        evidence: ['photos', 'paint_samples']
+      },
+      {
+        pdIncidentId: 'HPD-2024-001236',
+        type: 'assault',
+        location: '789 Hotel Street, Honolulu, HI',
+        coordinates: '21.3099,-157.8556',
+        dateTime: new Date('2024-01-16T01:20:00Z'),
+        description: 'Physical altercation between two individuals',
+        severity: 'high',
+        status: 'active_investigation',
+        officerBadge: 'HPD-3456',
+        caseNumber: 'HPD-24-001236',
+        injuries: 'minor injuries reported',
+        suspects: 2,
+        witnesses: 4,
+        evidence: ['medical_records', 'witness_statements']
+      }
+    ];
+    
+    // Filter based on options if provided
+    let filteredIncidents = incidents;
+    
+    if (options?.timeframe) {
+      filteredIncidents = filteredIncidents.filter(incident => 
+        incident.dateTime >= options.timeframe.start && incident.dateTime <= options.timeframe.end
+      );
+    }
+    
+    if (options?.location) {
+      filteredIncidents = filteredIncidents.filter(incident =>
+        incident.location.toLowerCase().includes(options.location.toLowerCase())
+      );
+    }
+    
+    if (options?.crimeTypes) {
+      filteredIncidents = filteredIncidents.filter(incident =>
+        options.crimeTypes.includes(incident.type)
+      );
+    }
+    
+    return filteredIncidents;
+  }
+
+  // Find geographic matches within specified radius
+  private findGeographicMatches(externalIncident: any, internalIncidents: Incident[], radiusMiles: number): any[] {
+    if (!externalIncident.coordinates) return [];
+    
+    const [extLat, extLon] = externalIncident.coordinates.split(',').map(Number);
+    
+    return internalIncidents.filter(incident => {
+      if (!incident.coordinates) return false;
+      
+      const [intLat, intLon] = incident.coordinates.split(',').map(Number);
+      const distance = this.calculateDistance(extLat, extLon, intLat, intLon);
+      
+      return distance <= radiusMiles;
+    });
+  }
+
+  // Find temporal matches within specified hours
+  private findTemporalMatches(externalIncident: any, internalIncidents: Incident[], hoursWindow: number): any[] {
+    const extDateTime = new Date(externalIncident.dateTime);
+    const windowMs = hoursWindow * 60 * 60 * 1000;
+    
+    return internalIncidents.filter(incident => {
+      const timeDiff = Math.abs(incident.occuredAt.getTime() - extDateTime.getTime());
+      return timeDiff <= windowMs;
+    });
+  }
+
+  // Find pattern-based matches with intelligence reports
+  private findPatternMatches(externalIncident: any, intelligence: CrimeIntelligence[]): any[] {
+    return intelligence.filter(intel => {
+      // Match by crime type patterns
+      if (intel.patterns?.crimeType && 
+          intel.patterns.crimeType.toLowerCase().includes(externalIncident.type.toLowerCase())) {
+        return true;
+      }
+      
+      // Match by methodology patterns
+      if (intel.patterns?.methodology) {
+        const description = externalIncident.description.toLowerCase();
+        const methodology = intel.patterns.methodology.toLowerCase();
+        if (description.includes(methodology) || methodology.includes(description)) {
+          return true;
+        }
+      }
+      
+      // Match by geographic area patterns
+      if (intel.patterns?.geographicArea && externalIncident.location) {
+        return externalIncident.location.toLowerCase().includes(
+          intel.patterns.geographicArea.toLowerCase()
+        );
+      }
+      
+      return false;
+    });
+  }
+
+  // Calculate correlation score based on match types
+  private calculateCorrelationScore(geoMatches: any[], tempMatches: any[], patternMatches: any[]): number {
+    let score = 0;
+    
+    // Geographic matches are weighted highest
+    score += geoMatches.length * 0.5;
+    
+    // Temporal matches are weighted medium
+    score += tempMatches.length * 0.3;
+    
+    // Pattern matches are weighted lower but still significant
+    score += patternMatches.length * 0.2;
+    
+    // Normalize to 0-1 scale
+    return Math.min(score, 1.0);
+  }
+
+  // Calculate correlation confidence
+  private calculateCorrelationConfidence(externalIncident: any, geoMatches: any[], tempMatches: any[]): number {
+    let confidence = 0.1; // Base confidence
+    
+    // High confidence if both geographic and temporal matches
+    if (geoMatches.length > 0 && tempMatches.length > 0) {
+      confidence = 0.9;
+    } else if (geoMatches.length > 0) {
+      confidence = 0.7;
+    } else if (tempMatches.length > 0) {
+      confidence = 0.6;
+    }
+    
+    // Adjust based on data quality
+    if (externalIncident.evidence && externalIncident.evidence.length > 0) {
+      confidence += 0.1;
+    }
+    
+    if (externalIncident.witnesses > 0) {
+      confidence += 0.05 * externalIncident.witnesses;
+    }
+    
+    return Math.min(confidence, 1.0);
+  }
+
+  // Assess risk level of correlation
+  private assessCorrelationRisk(externalIncident: any, geoMatches: any[], tempMatches: any[]): string {
+    let riskScore = 0;
+    
+    // High risk for serious crimes
+    if (['assault', 'robbery', 'burglary', 'weapons'].includes(externalIncident.type)) {
+      riskScore += 3;
+    }
+    
+    // Medium risk for property crimes
+    if (['theft', 'vandalism', 'fraud'].includes(externalIncident.type)) {
+      riskScore += 2;
+    }
+    
+    // Risk increases with multiple matches (pattern indicating)
+    riskScore += geoMatches.length + tempMatches.length;
+    
+    if (riskScore >= 5) return 'high';
+    if (riskScore >= 3) return 'medium';
+    return 'low';
+  }
+
+  // Calculate distance between two coordinates (Haversine formula)
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 3959; // Earth's radius in miles
+    const dLat = this.toRadians(lat2 - lat1);
+    const dLon = this.toRadians(lon2 - lon1);
+    
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  private toRadians(degrees: number): number {
+    return degrees * (Math.PI / 180);
+  }
+
+  // Create new intelligence from strong correlations
+  private async createIntelligenceFromCorrelation(correlation: any): Promise<CrimeIntelligence> {
+    const ext = correlation.externalIncident;
+    
+    return await this.createCrimeIntelligence({
+      title: `External Correlation: ${ext.type} - ${ext.location}`,
+      analysisType: 'intelligence_report',
+      threatLevel: correlation.riskLevel === 'high' ? 'high' : 'medium',
+      priority: correlation.riskLevel === 'high' ? 'high' : 'medium',
+      classification: 'restricted',
+      source: 'law_enforcement',
+      description: `Correlated external incident: ${ext.description}`,
+      summary: `External PD incident ${ext.pdIncidentId} correlated with internal data`,
+      location: ext.location,
+      coordinates: ext.coordinates,
+      externalReferences: {
+        policeReportNumber: ext.caseNumber,
+      },
+      intelligence: {
+        sources: ['honolulu_pd_integration'],
+        reliability: 'good',
+        credibility: 'confirmed',
+        additionalInfo: `Correlation confidence: ${(correlation.confidence * 100).toFixed(1)}%`
+      },
+      tags: ['external_correlation', 'pd_integration', ext.type],
+      assignedAnalyst: 'system'
+    });
+  }
+
+  // Generate update suggestions for existing intelligence
+  private generateUpdateSuggestions(correlation: any): any[] {
+    const suggestions: any[] = [];
+    const ext = correlation.externalIncident;
+    
+    correlation.internalMatches.pattern.forEach((intel: CrimeIntelligence) => {
+      suggestions.push({
+        intelligenceId: intel.id,
+        type: 'external_correlation_update',
+        suggestion: `Add external reference: PD case ${ext.caseNumber}`,
+        confidence: correlation.confidence,
+        data: {
+          externalReferences: {
+            policeReportNumber: ext.caseNumber,
+          },
+          lastActivityDate: new Date(),
+          actionsTaken: [...(intel.actionsTaken || []), `Correlated with external PD incident ${ext.pdIncidentId}`]
+        }
+      });
+    });
+    
+    return suggestions;
+  }
+
+  // Assess risk of external incident for security implications
+  private async assessExternalIncidentRisk(externalIncident: any, correlation: any): Promise<any> {
+    return {
+      incidentId: externalIncident.pdIncidentId,
+      securityImpact: correlation.riskLevel,
+      recommendations: this.getSecurityRecommendations(externalIncident, correlation),
+      affectedProperties: await this.findAffectedProperties(externalIncident),
+      responseRequired: correlation.riskLevel === 'high',
+      alertLevel: correlation.confidence > 0.8 ? 'immediate' : 'routine'
+    };
+  }
+
+  // Get security recommendations based on external incident
+  private getSecurityRecommendations(externalIncident: any, correlation: any): string[] {
+    const recommendations: string[] = [];
+    
+    if (correlation.riskLevel === 'high') {
+      recommendations.push('Increase security presence in affected area');
+      recommendations.push('Alert on-duty personnel immediately');
+      recommendations.push('Review and update property security protocols');
+    }
+    
+    if (externalIncident.type === 'theft') {
+      recommendations.push('Increase vehicle patrol frequency');
+      recommendations.push('Review parking area security measures');
+    }
+    
+    if (externalIncident.type === 'assault') {
+      recommendations.push('Enhanced personal safety protocols');
+      recommendations.push('Coordinate with local law enforcement');
+    }
+    
+    recommendations.push(`Monitor for similar incidents in ${correlation.internalMatches.geographic.length} nearby properties`);
+    
+    return recommendations;
+  }
+
+  // Find properties that may be affected by external incident
+  private async findAffectedProperties(externalIncident: any): Promise<string[]> {
+    if (!externalIncident.coordinates) return [];
+    
+    const properties = await this.getProperties();
+    const [extLat, extLon] = externalIncident.coordinates.split(',').map(Number);
+    
+    return properties
+      .filter(property => {
+        if (!property.coordinates) return false;
+        const [propLat, propLon] = property.coordinates.split(',').map(Number);
+        const distance = this.calculateDistance(extLat, extLon, propLat, propLon);
+        return distance <= 1.0; // Within 1 mile
+      })
+      .map(property => property.id);
+  }
+
+  // Sync data with external sources (periodic update capability)
+  async syncExternalData(options?: {
+    sources?: string[];
+    forceRefresh?: boolean;
+    batchSize?: number;
+  }): Promise<{
+    processed: number;
+    updated: number;
+    created: number;
+    errors: string[];
+    lastSync: Date;
+  }> {
+    // This would implement periodic synchronization with external data sources
+    // For now, returns a summary of what would be processed
+    
+    const result = {
+      processed: 0,
+      updated: 0,
+      created: 0,
+      errors: [] as string[],
+      lastSync: new Date()
+    };
+    
+    try {
+      // Simulate processing external data updates
+      const correlation = await this.correlateExternalCrimeData({
+        timeframe: {
+          start: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+          end: new Date()
+        },
+        autoCreateIntelligence: true
+      });
+      
+      result.processed = correlation.integrationSummary.totalExternalIncidents;
+      result.created = correlation.integrationSummary.newIntelligenceCreated;
+      result.updated = correlation.updateSuggestions.length;
+      
+    } catch (error) {
+      result.errors.push(`Sync error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    return result;
   }
 }
 

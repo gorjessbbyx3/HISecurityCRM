@@ -82,7 +82,14 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('🚀 Starting Hawaii Security CRM Server...');
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔐 Session secret configured: ${!!process.env.SESSION_SECRET}`);
+    
+    // Check JWT secret configuration (matches memoryAuth.ts logic)
+    const jwtSecret = process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET || process.env.SESSION_SECRET;
+    console.log(`🔐 JWT Secret configured: ${!!jwtSecret}`);
+    if (!jwtSecret) {
+      console.error('❌ CRITICAL SECURITY ISSUE: No JWT secret found. Set JWT_SECRET, SUPABASE_JWT_SECRET, or SESSION_SECRET environment variable.');
+    }
+    
     console.log(`🗄️  Database configured: ${!!process.env.DATABASE_URL}`);
 
     // Register routes and setup authentication
