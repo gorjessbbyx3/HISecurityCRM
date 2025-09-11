@@ -127,6 +127,48 @@ export const updateEvidenceInputSchema = z.object({
 // Full update schema for server operations (includes all updateable fields)
 export const updateEvidenceSchema = insertEvidenceSchema.partial().omit({ uploadedBy: true });
 
+// Community Resource schemas
+export const insertCommunityResourceSchema = z.object({
+  name: z.string().min(1),
+  category: z.enum(['emergency_services', 'healthcare', 'social_services', 'education', 'legal_aid', 'housing', 'transportation']),
+  subcategory: z.string().optional(),
+  description: z.string().min(1),
+  contactPerson: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+  website: z.string().url().optional(),
+  address: z.string().min(1),
+  city: z.string().min(1),
+  state: z.string().min(1),
+  zipCode: z.string().min(1),
+  coordinates: z.string().optional(), // latitude,longitude
+  operatingHours: z.string().optional(),
+  languages: z.array(z.string()).optional(),
+  servicesOffered: z.array(z.string()).optional(),
+  eligibilityRequirements: z.string().optional(),
+  cost: z.enum(['free', 'sliding_scale', 'insurance_accepted', 'fee_for_service']).optional(),
+  accessibilityFeatures: z.array(z.string()).optional(),
+  transportationInfo: z.string().optional(),
+  specialNotes: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  priority: z.enum(['critical', 'high', 'medium', 'low']).default('medium'),
+  status: z.enum(['active', 'inactive', 'temporarily_closed', 'permanently_closed']).default('active'),
+  verifiedAt: z.string().transform(str => new Date(str)).optional(),
+  verifiedBy: z.string().optional(),
+});
+
+// Client-safe schema for community resource creation (excludes verification fields)
+export const createCommunityResourceInputSchema = insertCommunityResourceSchema.omit({
+  verifiedAt: true,
+  verifiedBy: true,
+});
+
+// Client-safe schema for community resource updates (excludes verification and system fields)
+export const updateCommunityResourceInputSchema = createCommunityResourceInputSchema.partial();
+
+// Full update schema for server operations (includes verification fields)
+export const updateCommunityResourceSchema = insertCommunityResourceSchema.partial();
+
 // Export types
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
@@ -138,3 +180,7 @@ export type CreateEvidenceInput = z.infer<typeof createEvidenceInputSchema>;
 export type InsertEvidence = z.infer<typeof insertEvidenceSchema>;
 export type UpdateEvidenceInput = z.infer<typeof updateEvidenceInputSchema>;
 export type UpdateEvidence = z.infer<typeof updateEvidenceSchema>;
+export type CreateCommunityResourceInput = z.infer<typeof createCommunityResourceInputSchema>;
+export type InsertCommunityResource = z.infer<typeof insertCommunityResourceSchema>;
+export type UpdateCommunityResourceInput = z.infer<typeof updateCommunityResourceInputSchema>;
+export type UpdateCommunityResource = z.infer<typeof updateCommunityResourceSchema>;

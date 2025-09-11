@@ -13,6 +13,10 @@ import {
   insertEvidenceSchema,
   updateEvidenceInputSchema,
   updateEvidenceSchema,
+  createCommunityResourceInputSchema,
+  insertCommunityResourceSchema,
+  updateCommunityResourceInputSchema,
+  updateCommunityResourceSchema,
 } from "@shared/schema";
 import { WebSocketServer, WebSocket } from "ws";
 
@@ -912,6 +916,210 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting evidence:", error);
       res.status(500).json({ message: "Failed to delete evidence" });
+    }
+  });
+
+  // Community Resources routes
+  app.get('/api/community-resources', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      const { category, city, status, priority, tags, searchTerm } = req.query;
+      const filter: any = {};
+      
+      if (category) filter.category = category as string;
+      if (city) filter.city = city as string;
+      if (status) filter.status = status as string;
+      if (priority) filter.priority = priority as string;
+      if (tags) filter.tags = Array.isArray(tags) ? tags as string[] : [tags as string];
+      if (searchTerm) filter.searchTerm = searchTerm as string;
+
+      const resources = await storage.getCommunityResources(Object.keys(filter).length > 0 ? filter : undefined);
+      res.json(resources);
+    } catch (error) {
+      console.error("Error fetching community resources:", error);
+      res.status(500).json({ message: "Failed to fetch community resources" });
+    }
+  });
+
+  app.get('/api/community-resources/stats', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      const stats = await storage.getCommunityResourceStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching community resource stats:", error);
+      res.status(500).json({ message: "Failed to fetch community resource stats" });
+    }
+  });
+
+  app.get('/api/community-resources/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      const { id } = req.params;
+      const resource = await storage.getCommunityResourceById(id);
+      
+      if (!resource) {
+        return res.status(404).json({ message: "Community resource not found" });
+      }
+
+      res.json(resource);
+    } catch (error) {
+      console.error("Error fetching community resource:", error);
+      res.status(500).json({ message: "Failed to fetch community resource" });
+    }
+  });
+
+  app.get('/api/community-resources/category/:category', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      const { category } = req.params;
+      const resources = await storage.getCommunityResourcesByCategory(category);
+      res.json(resources);
+    } catch (error) {
+      console.error("Error fetching community resources by category:", error);
+      res.status(500).json({ message: "Failed to fetch community resources by category" });
+    }
+  });
+
+  app.post('/api/community-resources', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Only admin and supervisor can create community resources
+      if (req.user.role !== 'admin' && req.user.role !== 'supervisor') {
+        return res.status(403).json({ message: "Insufficient permissions to create community resources" });
+      }
+
+      // Validate request body using client-safe schema
+      const resourceData = createCommunityResourceInputSchema.parse(req.body);
+      
+      // Create resource using server schema (adds verification info if admin)
+      const serverData = insertCommunityResourceSchema.parse({
+        ...resourceData,
+        verifiedBy: req.user.role === 'admin' ? req.user.id : undefined,
+        verifiedAt: req.user.role === 'admin' ? new Date().toISOString() : undefined,
+      });
+
+      const resource = await storage.createCommunityResource(serverData);
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "community_resource_created",
+        entityType: "community_resource",
+        entityId: resource.id,
+        description: `Created community resource: ${resource.name}`,
+      });
+
+      res.status(201).json(resource);
+    } catch (error) {
+      console.error("Error creating community resource:", error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid input data", details: error.message });
+      }
+      res.status(500).json({ message: "Failed to create community resource" });
+    }
+  });
+
+  app.put('/api/community-resources/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Only admin and supervisor can update community resources
+      if (req.user.role !== 'admin' && req.user.role !== 'supervisor') {
+        return res.status(403).json({ message: "Insufficient permissions to update community resources" });
+      }
+
+      const { id } = req.params;
+      
+      // Get existing resource
+      const existingResource = await storage.getCommunityResourceById(id);
+      if (!existingResource) {
+        return res.status(404).json({ message: "Community resource not found" });
+      }
+
+      // Validate request body using client-safe schema
+      const updates = updateCommunityResourceInputSchema.parse(req.body);
+      
+      // Prepare server updates (add verification info if admin)
+      const serverUpdates = updateCommunityResourceSchema.parse({
+        ...updates,
+        verifiedBy: req.user.role === 'admin' ? req.user.id : existingResource.verifiedBy,
+        verifiedAt: req.user.role === 'admin' && updates ? new Date().toISOString() : existingResource.verifiedAt,
+      });
+
+      const resource = await storage.updateCommunityResource(id, serverUpdates);
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "community_resource_updated",
+        entityType: "community_resource", 
+        entityId: id,
+        description: `Updated community resource: ${resource.name}`,
+        metadata: { changes: updates },
+      });
+
+      res.json(resource);
+    } catch (error) {
+      console.error("Error updating community resource:", error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid input data", details: error.message });
+      }
+      res.status(500).json({ message: "Failed to update community resource" });
+    }
+  });
+
+  app.delete('/api/community-resources/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Only admin can delete community resources
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin permissions required to delete community resources" });
+      }
+
+      const { id } = req.params;
+      
+      // Get existing resource for logging
+      const existingResource = await storage.getCommunityResourceById(id);
+      if (!existingResource) {
+        return res.status(404).json({ message: "Community resource not found" });
+      }
+
+      const deleted = await storage.deleteCommunityResource(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Community resource not found" });
+      }
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "community_resource_deleted",
+        entityType: "community_resource",
+        entityId: id,
+        description: `Deleted community resource: ${existingResource.name}`,
+      });
+
+      res.json({ message: "Community resource deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting community resource:", error);
+      res.status(500).json({ message: "Failed to delete community resource" });
     }
   });
 

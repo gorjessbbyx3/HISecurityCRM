@@ -161,6 +161,39 @@ export interface Evidence {
   updatedAt: Date;
 }
 
+export interface CommunityResource {
+  id: string;
+  name: string;
+  category: string; // 'emergency_services', 'healthcare', 'social_services', 'education', 'legal_aid', 'housing', 'transportation'
+  subcategory?: string;
+  description: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  coordinates?: string; // latitude,longitude
+  operatingHours?: string;
+  languages?: string[]; // languages spoken
+  servicesOffered?: string[];
+  eligibilityRequirements?: string;
+  cost?: string; // 'free', 'sliding_scale', 'insurance_accepted', 'fee_for_service'
+  accessibilityFeatures?: string[];
+  transportationInfo?: string;
+  specialNotes?: string;
+  tags?: string[];
+  priority: string; // 'critical', 'high', 'medium', 'low'
+  status: string; // 'active', 'inactive', 'temporarily_closed', 'permanently_closed'
+  verifiedAt?: Date;
+  verifiedBy?: string;
+  lastUpdated: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // In-memory storage
 class MemoryStorage {
   private users: Map<string, User> = new Map();
@@ -172,6 +205,7 @@ class MemoryStorage {
   private activities: Map<string, Activity> = new Map();
   private financialRecords: Map<string, FinancialRecord> = new Map();
   private evidence: Map<string, Evidence> = new Map();
+  private communityResources: Map<string, CommunityResource> = new Map();
 
   constructor() {
     this.initializeDefaultData();
@@ -671,15 +705,228 @@ class MemoryStorage {
     };
   }
 
-  // Community resources
-  async getCommunityResources(): Promise<any[]> {
-    // For now, return empty array as community resources are not implemented
-    return [];
+  // Community Resources management
+  async getCommunityResources(filter?: { 
+    category?: string; 
+    city?: string; 
+    status?: string; 
+    priority?: string;
+    tags?: string[];
+    searchTerm?: string;
+  }): Promise<CommunityResource[]> {
+    let resourcesList = Array.from(this.communityResources.values());
+    
+    if (filter) {
+      if (filter.category) {
+        resourcesList = resourcesList.filter(r => r.category === filter.category);
+      }
+      if (filter.city) {
+        resourcesList = resourcesList.filter(r => r.city.toLowerCase().includes(filter.city!.toLowerCase()));
+      }
+      if (filter.status) {
+        resourcesList = resourcesList.filter(r => r.status === filter.status);
+      }
+      if (filter.priority) {
+        resourcesList = resourcesList.filter(r => r.priority === filter.priority);
+      }
+      if (filter.tags && filter.tags.length > 0) {
+        resourcesList = resourcesList.filter(r => 
+          filter.tags!.some(tag => r.tags?.includes(tag))
+        );
+      }
+      if (filter.searchTerm) {
+        const term = filter.searchTerm.toLowerCase();
+        resourcesList = resourcesList.filter(r => 
+          r.name.toLowerCase().includes(term) ||
+          r.description.toLowerCase().includes(term) ||
+          r.servicesOffered?.some(service => service.toLowerCase().includes(term))
+        );
+      }
+    }
+    
+    return resourcesList.sort((a, b) => {
+      // Sort by priority first (critical > high > medium > low)
+      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+      const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+      const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+      if (aPriority !== bPriority) return bPriority - aPriority;
+      
+      // Then by name alphabetically
+      return a.name.localeCompare(b.name);
+    });
   }
 
-  async createCommunityResource(resourceData: any): Promise<any> {
-    // For now, just return the data with an ID
-    return { id: uuidv4(), ...resourceData, createdAt: new Date() };
+  async getCommunityResourceById(id: string): Promise<CommunityResource | null> {
+    return this.communityResources.get(id) || null;
+  }
+
+  async createCommunityResource(resourceData: Omit<CommunityResource, 'id' | 'createdAt' | 'updatedAt' | 'lastUpdated'>): Promise<CommunityResource> {
+    const id = uuidv4();
+    const now = new Date();
+    const resource: CommunityResource = {
+      id,
+      ...resourceData,
+      status: resourceData.status || 'active',
+      priority: resourceData.priority || 'medium',
+      lastUpdated: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.communityResources.set(id, resource);
+    
+    // Log activity
+    await this.createActivity({
+      userId: resourceData.verifiedBy || 'system',
+      activityType: 'community_resource_created',
+      entityType: 'community_resource',
+      entityId: id,
+      description: `Created community resource: ${resourceData.name} (${resourceData.category})`,
+      metadata: { resourceId: id, category: resourceData.category, city: resourceData.city }
+    });
+    
+    return resource;
+  }
+
+  async updateCommunityResource(id: string, updates: Partial<CommunityResource>): Promise<CommunityResource> {
+    const resource = this.communityResources.get(id);
+    if (!resource) {
+      throw new Error(`Community resource with id ${id} not found`);
+    }
+    const now = new Date();
+    const updatedResource = { 
+      ...resource, 
+      ...updates, 
+      lastUpdated: now,
+      updatedAt: now 
+    };
+    this.communityResources.set(id, updatedResource);
+    
+    // Log activity
+    await this.createActivity({
+      userId: updates.verifiedBy || resource.verifiedBy || 'system',
+      activityType: 'community_resource_updated',
+      entityType: 'community_resource',
+      entityId: id,
+      description: `Updated community resource: ${resource.name}`,
+      metadata: { 
+        resourceId: id, 
+        updatedFields: Object.keys(updates),
+        category: resource.category
+      }
+    });
+    
+    return updatedResource;
+  }
+
+  async deleteCommunityResource(id: string): Promise<boolean> {
+    const resource = this.communityResources.get(id);
+    if (!resource) {
+      return false;
+    }
+    
+    // Soft delete by updating status
+    await this.updateCommunityResource(id, { status: 'permanently_closed' });
+    
+    // Log activity
+    await this.createActivity({
+      userId: resource.verifiedBy || 'system',
+      activityType: 'community_resource_deleted',
+      entityType: 'community_resource',
+      entityId: id,
+      description: `Deleted community resource: ${resource.name}`,
+      metadata: { resourceId: id, category: resource.category }
+    });
+    
+    return true;
+  }
+
+  async getCommunityResourcesByCategory(category: string): Promise<CommunityResource[]> {
+    return this.getCommunityResources({ category, status: 'active' });
+  }
+
+  async getCommunityResourceStats(): Promise<any> {
+    const resourcesList = Array.from(this.communityResources.values());
+    const activeResources = resourcesList.filter(r => r.status === 'active');
+    
+    const categoryStats: { [key: string]: number } = {};
+    const cityStats: { [key: string]: number } = {};
+    const priorityStats: { [key: string]: number } = {};
+    
+    activeResources.forEach(resource => {
+      categoryStats[resource.category] = (categoryStats[resource.category] || 0) + 1;
+      cityStats[resource.city] = (cityStats[resource.city] || 0) + 1;
+      priorityStats[resource.priority] = (priorityStats[resource.priority] || 0) + 1;
+    });
+    
+    return {
+      total: activeResources.length,
+      byCategory: categoryStats,
+      byCity: cityStats,
+      byPriority: priorityStats,
+      recentlyUpdated: resourcesList.filter(r => {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        return r.lastUpdated > oneWeekAgo;
+      }).length,
+      needingVerification: resourcesList.filter(r => {
+        if (!r.verifiedAt) return true;
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        return r.verifiedAt < sixMonthsAgo;
+      }).length
+    };
+  }
+
+  async seedCommunityResourcesData(): Promise<void> {
+    // Add sample community resources for Hawaii
+    const sampleResources: Omit<CommunityResource, 'id' | 'createdAt' | 'updatedAt' | 'lastUpdated'>[] = [
+      {
+        name: 'Hawaii State Crisis Hotline',
+        category: 'emergency_services',
+        description: '24/7 crisis intervention and suicide prevention services',
+        phone: '1-800-753-6879',
+        address: 'Statewide Service',
+        city: 'Honolulu',
+        state: 'HI',
+        zipCode: '96813',
+        operatingHours: '24/7',
+        languages: ['English', 'Hawaiian'],
+        servicesOffered: ['Crisis Intervention', 'Suicide Prevention', 'Mental Health Support'],
+        cost: 'free',
+        priority: 'critical',
+        status: 'active',
+        tags: ['crisis', 'mental health', '24/7'],
+        verifiedBy: 'admin-001'
+      },
+      {
+        name: 'Queen\'s Medical Center',
+        category: 'healthcare',
+        description: 'Full-service hospital with emergency care',
+        contactPerson: 'Emergency Department',
+        phone: '808-538-9011',
+        website: 'https://www.queensmedicalcenter.org',
+        address: '1301 Punchbowl St',
+        city: 'Honolulu',
+        state: 'HI',
+        zipCode: '96813',
+        coordinates: '21.3099,-157.8581',
+        operatingHours: '24/7 Emergency',
+        languages: ['English', 'Hawaiian', 'Filipino'],
+        servicesOffered: ['Emergency Care', 'Trauma Center', 'Intensive Care'],
+        cost: 'insurance_accepted',
+        priority: 'critical',
+        status: 'active',
+        accessibilityFeatures: ['Wheelchair accessible', 'Sign language interpreters'],
+        tags: ['hospital', 'emergency', 'trauma'],
+        verifiedBy: 'admin-001'
+      }
+    ];
+    
+    for (const resourceData of sampleResources) {
+      await this.createCommunityResource(resourceData);
+    }
+    
+    console.log('✅ Sample community resources data seeded');
   }
 
   // Law references
