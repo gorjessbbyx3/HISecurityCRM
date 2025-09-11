@@ -90,6 +90,43 @@ export const insertFinancialRecordSchema = z.object({
   notes: z.string().optional(),
 });
 
+// Client-safe schema for evidence creation (excludes server-controlled fields)
+export const createEvidenceInputSchema = z.object({
+  entityType: z.enum(['incident', 'patrol_report', 'property', 'client', 'user', 'general']),
+  entityId: z.string().optional(),
+  fileName: z.string().min(1),
+  originalFileName: z.string().optional(),
+  fileUrl: z.string().url(),
+  fileType: z.enum(['image', 'video', 'document', 'audio']),
+  mimeType: z.string().optional(),
+  fileSize: z.number().positive(),
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  // Note: uploadedBy, status, accessLevel excluded for security
+  location: z.string().optional(),
+  coordinates: z.string().optional(),
+  capturedAt: z.string().transform(str => new Date(str)).optional(),
+  notes: z.string().optional(),
+});
+
+// Server-only schema for evidence creation (includes all fields)
+export const insertEvidenceSchema = createEvidenceInputSchema.extend({
+  uploadedBy: z.string(), // Set server-side from req.user.id
+  status: z.enum(['active', 'archived', 'deleted']).default('active'),
+  accessLevel: z.enum(['public', 'restricted', 'confidential']).default('restricted'),
+});
+
+// Restrictive client-safe schema for evidence updates (only safe fields)
+export const updateEvidenceInputSchema = z.object({
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  notes: z.string().optional(),
+  // Note: fileName, fileUrl, accessLevel, status excluded for security
+});
+
+// Full update schema for server operations (includes all updateable fields)
+export const updateEvidenceSchema = insertEvidenceSchema.partial().omit({ uploadedBy: true });
+
 // Export types
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
@@ -97,3 +134,7 @@ export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 export type InsertPatrolReport = z.infer<typeof insertPatrolReportSchema>;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 export type InsertFinancialRecord = z.infer<typeof insertFinancialRecordSchema>;
+export type CreateEvidenceInput = z.infer<typeof createEvidenceInputSchema>;
+export type InsertEvidence = z.infer<typeof insertEvidenceSchema>;
+export type UpdateEvidenceInput = z.infer<typeof updateEvidenceInputSchema>;
+export type UpdateEvidence = z.infer<typeof updateEvidenceSchema>;

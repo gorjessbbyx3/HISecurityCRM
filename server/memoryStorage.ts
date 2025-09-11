@@ -138,6 +138,29 @@ export interface FinancialRecord {
   updatedAt: Date;
 }
 
+export interface Evidence {
+  id: string;
+  entityType: string; // 'incident', 'patrol_report', 'property', etc.
+  entityId?: string;
+  fileName: string;
+  originalFileName?: string;
+  fileUrl: string;
+  fileType: string; // 'image', 'video', 'document', 'audio'
+  mimeType?: string;
+  fileSize: number;
+  description?: string;
+  tags?: string[];
+  uploadedBy: string;
+  location?: string;
+  coordinates?: string;
+  capturedAt?: Date;
+  status: string; // 'active', 'archived', 'deleted'
+  accessLevel: string; // 'public', 'restricted', 'confidential'
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // In-memory storage
 class MemoryStorage {
   private users: Map<string, User> = new Map();
@@ -148,6 +171,7 @@ class MemoryStorage {
   private appointments: Map<string, Appointment> = new Map();
   private activities: Map<string, Activity> = new Map();
   private financialRecords: Map<string, FinancialRecord> = new Map();
+  private evidence: Map<string, Evidence> = new Map();
 
   constructor() {
     this.initializeDefaultData();
@@ -522,14 +546,129 @@ class MemoryStorage {
   }
 
   // Evidence management
-  async getEvidence(): Promise<any[]> {
-    // For now, return empty array as evidence is not implemented in memory storage
-    return [];
+  async getEvidence(filter?: { entityType?: string; entityId?: string; status?: string; uploadedBy?: string }): Promise<Evidence[]> {
+    let evidenceList = Array.from(this.evidence.values());
+    
+    if (filter) {
+      if (filter.entityType) {
+        evidenceList = evidenceList.filter(e => e.entityType === filter.entityType);
+      }
+      if (filter.entityId) {
+        evidenceList = evidenceList.filter(e => e.entityId === filter.entityId);
+      }
+      if (filter.status) {
+        evidenceList = evidenceList.filter(e => e.status === filter.status);
+      }
+      if (filter.uploadedBy) {
+        evidenceList = evidenceList.filter(e => e.uploadedBy === filter.uploadedBy);
+      }
+    }
+    
+    return evidenceList.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async createEvidence(evidenceData: any): Promise<any> {
-    // For now, just return the data with an ID as evidence is not implemented
-    return { id: uuidv4(), ...evidenceData, createdAt: new Date() };
+  async getEvidenceById(id: string): Promise<Evidence | null> {
+    return this.evidence.get(id) || null;
+  }
+
+  async createEvidence(evidenceData: Omit<Evidence, 'id' | 'createdAt' | 'updatedAt'>): Promise<Evidence> {
+    const id = uuidv4();
+    const now = new Date();
+    const evidence: Evidence = {
+      id,
+      ...evidenceData,
+      status: evidenceData.status || 'active',
+      accessLevel: evidenceData.accessLevel || 'public',
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.evidence.set(id, evidence);
+    
+    // Log activity
+    await this.createActivity({
+      userId: evidenceData.uploadedBy,
+      activityType: 'evidence_uploaded',
+      entityType: evidenceData.entityType,
+      entityId: evidenceData.entityId,
+      description: `Uploaded evidence: ${evidenceData.fileName}`,
+      metadata: { evidenceId: id, fileType: evidenceData.fileType }
+    });
+    
+    return evidence;
+  }
+
+  async updateEvidence(id: string, updates: Partial<Evidence>): Promise<Evidence> {
+    const evidence = this.evidence.get(id);
+    if (!evidence) {
+      throw new Error(`Evidence with id ${id} not found`);
+    }
+    const updatedEvidence = { ...evidence, ...updates, updatedAt: new Date() };
+    this.evidence.set(id, updatedEvidence);
+    
+    // Log activity
+    if (updates.status) {
+      await this.createActivity({
+        userId: evidence.uploadedBy,
+        activityType: 'evidence_updated',
+        entityType: evidence.entityType,
+        entityId: evidence.entityId,
+        description: `Updated evidence: ${evidence.fileName} (status: ${updates.status})`,
+        metadata: { evidenceId: id, previousStatus: evidence.status, newStatus: updates.status }
+      });
+    }
+    
+    return updatedEvidence;
+  }
+
+  async deleteEvidence(id: string): Promise<boolean> {
+    const evidence = this.evidence.get(id);
+    if (!evidence) {
+      return false;
+    }
+    
+    // Soft delete by updating status
+    await this.updateEvidence(id, { status: 'deleted' });
+    
+    // Log activity
+    await this.createActivity({
+      userId: evidence.uploadedBy,
+      activityType: 'evidence_deleted',
+      entityType: evidence.entityType,
+      entityId: evidence.entityId,
+      description: `Deleted evidence: ${evidence.fileName}`,
+      metadata: { evidenceId: id }
+    });
+    
+    return true;
+  }
+
+  async getEvidenceByEntity(entityType: string, entityId: string): Promise<Evidence[]> {
+    return this.getEvidence({ entityType, entityId, status: 'active' });
+  }
+
+  async getEvidenceStats(): Promise<any> {
+    const evidenceList = Array.from(this.evidence.values());
+    const activeEvidence = evidenceList.filter(e => e.status === 'active');
+    
+    return {
+      total: activeEvidence.length,
+      byType: {
+        image: activeEvidence.filter(e => e.fileType === 'image').length,
+        video: activeEvidence.filter(e => e.fileType === 'video').length,
+        document: activeEvidence.filter(e => e.fileType === 'document').length,
+        audio: activeEvidence.filter(e => e.fileType === 'audio').length
+      },
+      byEntity: {
+        incident: activeEvidence.filter(e => e.entityType === 'incident').length,
+        patrol_report: activeEvidence.filter(e => e.entityType === 'patrol_report').length,
+        property: activeEvidence.filter(e => e.entityType === 'property').length
+      },
+      recentUploads: activeEvidence.filter(e => {
+        const oneDayAgo = new Date();
+        oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+        return e.createdAt > oneDayAgo;
+      }).length
+    };
   }
 
   // Community resources

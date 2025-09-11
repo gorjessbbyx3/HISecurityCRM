@@ -9,8 +9,60 @@ import {
   insertPatrolReportSchema,
   insertAppointmentSchema,
   insertFinancialRecordSchema,
+  createEvidenceInputSchema,
+  insertEvidenceSchema,
+  updateEvidenceInputSchema,
+  updateEvidenceSchema,
 } from "@shared/schema";
 import { WebSocketServer, WebSocket } from "ws";
+
+// Role-based access control for evidence
+function checkEvidencePermissions(user: any, evidence: any, action: 'read' | 'write' | 'delete'): boolean {
+  if (!user) return false;
+  
+  // Admin and supervisor can do everything
+  if (user.role === 'admin' || user.role === 'supervisor') {
+    return true;
+  }
+  
+  // Check access level permissions
+  const userClearanceLevel = getUserClearanceLevel(user.role);
+  const evidenceClearanceRequired = getRequiredClearanceLevel(evidence.accessLevel);
+  
+  if (userClearanceLevel < evidenceClearanceRequired) {
+    return false;
+  }
+  
+  // For write/delete operations, user must be owner or have elevated privileges
+  if (action === 'write' || action === 'delete') {
+    return evidence.uploadedBy === user.id || user.role === 'supervisor' || user.role === 'admin';
+  }
+  
+  return true;
+}
+
+function getUserClearanceLevel(role: string): number {
+  switch (role) {
+    case 'admin': return 3;
+    case 'supervisor': return 3;
+    case 'security_officer': return 2;
+    case 'guard': return 1;
+    default: return 0;
+  }
+}
+
+function getRequiredClearanceLevel(accessLevel: string): number {
+  switch (accessLevel) {
+    case 'public': return 1;
+    case 'restricted': return 2;
+    case 'confidential': return 3;
+    default: return 2;
+  }
+}
+
+function filterEvidenceByPermissions(evidenceList: any[], user: any): any[] {
+  return evidenceList.filter(evidence => checkEvidencePermissions(user, evidence, 'read'));
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint (before auth middleware)
@@ -570,10 +622,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Evidence routes
+  // Evidence routes with enhanced security
   app.get('/api/evidence', authenticateToken, async (req, res) => {
     try {
-      const evidence = await storage.getEvidence();
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      const { entityType, entityId, status, uploadedBy } = req.query;
+      const filter = {
+        ...(entityType && { entityType: entityType as string }),
+        ...(entityId && { entityId: entityId as string }),
+        ...(status && { status: status as string }),
+        ...(uploadedBy && { uploadedBy: uploadedBy as string })
+      };
+      
+      const evidence = await storage.getEvidence(Object.keys(filter).length > 0 ? filter : undefined);
+      const filteredEvidence = filterEvidenceByPermissions(evidence, req.user);
+      
+      res.json(filteredEvidence);
+    } catch (error) {
+      console.error("Error fetching evidence:", error);
+      res.status(500).json({ message: "Failed to fetch evidence" });
+    }
+  });
+
+  app.get('/api/evidence/stats', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Only supervisors and admins can view evidence stats
+      if (!['admin', 'supervisor'].includes(req.user.role)) {
+        return res.status(403).json({ message: "Insufficient permissions to view evidence statistics" });
+      }
+
+      const stats = await storage.getEvidenceStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching evidence stats:", error);
+      res.status(500).json({ message: "Failed to fetch evidence stats" });
+    }
+  });
+
+  app.get('/api/evidence/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      const evidence = await storage.getEvidenceById(req.params.id);
+      if (!evidence) {
+        return res.status(404).json({ message: "Evidence not found" });
+      }
+
+      // Check if user has permission to view this evidence
+      if (!checkEvidencePermissions(req.user, evidence, 'read')) {
+        return res.status(403).json({ message: "Insufficient permissions to access this evidence" });
+      }
+
       res.json(evidence);
     } catch (error) {
       console.error("Error fetching evidence:", error);
@@ -581,17 +689,229 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/evidence/entity/:entityType/:entityId', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      const { entityType, entityId } = req.params;
+      const evidence = await storage.getEvidenceByEntity(entityType, entityId);
+      const filteredEvidence = filterEvidenceByPermissions(evidence, req.user);
+      
+      res.json(filteredEvidence);
+    } catch (error) {
+      console.error("Error fetching evidence by entity:", error);
+      res.status(500).json({ message: "Failed to fetch evidence by entity" });
+    }
+  });
+
   app.post('/api/evidence', authenticateToken, async (req, res) => {
     try {
-      const evidenceData = {
-        ...req.body,
-        uploadedBy: req.user?.id,
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Validate client input with secure schema (excludes uploadedBy, status, accessLevel)
+      const clientInput = createEvidenceInputSchema.parse(req.body);
+
+      // Determine access level based on user clearance (server-side controlled)
+      const userClearanceLevel = getUserClearanceLevel(req.user.role);
+      let accessLevel: 'public' | 'restricted' | 'confidential';
+      
+      // Set access level based on user role - guards can only create public evidence
+      if (userClearanceLevel >= 3) {
+        accessLevel = 'confidential'; // Admin/supervisor default to confidential
+      } else if (userClearanceLevel >= 2) {
+        accessLevel = 'restricted'; // Security officers default to restricted
+      } else {
+        accessLevel = 'public'; // Guards can only create public evidence
+      }
+
+      // Create server-side validated data
+      const serverData = {
+        ...clientInput,
+        uploadedBy: req.user.id as string, // Server-controlled
+        status: 'active' as const, // Server-controlled
+        accessLevel, // Server-controlled based on user clearance
       };
-      const evidence = await storage.createEvidence(evidenceData);
+
+      const evidence = await storage.createEvidence(serverData);
+      
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "evidence_uploaded",
+        entityType: "evidence",
+        entityId: evidence.id,
+        description: `Uploaded evidence: ${evidence.fileName}`,
+      });
+      
       res.status(201).json(evidence);
     } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid evidence data", errors: error.message });
+      }
       console.error("Error creating evidence:", error);
       res.status(500).json({ message: "Failed to create evidence" });
+    }
+  });
+
+  app.put('/api/evidence/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Get existing evidence first
+      const existingEvidence = await storage.getEvidenceById(req.params.id);
+      if (!existingEvidence) {
+        return res.status(404).json({ message: "Evidence not found" });
+      }
+
+      // Check if user has permission to update this evidence
+      if (!checkEvidencePermissions(req.user, existingEvidence, 'write')) {
+        return res.status(403).json({ message: "Insufficient permissions to update this evidence" });
+      }
+
+      // Validate client input with restrictive schema (only safe fields: description, tags, notes)
+      const clientUpdates = updateEvidenceInputSchema.parse(req.body);
+
+      // For access level changes, require admin/supervisor and use separate route
+      // This ensures access level changes are intentional and logged separately
+      if (req.body.accessLevel || req.body.status) {
+        return res.status(400).json({ 
+          message: "Access level and status changes must be done through admin endpoints" 
+        });
+      }
+
+      const evidence = await storage.updateEvidence(req.params.id, clientUpdates);
+      
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "evidence_updated",
+        entityType: "evidence",
+        entityId: req.params.id,
+        description: `Updated evidence metadata: ${evidence.fileName}`,
+      });
+      
+      res.json(evidence);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid evidence data", errors: error.message });
+      }
+      console.error("Error updating evidence:", error);
+      if (error instanceof Error && error.message.includes('not found')) {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to update evidence" });
+    }
+  });
+
+  // Admin-only route for sensitive evidence operations (access level and status changes)
+  app.put('/api/evidence/:id/admin', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Only admin and supervisor can perform sensitive operations
+      if (!['admin', 'supervisor'].includes(req.user.role)) {
+        return res.status(403).json({ message: "Admin or supervisor access required for sensitive evidence operations" });
+      }
+
+      // Get existing evidence first
+      const existingEvidence = await storage.getEvidenceById(req.params.id);
+      if (!existingEvidence) {
+        return res.status(404).json({ message: "Evidence not found" });
+      }
+
+      const { accessLevel, status } = req.body;
+      const updates: any = {};
+
+      // Handle access level changes with transition rules
+      if (accessLevel && accessLevel !== existingEvidence.accessLevel) {
+        const userClearanceLevel = getUserClearanceLevel(req.user.role);
+        const newClearanceRequired = getRequiredClearanceLevel(accessLevel);
+        const currentClearanceRequired = getRequiredClearanceLevel(existingEvidence.accessLevel);
+        
+        // Check if user has clearance for new level
+        if (userClearanceLevel < newClearanceRequired) {
+          return res.status(403).json({ 
+            message: `Insufficient clearance level to set ${accessLevel} access level` 
+          });
+        }
+
+        // Prevent non-admin downgrades (confidential → restricted/public, restricted → public)
+        if (req.user.role !== 'admin' && newClearanceRequired < currentClearanceRequired) {
+          return res.status(403).json({ 
+            message: "Only admins can downgrade evidence confidentiality levels" 
+          });
+        }
+
+        updates.accessLevel = accessLevel;
+      }
+
+      // Handle status changes
+      if (status && status !== existingEvidence.status) {
+        updates.status = status;
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: "No valid updates provided" });
+      }
+
+      const evidence = await storage.updateEvidence(req.params.id, updates);
+      
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "evidence_admin_update",
+        entityType: "evidence",
+        entityId: req.params.id,
+        description: `Admin updated evidence security settings: ${evidence.fileName}`,
+        metadata: { changes: updates, previousAccessLevel: existingEvidence.accessLevel, previousStatus: existingEvidence.status },
+      });
+      
+      res.json(evidence);
+    } catch (error) {
+      console.error("Error in admin evidence update:", error);
+      res.status(500).json({ message: "Failed to perform admin evidence update" });
+    }
+  });
+
+  app.delete('/api/evidence/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Get existing evidence first
+      const existingEvidence = await storage.getEvidenceById(req.params.id);
+      if (!existingEvidence) {
+        return res.status(404).json({ message: "Evidence not found" });
+      }
+
+      // Check if user has permission to delete this evidence
+      if (!checkEvidencePermissions(req.user, existingEvidence, 'delete')) {
+        return res.status(403).json({ message: "Insufficient permissions to delete this evidence" });
+      }
+
+      const deleted = await storage.deleteEvidence(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Evidence not found" });
+      }
+      
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "evidence_deleted",
+        entityType: "evidence",
+        entityId: req.params.id,
+        description: `Deleted evidence: ${existingEvidence.fileName}`,
+      });
+      
+      res.json({ message: "Evidence deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting evidence:", error);
+      res.status(500).json({ message: "Failed to delete evidence" });
     }
   });
 
@@ -652,7 +972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileUrl,
         fileType,
         fileSize: fileData ? fileData.length : 0,
-        uploadedBy: req.user?.id,
+        uploadedBy: req.user?.id as string,
       });
 
       res.status(201).json(fileUpload);
