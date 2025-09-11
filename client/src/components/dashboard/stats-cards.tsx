@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { DashboardStats } from "@shared/schema";
 
 export default function StatsCards() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
   });
 

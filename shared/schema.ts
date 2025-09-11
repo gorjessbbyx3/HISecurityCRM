@@ -1,6 +1,33 @@
 // In-memory storage types - no database schema needed
 import { z } from "zod";
 
+// Dashboard stats response type
+export interface DashboardStats {
+  // Legacy fields for compatibility
+  totalClients: number;
+  totalProperties: number;
+  activeIncidents: number;
+  activeStaff: number;
+  totalIncidents: number;
+  criticalIncidents: number;
+  
+  // New fields expected by frontend
+  activePatrols: number;
+  activePatrolsChange: string;
+  activePatrolsChangeType: 'positive' | 'negative' | 'neutral';
+  
+  staffOnDuty: number;
+  staffChange: string;
+  staffChangeType: 'positive' | 'negative' | 'neutral';
+  
+  propertiesSecured: number;
+  propertiesChange: string;
+  propertiesChangeType: 'positive' | 'negative' | 'neutral';
+  
+  incidentsChange: string;
+  incidentsChangeType: 'positive' | 'negative' | 'neutral';
+}
+
 // Basic validation schemas for in-memory storage
 export const insertClientSchema = z.object({
   name: z.string().min(1),

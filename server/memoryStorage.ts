@@ -617,13 +617,116 @@ class MemoryStorage {
 
   // Dashboard stats
   async getDashboardStats(): Promise<any> {
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    // Get current data
+    const incidents = Array.from(this.incidents.values());
+    const properties = Array.from(this.properties.values());
+    const staff = Array.from(this.users.values());
+    const patrolReports = Array.from(this.patrolReports.values());
+    const schedules = Array.from(this.schedules.values());
+    
+    // Active patrols (patrol reports that are in progress or started today)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const activePatrols = patrolReports.filter(report => 
+      report.status === 'in_progress' || 
+      (new Date(report.startTime) >= today && report.status !== 'completed')
+    ).length;
+    
+    // Get previous week's active patrols for trend comparison
+    const lastWeekStart = new Date(twoWeeksAgo);
+    const lastWeekEnd = new Date(oneWeekAgo);
+    const lastWeekActivePatrols = patrolReports.filter(report => {
+      const startTime = new Date(report.startTime);
+      return startTime >= lastWeekStart && startTime < lastWeekEnd && 
+             (report.status === 'in_progress' || report.status === 'completed');
+    }).length;
+    
+    // Staff currently on duty
+    const staffStats = await this.getStaffDashboardStats();
+    const staffOnDuty = staffStats.onDuty;
+    
+    // Get previous period staff count for comparison
+    const lastWeekStaffOnDuty = staff.filter(s => s.status === 'active').length; // Simplified for now
+    
+    // Properties secured - now based on actual coverage (active schedules, patrols, or guard assignments)
+    const propertiesSecured = properties.filter(p => {
+      if (p.status !== 'active') return false;
+      
+      // Check if property has active security coverage
+      const hasActiveSchedule = schedules.some(s => 
+        s.propertyId === p.id && s.status === 'in_progress'
+      );
+      const hasActivePatrol = patrolReports.some(r => 
+        r.propertyId === p.id && r.status === 'in_progress'
+      );
+      const hasGuardAssignment = p.guardCount && p.guardCount > 0;
+      
+      return hasActiveSchedule || hasActivePatrol || hasGuardAssignment;
+    }).length;
+    
+    // Get previous period's secured properties for comparison
+    const lastWeekPropertiesSecured = properties.filter(p => p.status === 'active').length; // Simplified baseline
+    
+    // Total incidents
+    const totalIncidents = incidents.length;
+    const activeIncidents = incidents.filter(i => i.status === 'open').length;
+    
+    // FIXED: Calculate trends properly - compare [now-7d, now) vs [now-14d, now-7d)
+    const thisWeekIncidents = incidents.filter(i => 
+      new Date(i.createdAt) >= oneWeekAgo && new Date(i.createdAt) < now
+    ).length;
+    const lastWeekIncidents = incidents.filter(i => 
+      new Date(i.createdAt) >= twoWeeksAgo && new Date(i.createdAt) < oneWeekAgo
+    ).length;
+    
+    // Calculate actual trends
+    const incidentsTrend = thisWeekIncidents - lastWeekIncidents;
+    const patrolsTrend = activePatrols - lastWeekActivePatrols;
+    const staffTrend = staffOnDuty - lastWeekStaffOnDuty;
+    const propertiesTrend = propertiesSecured - lastWeekPropertiesSecured;
+    
     return {
+      // Legacy fields for compatibility
       totalClients: this.clients.size,
       totalProperties: this.properties.size,
-      activeIncidents: Array.from(this.incidents.values()).filter(i => i.status === 'open').length,
-      activeStaff: Array.from(this.users.values()).filter(u => u.status === 'active').length,
-      totalIncidents: this.incidents.size,
-      criticalIncidents: Array.from(this.incidents.values()).filter(i => i.severity === 'critical').length,
+      activeIncidents,
+      activeStaff: staff.filter(u => u.status === 'active').length,
+      totalIncidents,
+      criticalIncidents: incidents.filter(i => i.severity === 'critical').length,
+      
+      // New fields expected by frontend with FIXED trend calculations
+      activePatrols,
+      activePatrolsChange: patrolsTrend === 0 ? 'No change' : 
+                          patrolsTrend > 0 ? `+${patrolsTrend} vs last week` : 
+                          `${patrolsTrend} vs last week`,
+      activePatrolsChangeType: patrolsTrend > 0 ? 'positive' : 
+                              patrolsTrend < 0 ? 'negative' : 'neutral',
+      
+      staffOnDuty,
+      staffChange: staffTrend === 0 ? 'No change' : 
+                  staffTrend > 0 ? `+${staffTrend} vs last period` : 
+                  `${staffTrend} vs last period`,
+      staffChangeType: staffTrend > 0 ? 'positive' : 
+                      staffTrend < 0 ? 'negative' : 'neutral',
+      
+      propertiesSecured,
+      propertiesChange: propertiesTrend === 0 ? 'No change' : 
+                       propertiesTrend > 0 ? `+${propertiesTrend} vs last period` : 
+                       `${propertiesTrend} vs last period`,
+      propertiesChangeType: propertiesTrend > 0 ? 'positive' : 
+                           propertiesTrend < 0 ? 'negative' : 'neutral',
+      
+      incidentsChange: incidentsTrend === 0 ? 'No change' : 
+                      incidentsTrend > 0 ? `+${incidentsTrend} vs last week` : 
+                      `${incidentsTrend} vs last week`,
+      incidentsChangeType: incidentsTrend > 0 ? 'negative' : 
+                          incidentsTrend < 0 ? 'positive' : 'neutral'
     };
   }
 
@@ -1827,18 +1930,37 @@ class MemoryStorage {
 
   async getStaffStats(): Promise<any> {
     const staff = await this.getStaff();
+    
+    // Calculate actual on-duty staff based on current schedules
+    const staffDashboardStats = await this.getStaffDashboardStats();
+    
     return {
       total: staff.length,
       active: staff.filter(s => s.status === "active").length,
-      onDuty: Math.floor(staff.length / 2), // Placeholder, actual on-duty logic would be more complex
+      onDuty: staffDashboardStats.onDuty,
       supervisors: staff.filter(s => s.role.includes("supervisor") || s.role === "admin").length
     };
   }
 
   async getOnDutyStaff(): Promise<any[]> {
     const staff = await this.getStaff();
-    // Placeholder logic: assume half the staff are on duty
-    return staff.slice(0, Math.ceil(staff.length / 2));
+    const now = new Date();
+    
+    // Get current schedules to find who's actually on duty
+    const currentSchedules = Array.from(this.schedules.values())
+      .filter(schedule => {
+        const startTime = new Date(schedule.startTime);
+        const endTime = new Date(schedule.endTime);
+        return startTime <= now && 
+               endTime > now && 
+               schedule.status !== 'cancelled';
+      });
+    
+    // Get staff IDs who are currently on duty
+    const onDutyStaffIds = new Set(currentSchedules.map(s => s.staffId));
+    
+    // Return staff members who are currently on duty
+    return staff.filter(s => onDutyStaffIds.has(s.id));
   }
 
   async getTodaysSchedule(): Promise<Schedule[]> {
@@ -1856,12 +1978,43 @@ class MemoryStorage {
   }
 
   async getStaffDashboardStats(): Promise<any> {
-    // Placeholder dashboard stats for staff
+    const staff = await this.getStaff();
+    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Get today's schedules
+    const todaySchedules = Array.from(this.schedules.values())
+      .filter(schedule => {
+        const startTime = new Date(schedule.startTime);
+        return startTime >= today && startTime < tomorrow && schedule.status !== 'cancelled';
+      });
+
+    // Calculate staff currently on duty
+    const currentlyOnDuty = todaySchedules.filter(schedule => {
+      const startTime = new Date(schedule.startTime);
+      const endTime = new Date(schedule.endTime);
+      return startTime <= now && endTime > now;
+    }).length;
+
+    // Calculate total staff scheduled today
+    const scheduledToday = new Set(todaySchedules.map(s => s.staffId)).size;
+
+    // Get availability data to calculate available staff
+    const availabilityData = await this.getStaffAvailability();
+    const available = availabilityData.filter(a => a.available).length;
+
+    // Calculate off duty (active staff not on duty)
+    const activeStaff = staff.filter(s => s.status === 'active').length;
+    const offDuty = Math.max(0, activeStaff - currentlyOnDuty);
+
     return {
-      onDuty: 3,
-      scheduledToday: 8,
-      available: 2,
-      offDuty: 4
+      onDuty: currentlyOnDuty,
+      scheduledToday,
+      available,
+      offDuty
     };
   }
 
@@ -1995,11 +2148,19 @@ class MemoryStorage {
 
   async getClientStats(): Promise<any> {
     const clients = await this.getClients();
+    
+    // Calculate clients created this month
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const newThisMonth = clients.filter(c => 
+      new Date(c.createdAt) >= startOfMonth
+    ).length;
+    
     return {
       total: clients.length,
       active: clients.filter(c => c.status === "active").length,
       pending: clients.filter(c => c.status === "pending").length,
-      newThisMonth: 0 // Placeholder
+      newThisMonth
     };
   }
 
