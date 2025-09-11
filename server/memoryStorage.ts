@@ -194,6 +194,47 @@ export interface CommunityResource {
   updatedAt: Date;
 }
 
+export interface LawReference {
+  id: string;
+  title: string;
+  category: string; // 'hawaii_state', 'federal', 'city_county', 'administrative', 'case_law'
+  subcategory?: string; // 'criminal_law', 'civil_law', 'traffic', 'property', 'business', 'labor', 'environmental'
+  jurisdiction: string; // 'State of Hawaii', 'Federal', 'City & County of Honolulu', etc.
+  lawType: string; // 'statute', 'regulation', 'ordinance', 'code', 'case', 'constitution'
+  citation: string; // official legal citation
+  chapter?: string;
+  section?: string;
+  subsection?: string;
+  description: string;
+  fullText?: string; // complete text of the law/statute
+  summary: string; // brief summary for quick reference
+  keyProvisions?: string[]; // key points or provisions
+  applicableScenarios?: string[]; // when this law applies
+  penalties?: string; // penalties or consequences
+  relatedLaws?: string[]; // references to related law IDs
+  precedingLaw?: string; // what law this supersedes or amends
+  amendedBy?: string[]; // laws that have amended this one
+  effectiveDate: Date;
+  expirationDate?: Date; // for temporary laws
+  lastAmended?: Date;
+  keywords?: string[]; // searchable keywords
+  tags?: string[];
+  searchableText: string; // combined searchable content
+  officialUrl?: string; // link to official source
+  sourceDocument?: string; // official document reference
+  interpretationNotes?: string; // guidance on interpretation
+  commonMisunderstandings?: string; // clarifications
+  practicalApplications?: string[]; // real-world applications
+  priority: string; // 'critical', 'high', 'medium', 'low' - importance for security personnel
+  relevanceToSecurity: string; // 'high', 'medium', 'low' - specific relevance to security work
+  status: string; // 'active', 'superseded', 'repealed', 'pending'
+  verified: boolean; // whether the reference has been verified for accuracy
+  verifiedAt?: Date;
+  verifiedBy?: string; // user ID who verified
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // In-memory storage
 class MemoryStorage {
   private users: Map<string, User> = new Map();
@@ -206,6 +247,7 @@ class MemoryStorage {
   private financialRecords: Map<string, FinancialRecord> = new Map();
   private evidence: Map<string, Evidence> = new Map();
   private communityResources: Map<string, CommunityResource> = new Map();
+  private lawReferences: Map<string, LawReference> = new Map();
 
   constructor() {
     this.initializeDefaultData();
@@ -929,15 +971,283 @@ class MemoryStorage {
     console.log('✅ Sample community resources data seeded');
   }
 
-  // Law references
-  async getLawReferences(): Promise<any[]> {
-    // For now, return empty array as law references are not implemented
-    return [];
+  // Law References management
+  async getLawReferences(filter?: {
+    category?: string;
+    subcategory?: string;
+    jurisdiction?: string;
+    lawType?: string;
+    status?: string;
+    priority?: string;
+    relevanceToSecurity?: string;
+    searchTerm?: string;
+    keywords?: string[];
+    tags?: string[];
+  }): Promise<LawReference[]> {
+    let lawsList = Array.from(this.lawReferences.values());
+    
+    if (filter) {
+      if (filter.category) {
+        lawsList = lawsList.filter(l => l.category === filter.category);
+      }
+      if (filter.subcategory) {
+        lawsList = lawsList.filter(l => l.subcategory === filter.subcategory);
+      }
+      if (filter.jurisdiction) {
+        lawsList = lawsList.filter(l => l.jurisdiction.toLowerCase().includes(filter.jurisdiction!.toLowerCase()));
+      }
+      if (filter.lawType) {
+        lawsList = lawsList.filter(l => l.lawType === filter.lawType);
+      }
+      if (filter.status) {
+        lawsList = lawsList.filter(l => l.status === filter.status);
+      }
+      if (filter.priority) {
+        lawsList = lawsList.filter(l => l.priority === filter.priority);
+      }
+      if (filter.relevanceToSecurity) {
+        lawsList = lawsList.filter(l => l.relevanceToSecurity === filter.relevanceToSecurity);
+      }
+      if (filter.keywords && filter.keywords.length > 0) {
+        lawsList = lawsList.filter(l => 
+          filter.keywords!.some(keyword => 
+            l.keywords?.some(k => k.toLowerCase().includes(keyword.toLowerCase()))
+          )
+        );
+      }
+      if (filter.tags && filter.tags.length > 0) {
+        lawsList = lawsList.filter(l => 
+          filter.tags!.some(tag => l.tags?.includes(tag))
+        );
+      }
+      if (filter.searchTerm) {
+        const term = filter.searchTerm.toLowerCase();
+        lawsList = lawsList.filter(l => 
+          l.searchableText.toLowerCase().includes(term) ||
+          l.title.toLowerCase().includes(term) ||
+          l.citation.toLowerCase().includes(term) ||
+          l.summary.toLowerCase().includes(term)
+        );
+      }
+    }
+    
+    return lawsList.sort((a, b) => {
+      // Sort by relevance to security first
+      const relevanceOrder = { high: 3, medium: 2, low: 1 };
+      const aRelevance = relevanceOrder[a.relevanceToSecurity as keyof typeof relevanceOrder] || 0;
+      const bRelevance = relevanceOrder[b.relevanceToSecurity as keyof typeof relevanceOrder] || 0;
+      if (aRelevance !== bRelevance) return bRelevance - aRelevance;
+      
+      // Then by priority
+      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+      const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+      const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+      if (aPriority !== bPriority) return bPriority - aPriority;
+      
+      // Finally by title alphabetically
+      return a.title.localeCompare(b.title);
+    });
   }
 
-  async createLawReference(referenceData: any): Promise<any> {
-    // For now, just return the data with an ID
-    return { id: uuidv4(), ...referenceData, createdAt: new Date() };
+  async getLawReferenceById(id: string): Promise<LawReference | null> {
+    return this.lawReferences.get(id) || null;
+  }
+
+  async createLawReference(referenceData: Omit<LawReference, 'id' | 'createdAt' | 'updatedAt' | 'searchableText'>): Promise<LawReference> {
+    const id = uuidv4();
+    const now = new Date();
+    
+    // Build searchable text from all relevant fields
+    const searchableText = [
+      referenceData.title,
+      referenceData.citation,
+      referenceData.description,
+      referenceData.summary,
+      referenceData.fullText || '',
+      referenceData.keyProvisions?.join(' ') || '',
+      referenceData.applicableScenarios?.join(' ') || '',
+      referenceData.keywords?.join(' ') || '',
+      referenceData.tags?.join(' ') || '',
+      referenceData.interpretationNotes || '',
+      referenceData.practicalApplications?.join(' ') || ''
+    ].join(' ').toLowerCase();
+    
+    const lawReference: LawReference = {
+      id,
+      ...referenceData,
+      searchableText,
+      status: referenceData.status || 'active',
+      priority: referenceData.priority || 'medium',
+      relevanceToSecurity: referenceData.relevanceToSecurity || 'medium',
+      verified: referenceData.verified || false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.lawReferences.set(id, lawReference);
+    
+    // Log activity
+    await this.createActivity({
+      userId: referenceData.verifiedBy || 'system',
+      activityType: 'law_reference_created',
+      entityType: 'law_reference',
+      entityId: id,
+      description: `Created law reference: ${referenceData.title} (${referenceData.citation})`,
+      metadata: { 
+        lawId: id, 
+        category: referenceData.category,
+        jurisdiction: referenceData.jurisdiction,
+        citation: referenceData.citation 
+      }
+    });
+    
+    return lawReference;
+  }
+
+  async updateLawReference(id: string, updates: Partial<LawReference>): Promise<LawReference> {
+    const lawReference = this.lawReferences.get(id);
+    if (!lawReference) {
+      throw new Error(`Law reference with id ${id} not found`);
+    }
+    
+    const now = new Date();
+    
+    // Rebuild searchable text if content fields are updated
+    let searchableText = lawReference.searchableText;
+    if (updates.title || updates.description || updates.summary || updates.fullText || 
+        updates.keyProvisions || updates.applicableScenarios || updates.keywords || 
+        updates.tags || updates.interpretationNotes || updates.practicalApplications) {
+      const updatedRef = { ...lawReference, ...updates };
+      searchableText = [
+        updatedRef.title,
+        updatedRef.citation,
+        updatedRef.description,
+        updatedRef.summary,
+        updatedRef.fullText || '',
+        updatedRef.keyProvisions?.join(' ') || '',
+        updatedRef.applicableScenarios?.join(' ') || '',
+        updatedRef.keywords?.join(' ') || '',
+        updatedRef.tags?.join(' ') || '',
+        updatedRef.interpretationNotes || '',
+        updatedRef.practicalApplications?.join(' ') || ''
+      ].join(' ').toLowerCase();
+    }
+    
+    const updatedLawReference = { 
+      ...lawReference, 
+      ...updates, 
+      searchableText,
+      updatedAt: now 
+    };
+    this.lawReferences.set(id, updatedLawReference);
+    
+    // Log activity
+    await this.createActivity({
+      userId: updates.verifiedBy || lawReference.verifiedBy || 'system',
+      activityType: 'law_reference_updated',
+      entityType: 'law_reference',
+      entityId: id,
+      description: `Updated law reference: ${lawReference.title}`,
+      metadata: { 
+        lawId: id, 
+        updatedFields: Object.keys(updates),
+        citation: lawReference.citation
+      }
+    });
+    
+    return updatedLawReference;
+  }
+
+  async deleteLawReference(id: string): Promise<boolean> {
+    const lawReference = this.lawReferences.get(id);
+    if (!lawReference) {
+      return false;
+    }
+    
+    // Soft delete by updating status
+    await this.updateLawReference(id, { status: 'superseded' });
+    
+    // Log activity
+    await this.createActivity({
+      userId: lawReference.verifiedBy || 'system',
+      activityType: 'law_reference_deleted',
+      entityType: 'law_reference',
+      entityId: id,
+      description: `Deleted law reference: ${lawReference.title}`,
+      metadata: { lawId: id, citation: lawReference.citation }
+    });
+    
+    return true;
+  }
+
+  async searchLawReferences(query: string, options?: {
+    category?: string;
+    jurisdiction?: string;
+    relevanceToSecurity?: string;
+    limit?: number;
+  }): Promise<LawReference[]> {
+    const filter = {
+      searchTerm: query,
+      ...options
+    };
+    const results = await this.getLawReferences(filter);
+    return options?.limit ? results.slice(0, options.limit) : results;
+  }
+
+  async getLawReferencesByCategory(category: string): Promise<LawReference[]> {
+    return this.getLawReferences({ category, status: 'active' });
+  }
+
+  async getRelatedLawReferences(lawId: string): Promise<LawReference[]> {
+    const lawReference = await this.getLawReferenceById(lawId);
+    if (!lawReference || !lawReference.relatedLaws) {
+      return [];
+    }
+    
+    const relatedLaws: LawReference[] = [];
+    for (const relatedId of lawReference.relatedLaws) {
+      const related = await this.getLawReferenceById(relatedId);
+      if (related) {
+        relatedLaws.push(related);
+      }
+    }
+    
+    return relatedLaws;
+  }
+
+  async getLawReferenceStats(): Promise<any> {
+    const lawsList = Array.from(this.lawReferences.values());
+    const activeLaws = lawsList.filter(l => l.status === 'active');
+    
+    const categoryStats: { [key: string]: number } = {};
+    const jurisdictionStats: { [key: string]: number } = {};
+    const lawTypeStats: { [key: string]: number } = {};
+    const relevanceStats: { [key: string]: number } = {};
+    
+    activeLaws.forEach(law => {
+      categoryStats[law.category] = (categoryStats[law.category] || 0) + 1;
+      jurisdictionStats[law.jurisdiction] = (jurisdictionStats[law.jurisdiction] || 0) + 1;
+      lawTypeStats[law.lawType] = (lawTypeStats[law.lawType] || 0) + 1;
+      relevanceStats[law.relevanceToSecurity] = (relevanceStats[law.relevanceToSecurity] || 0) + 1;
+    });
+    
+    return {
+      total: activeLaws.length,
+      byCategory: categoryStats,
+      byJurisdiction: jurisdictionStats,
+      byLawType: lawTypeStats,
+      byRelevanceToSecurity: relevanceStats,
+      highSecurityRelevance: activeLaws.filter(l => l.relevanceToSecurity === 'high').length,
+      criticalPriority: activeLaws.filter(l => l.priority === 'critical').length,
+      needingVerification: lawsList.filter(l => !l.verified || (
+        l.verifiedAt && 
+        l.verifiedAt < new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) // 1 year ago
+      )).length,
+      recentlyUpdated: lawsList.filter(l => {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        return l.updatedAt > oneWeekAgo;
+      }).length
+    };
   }
 
   // Seed database with sample data

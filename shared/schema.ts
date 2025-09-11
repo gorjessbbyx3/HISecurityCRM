@@ -169,6 +169,58 @@ export const updateCommunityResourceInputSchema = createCommunityResourceInputSc
 // Full update schema for server operations (includes verification fields)
 export const updateCommunityResourceSchema = insertCommunityResourceSchema.partial();
 
+// Law Reference schemas
+export const insertLawReferenceSchema = z.object({
+  title: z.string().min(1),
+  category: z.enum(['hawaii_state', 'federal', 'city_county', 'administrative', 'case_law']),
+  subcategory: z.enum(['criminal_law', 'civil_law', 'traffic', 'property', 'business', 'labor', 'environmental']).optional(),
+  jurisdiction: z.string().min(1), // 'State of Hawaii', 'Federal', 'City & County of Honolulu', etc.
+  lawType: z.enum(['statute', 'regulation', 'ordinance', 'code', 'case', 'constitution']),
+  citation: z.string().min(1), // official legal citation
+  chapter: z.string().optional(),
+  section: z.string().optional(),
+  subsection: z.string().optional(),
+  description: z.string().min(1),
+  fullText: z.string().optional(), // complete text of the law/statute
+  summary: z.string().min(1), // brief summary for quick reference
+  keyProvisions: z.array(z.string()).optional(), // key points or provisions
+  applicableScenarios: z.array(z.string()).optional(), // when this law applies
+  penalties: z.string().optional(), // penalties or consequences
+  relatedLaws: z.array(z.string()).optional(), // references to related law IDs
+  precedingLaw: z.string().optional(), // what law this supersedes or amends
+  amendedBy: z.array(z.string()).optional(), // laws that have amended this one
+  effectiveDate: z.string().transform(str => new Date(str)),
+  expirationDate: z.string().transform(str => new Date(str)).optional(), // for temporary laws
+  lastAmended: z.string().transform(str => new Date(str)).optional(),
+  keywords: z.array(z.string()).optional(), // searchable keywords
+  tags: z.array(z.string()).optional(),
+  searchableText: z.string().min(1), // combined searchable content
+  officialUrl: z.string().url().optional(), // link to official source
+  sourceDocument: z.string().optional(), // official document reference
+  interpretationNotes: z.string().optional(), // guidance on interpretation
+  commonMisunderstandings: z.string().optional(), // clarifications
+  practicalApplications: z.array(z.string()).optional(), // real-world applications
+  priority: z.enum(['critical', 'high', 'medium', 'low']).default('medium'), // importance for security personnel
+  relevanceToSecurity: z.enum(['high', 'medium', 'low']).default('medium'), // specific relevance to security work
+  status: z.enum(['active', 'superseded', 'repealed', 'pending']).default('active'),
+  verified: z.boolean().default(false), // whether the reference has been verified for accuracy
+  verifiedAt: z.string().transform(str => new Date(str)).optional(),
+  verifiedBy: z.string().optional(), // user ID who verified
+});
+
+// Client-safe schema for law reference creation (excludes verification fields)
+export const createLawReferenceInputSchema = insertLawReferenceSchema.omit({
+  verifiedAt: true,
+  verifiedBy: true,
+  verified: true,
+});
+
+// Client-safe schema for law reference updates (excludes verification and system fields)
+export const updateLawReferenceInputSchema = createLawReferenceInputSchema.partial();
+
+// Full update schema for server operations (includes verification fields)
+export const updateLawReferenceSchema = insertLawReferenceSchema.partial();
+
 // Export types
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
@@ -184,3 +236,7 @@ export type CreateCommunityResourceInput = z.infer<typeof createCommunityResourc
 export type InsertCommunityResource = z.infer<typeof insertCommunityResourceSchema>;
 export type UpdateCommunityResourceInput = z.infer<typeof updateCommunityResourceInputSchema>;
 export type UpdateCommunityResource = z.infer<typeof updateCommunityResourceSchema>;
+export type CreateLawReferenceInput = z.infer<typeof createLawReferenceInputSchema>;
+export type InsertLawReference = z.infer<typeof insertLawReferenceSchema>;
+export type UpdateLawReferenceInput = z.infer<typeof updateLawReferenceInputSchema>;
+export type UpdateLawReference = z.infer<typeof updateLawReferenceSchema>;

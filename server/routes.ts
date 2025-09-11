@@ -17,6 +17,10 @@ import {
   insertCommunityResourceSchema,
   updateCommunityResourceInputSchema,
   updateCommunityResourceSchema,
+  createLawReferenceInputSchema,
+  insertLawReferenceSchema,
+  updateLawReferenceInputSchema,
+  updateLawReferenceSchema,
 } from "@shared/schema";
 import { WebSocketServer, WebSocket } from "ws";
 
@@ -1120,6 +1124,248 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting community resource:", error);
       res.status(500).json({ message: "Failed to delete community resource" });
+    }
+  });
+
+  // Law References endpoints
+  app.get('/api/law-references', authenticateToken, async (req, res) => {
+    try {
+      const { 
+        category, 
+        subcategory, 
+        jurisdiction, 
+        lawType, 
+        status, 
+        priority, 
+        relevanceToSecurity,
+        searchTerm,
+        keywords,
+        tags,
+        verified
+      } = req.query;
+
+      const filters = {
+        category: category as string,
+        subcategory: subcategory as string,
+        jurisdiction: jurisdiction as string,
+        lawType: lawType as string,
+        status: status as string,
+        priority: priority as string,
+        relevanceToSecurity: relevanceToSecurity as string,
+        searchTerm: searchTerm as string,
+        keywords: keywords ? (keywords as string).split(',') : undefined,
+        tags: tags ? (tags as string).split(',') : undefined,
+        verified: verified === 'true' ? true : verified === 'false' ? false : undefined,
+      };
+
+      const lawReferences = await storage.getLawReferences(filters);
+      res.json(lawReferences);
+    } catch (error) {
+      console.error("Error fetching law references:", error);
+      res.status(500).json({ message: "Failed to fetch law references" });
+    }
+  });
+
+  app.get('/api/law-references/search', authenticateToken, async (req, res) => {
+    try {
+      const { q: query } = req.query;
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+
+      const results = await storage.searchLawReferences(query);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching law references:", error);
+      res.status(500).json({ message: "Failed to search law references" });
+    }
+  });
+
+  app.get('/api/law-references/stats', authenticateToken, async (req, res) => {
+    try {
+      const stats = await storage.getLawReferenceStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching law reference stats:", error);
+      res.status(500).json({ message: "Failed to fetch law reference stats" });
+    }
+  });
+
+  app.get('/api/law-references/:id', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const lawReference = await storage.getLawReferenceById(id);
+      
+      if (!lawReference) {
+        return res.status(404).json({ message: "Law reference not found" });
+      }
+
+      res.json(lawReference);
+    } catch (error) {
+      console.error("Error fetching law reference:", error);
+      res.status(500).json({ message: "Failed to fetch law reference" });
+    }
+  });
+
+  app.get('/api/law-references/category/:category', authenticateToken, async (req, res) => {
+    try {
+      const { category } = req.params;
+      const { subcategory, priority, relevanceToSecurity } = req.query;
+      
+      const filters = {
+        category,
+        subcategory: subcategory as string,
+        priority: priority as string,
+        relevanceToSecurity: relevanceToSecurity as string,
+      };
+
+      const lawReferences = await storage.getLawReferencesByCategory(category, filters);
+      res.json(lawReferences);
+    } catch (error) {
+      console.error("Error fetching law references by category:", error);
+      res.status(500).json({ message: "Failed to fetch law references by category" });
+    }
+  });
+
+  app.get('/api/law-references/:id/related', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const relatedLaws = await storage.getRelatedLawReferences(id);
+      res.json(relatedLaws);
+    } catch (error) {
+      console.error("Error fetching related law references:", error);
+      res.status(500).json({ message: "Failed to fetch related law references" });
+    }
+  });
+
+  app.post('/api/law-references', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Only admin and supervisor can create law references
+      if (req.user.role !== 'admin' && req.user.role !== 'supervisor') {
+        return res.status(403).json({ message: "Admin or supervisor permissions required" });
+      }
+
+      const lawReferenceData = createLawReferenceInputSchema.parse(req.body);
+
+      // Server-controlled fields
+      const serverData = insertLawReferenceSchema.parse({
+        ...lawReferenceData,
+        verified: req.user.role === 'admin', // Only admin can create pre-verified entries
+        verifiedBy: req.user.role === 'admin' ? req.user.id : undefined,
+        verifiedAt: req.user.role === 'admin' ? new Date().toISOString() : undefined,
+      });
+
+      const lawReference = await storage.createLawReference(serverData);
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "law_reference_created",
+        entityType: "law_reference",
+        entityId: lawReference.id,
+        description: `Created law reference: ${lawReference.title}`,
+        metadata: { citation: lawReference.citation },
+      });
+
+      res.status(201).json(lawReference);
+    } catch (error) {
+      console.error("Error creating law reference:", error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid input data", details: error.message });
+      }
+      res.status(500).json({ message: "Failed to create law reference" });
+    }
+  });
+
+  app.put('/api/law-references/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Only admin and supervisor can update law references
+      if (req.user.role !== 'admin' && req.user.role !== 'supervisor') {
+        return res.status(403).json({ message: "Admin or supervisor permissions required" });
+      }
+
+      const { id } = req.params;
+      
+      // Get existing law reference for comparison
+      const existingLawRef = await storage.getLawReferenceById(id);
+      if (!existingLawRef) {
+        return res.status(404).json({ message: "Law reference not found" });
+      }
+
+      const updates = updateLawReferenceInputSchema.parse(req.body);
+
+      // Server-controlled fields - only admin can verify/unverify
+      const serverUpdates = updateLawReferenceSchema.parse({
+        ...updates,
+        verified: req.user.role === 'admin' && updates ? true : existingLawRef.verified,
+        verifiedBy: req.user.role === 'admin' ? req.user.id : existingLawRef.verifiedBy,
+        verifiedAt: req.user.role === 'admin' && updates ? new Date().toISOString() : existingLawRef.verifiedAt,
+      });
+
+      const lawReference = await storage.updateLawReference(id, serverUpdates);
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "law_reference_updated",
+        entityType: "law_reference",
+        entityId: id,
+        description: `Updated law reference: ${lawReference.title}`,
+        metadata: { changes: updates },
+      });
+
+      res.json(lawReference);
+    } catch (error) {
+      console.error("Error updating law reference:", error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid input data", details: error.message });
+      }
+      res.status(500).json({ message: "Failed to update law reference" });
+    }
+  });
+
+  app.delete('/api/law-references/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      // Only admin can delete law references
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin permissions required to delete law references" });
+      }
+
+      const { id } = req.params;
+      
+      // Get existing law reference for logging
+      const existingLawRef = await storage.getLawReferenceById(id);
+      if (!existingLawRef) {
+        return res.status(404).json({ message: "Law reference not found" });
+      }
+
+      const deleted = await storage.deleteLawReference(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Law reference not found" });
+      }
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "law_reference_deleted",
+        entityType: "law_reference",
+        entityId: id,
+        description: `Deleted law reference: ${existingLawRef.title}`,
+      });
+
+      res.json({ message: "Law reference deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting law reference:", error);
+      res.status(500).json({ message: "Failed to delete law reference" });
     }
   });
 
