@@ -1,25 +1,87 @@
+
 <!DOCTYPE html>
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hawaii Security CRM - Professional Crime Watch & Security Management</title>
-    <meta name="description" content="Comprehensive security management system for Hawaii-based crime watch and protection services. Manage clients, patrol reports, crime intelligence, and community outreach." />
+    <title>Hawaii Security Enterprise - Advanced Security Management Platform</title>
+    <meta name="description" content="Enterprise-grade security management system for Hawaii-based professional security services. Advanced client management, real-time monitoring, patrol coordination, and comprehensive security operations." />
+    <meta name="keywords" content="security management, enterprise security, Hawaii security, patrol management, incident reporting, client portal, security operations center" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Hawaii Security Enterprise" />
+    <meta property="og:description" content="Professional security management platform with advanced monitoring and operational capabilities" />
+    <meta property="og:type" content="website" />
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Roboto+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Enhanced Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><path d='M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,3.18L19,6.3V11C19,15.5 16.18,19.82 12,20.95C7.82,19.82 5,15.5 5,11V6.3L12,3.18Z' stroke='%23ffffff' stroke-width='0.5' fill='%233b82f6'/></svg>">
     
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23f59e0b'><path d='M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,3.18L19,6.3V11C19,15.5 16.18,19.82 12,20.95C7.82,19.82 5,15.5 5,11V6.3L12,3.18Z'/></svg>">
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><path d='M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,3.18L19,6.3V11C19,15.5 16.18,19.82 12,20.95C7.82,19.82 5,15.5 5,11V6.3L12,3.18Z'/></svg>">
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#3b82f6" />
+    
+    <!-- Viewport Settings for Mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="/src/index.css" as="style">
+    <link rel="preload" href="/src/main.tsx" as="script">
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
   </head>
-  <body class="bg-slate-900 text-white font-inter antialiased">
-    <div id="root"></div>
+  <body class="bg-slate-950 text-white font-inter antialiased overflow-x-hidden">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
+      <div class="text-center">
+        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg shadow-blue-500/25">
+          <svg class="w-8 h-8 text-white animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,3.18L19,6.3V11C19,15.5 16.18,19.82 12,20.95C7.82,19.82 5,15.5 5,11V6.3L12,3.18Z"/>
+          </svg>
+        </div>
+        <div class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent mb-2">
+          Hawaii Security
+        </div>
+        <div class="text-sm text-slate-400 uppercase tracking-wider">
+          Enterprise Platform
+        </div>
+        <div class="mt-6 w-48 h-1 bg-slate-800 rounded-full mx-auto overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full animate-pulse"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Application Container -->
+    <div id="root" class="min-h-screen"></div>
+    
+    <!-- Loading Screen Script -->
+    <script>
+      // Hide loading screen once the app is ready
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          const loadingScreen = document.getElementById('loading-screen');
+          if (loadingScreen) {
+            loadingScreen.style.opacity = '0';
+            loadingScreen.style.transition = 'opacity 0.5s ease-out';
+            setTimeout(() => {
+              loadingScreen.style.display = 'none';
+            }, 500);
+          }
+        }, 1000);
+      });
+    </script>
+    
+    <!-- Main Application Script -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
