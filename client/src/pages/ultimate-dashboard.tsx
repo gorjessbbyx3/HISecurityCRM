@@ -187,55 +187,55 @@ export default function UltimateDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4">
-      <div className="max-w-7xl mx-auto space-y-4">
-        {/* Compact Header */}
-        <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-2xl">
-            <Shield className="w-8 h-8 text-white" />
+    <div className="min-h-screen bg-slate-950 p-2">
+      <div className="max-w-7xl mx-auto space-y-2">
+        {/* Ultra Compact Header */}
+        <div className="text-center mb-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mx-auto mb-1 shadow-lg">
+            <Shield className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-xl font-bold text-white mb-1">
             STREET PATROL Dashboard
           </h1>
-          <p className="text-lg text-slate-400 mb-2">
+          <p className="text-sm text-slate-400 mb-1">
             Hawaii Security Enterprise Platform
           </p>
-          <div className="text-sm text-green-400 font-semibold">
+          <div className="text-xs text-green-400 font-semibold">
             System Status: ONLINE • {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
           </div>
         </div>
 
         {/* Emergency Alerts - Top Priority */}
         {stats?.emergencyAlerts && stats.emergencyAlerts.length > 0 && (
-          <div className="mb-6">
-            <div className="bg-red-600 text-white p-4 rounded-xl mb-4 text-center">
-              <Siren className="w-8 h-8 mx-auto mb-2 animate-pulse" />
-              <h2 className="text-xl font-bold mb-1">EMERGENCY ALERTS</h2>
-              <p className="text-sm">Immediate attention required</p>
+          <div className="mb-2">
+            <div className="bg-red-600 text-white p-2 rounded-lg mb-2 text-center">
+              <Siren className="w-5 h-5 mx-auto mb-1 animate-pulse" />
+              <h2 className="text-sm font-bold mb-1">EMERGENCY ALERTS</h2>
+              <p className="text-xs">Immediate attention required</p>
             </div>
 
-            <div className="grid gap-4">
+            <div className="grid gap-2">
               {stats.emergencyAlerts.map((alert) => (
                 <div
                   key={alert.id}
-                  className={`p-4 rounded-xl border-2 ${getAlertColor(alert.type)}`}
+                  className={`p-2 rounded-lg border ${getAlertColor(alert.type)}`}
                 >
-                  <div className="flex items-start gap-4">
-                    <AlertOctagon className="w-8 h-8 flex-shrink-0 animate-pulse" />
+                  <div className="flex items-start gap-2">
+                    <AlertOctagon className="w-5 h-5 flex-shrink-0 animate-pulse" />
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold mb-2">{alert.title}</h3>
-                      <p className="text-sm mb-2">{alert.description}</p>
+                      <h3 className="text-sm font-bold mb-1">{alert.title}</h3>
+                      <p className="text-xs mb-1">{alert.description}</p>
                       {alert.location && (
-                        <div className="flex items-center gap-2 text-sm mb-2">
-                          <MapPin className="w-4 h-4" />
+                        <div className="flex items-center gap-1 text-xs mb-1">
+                          <MapPin className="w-3 h-3" />
                           <span className="font-semibold">Location: {alert.location}</span>
                         </div>
                       )}
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-mono">
+                        <span className="text-xs font-mono">
                           {format(new Date(alert.timestamp), 'MMM dd, HH:mm:ss')}
                         </span>
-                        <Badge className="text-sm px-2 py-1 font-bold">
+                        <Badge className="text-xs px-1 py-0 font-bold">
                           {alert.status.toUpperCase()}
                         </Badge>
                       </div>
@@ -247,19 +247,19 @@ export default function UltimateDashboard() {
           </div>
         )}
 
-        {/* Key Metrics - Compact */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Key Metrics - Ultra Compact */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
           {/* Active Patrols */}
-          <Card className="bg-slate-800 border-slate-600 border hover:border-blue-500 transition-all p-3">
-            <CardContent className="text-center p-2">
-              <Radio className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-              <h3 className="text-sm font-bold text-white mb-1">ACTIVE PATROLS</h3>
-              <div className="text-2xl font-bold text-blue-400 mb-1" data-testid="stat-active-patrols">
+          <Card className="bg-slate-800 border-slate-600 border hover:border-blue-500 transition-all p-1">
+            <CardContent className="text-center p-1">
+              <Radio className="w-5 h-5 text-blue-400 mx-auto mb-1" />
+              <h3 className="text-xs font-bold text-white mb-1">ACTIVE PATROLS</h3>
+              <div className="text-lg font-bold text-blue-400 mb-1" data-testid="stat-active-patrols">
                 {stats?.activePatrols || 0}
               </div>
-              <p className="text-xs text-slate-300 mb-2">Units Deployed</p>
+              <p className="text-xs text-slate-300 mb-1">Units Deployed</p>
               <Link href="/patrol-reports">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-1 text-xs font-bold">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-1 text-xs font-bold h-6">
                   MANAGE
                 </Button>
               </Link>
@@ -267,16 +267,16 @@ export default function UltimateDashboard() {
           </Card>
 
           {/* Staff Status */}
-          <Card className="bg-slate-800 border-slate-600 border hover:border-green-500 transition-all p-3">
-            <CardContent className="text-center p-2">
-              <UserCheck className="w-8 h-8 text-green-400 mx-auto mb-2" />
-              <h3 className="text-sm font-bold text-white mb-1">STAFF ON DUTY</h3>
-              <div className="text-2xl font-bold text-green-400 mb-1" data-testid="stat-on-duty-staff">
+          <Card className="bg-slate-800 border-slate-600 border hover:border-green-500 transition-all p-1">
+            <CardContent className="text-center p-1">
+              <UserCheck className="w-5 h-5 text-green-400 mx-auto mb-1" />
+              <h3 className="text-xs font-bold text-white mb-1">STAFF ON DUTY</h3>
+              <div className="text-lg font-bold text-green-400 mb-1" data-testid="stat-on-duty-staff">
                 {stats?.onDutyStaff || 0}
               </div>
-              <p className="text-xs text-slate-300 mb-2">Officers Available</p>
+              <p className="text-xs text-slate-300 mb-1">Officers Available</p>
               <Link href="/staff">
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-1 text-xs font-bold">
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-1 text-xs font-bold h-6">
                   VIEW STAFF
                 </Button>
               </Link>
@@ -284,16 +284,16 @@ export default function UltimateDashboard() {
           </Card>
 
           {/* Open Incidents */}
-          <Card className="bg-slate-800 border-slate-600 border hover:border-orange-500 transition-all p-3">
-            <CardContent className="text-center p-2">
-              <AlertTriangle className="w-8 h-8 text-orange-400 mx-auto mb-2" />
-              <h3 className="text-sm font-bold text-white mb-1">OPEN INCIDENTS</h3>
-              <div className="text-2xl font-bold text-orange-400 mb-1" data-testid="stat-open-incidents">
+          <Card className="bg-slate-800 border-slate-600 border hover:border-orange-500 transition-all p-1">
+            <CardContent className="text-center p-1">
+              <AlertTriangle className="w-5 h-5 text-orange-400 mx-auto mb-1" />
+              <h3 className="text-xs font-bold text-white mb-1">OPEN INCIDENTS</h3>
+              <div className="text-lg font-bold text-orange-400 mb-1" data-testid="stat-open-incidents">
                 {stats?.openIncidents || 0}
               </div>
-              <p className="text-xs text-slate-300 mb-2">Active Cases</p>
+              <p className="text-xs text-slate-300 mb-1">Active Cases</p>
               <Link href="/reports">
-                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white py-1 text-xs font-bold">
+                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white py-1 text-xs font-bold h-6">
                   VIEW INCIDENTS
                 </Button>
               </Link>
@@ -301,16 +301,16 @@ export default function UltimateDashboard() {
           </Card>
 
           {/* Properties */}
-          <Card className="bg-slate-800 border-slate-600 border hover:border-purple-500 transition-all p-3">
-            <CardContent className="text-center p-2">
-              <Building2 className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-              <h3 className="text-sm font-bold text-white mb-1">PROPERTIES</h3>
-              <div className="text-2xl font-bold text-purple-400 mb-1" data-testid="stat-active-properties">
+          <Card className="bg-slate-800 border-slate-600 border hover:border-purple-500 transition-all p-1">
+            <CardContent className="text-center p-1">
+              <Building2 className="w-5 h-5 text-purple-400 mx-auto mb-1" />
+              <h3 className="text-xs font-bold text-white mb-1">PROPERTIES</h3>
+              <div className="text-lg font-bold text-purple-400 mb-1" data-testid="stat-active-properties">
                 {stats?.activeProperties || 0}
               </div>
-              <p className="text-xs text-slate-300 mb-2">Under Protection</p>
+              <p className="text-xs text-slate-300 mb-1">Under Protection</p>
               <Link href="/properties">
-                <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-1 text-xs font-bold">
+                <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-1 text-xs font-bold h-6">
                   MANAGE
                 </Button>
               </Link>
@@ -318,55 +318,55 @@ export default function UltimateDashboard() {
           </Card>
         </div>
 
-        {/* Quick Actions - Compact Buttons */}
-        <div className="mb-6">
-          <h2 className="text-lg font-bold text-white text-center mb-4">QUICK ACTIONS</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Quick Actions - Ultra Compact */}
+        <div className="mb-3">
+          <h2 className="text-sm font-bold text-white text-center mb-2">QUICK ACTIONS</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <Link href="/patrol-reports">
-              <Button className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold flex flex-col items-center gap-1 p-3">
-                <FileCheck className="w-6 h-6" />
+              <Button className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex flex-col items-center gap-1 p-2">
+                <FileCheck className="w-4 h-4" />
                 PATROL REPORT
               </Button>
             </Link>
 
             <Link href="/reports">
-              <Button className="w-full h-16 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold flex flex-col items-center gap-1 p-3">
-                <AlertTriangle className="w-6 h-6" />
+              <Button className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex flex-col items-center gap-1 p-2">
+                <AlertTriangle className="w-4 h-4" />
                 LOG INCIDENT
               </Button>
             </Link>
 
             <Link href="/scheduling">
-              <Button className="w-full h-16 bg-green-600 hover:bg-green-700 text-white text-sm font-bold flex flex-col items-center gap-1 p-3">
-                <Calendar className="w-6 h-6" />
+              <Button className="w-full h-12 bg-green-600 hover:bg-green-700 text-white text-xs font-bold flex flex-col items-center gap-1 p-2">
+                <Calendar className="w-4 h-4" />
                 SCHEDULE
               </Button>
             </Link>
 
             <Button
-              className="w-full h-16 bg-red-600 hover:bg-red-700 text-white text-sm font-bold flex flex-col items-center gap-1 p-3"
+              className="w-full h-12 bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex flex-col items-center gap-1 p-2"
               onClick={() => {
                 if (confirm('This will activate emergency response. Continue?')) {
                   alert('Emergency response activated!');
                 }
               }}
             >
-              <PhoneCall className="w-6 h-6 animate-pulse" />
+              <PhoneCall className="w-4 h-4 animate-pulse" />
               EMERGENCY
             </Button>
           </div>
         </div>
 
-        {/* System Status & Activity - Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* System Status - Compact */}
+        {/* System Status & Activity - Ultra Compact Two Column */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
+          {/* System Status - Ultra Compact */}
           <div>
-            <h2 className="text-lg font-bold text-white text-center mb-4">SYSTEM STATUS</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <h2 className="text-sm font-bold text-white text-center mb-2">SYSTEM STATUS</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
               {stats?.systemStatus && Object.entries(stats.systemStatus).map(([system, status]) => (
-                <Card key={system} className="bg-slate-800 border-slate-600 border p-3">
-                  <CardContent className="text-center p-2">
-                    <div className={`w-4 h-4 rounded-full mx-auto mb-2 ${
+                <Card key={system} className="bg-slate-800 border-slate-600 border p-1">
+                  <CardContent className="text-center p-1">
+                    <div className={`w-3 h-3 rounded-full mx-auto mb-1 ${
                       status === 'online' || status === 'connected' || status === 'active' || status === 'operational' || status === 'ready'
                         ? 'bg-green-500'
                         : status === 'degraded' || status === 'slow' || status === 'limited' || status === 'impaired' || status === 'testing'
@@ -374,7 +374,7 @@ export default function UltimateDashboard() {
                         : 'bg-red-500'
                     } animate-pulse`} />
                     <h3 className="text-xs font-bold text-white mb-1 uppercase">{system}</h3>
-                    <div className={`px-2 py-1 rounded text-xs font-bold ${getStatusColor(status)}`}>
+                    <div className={`px-1 py-0.5 rounded text-xs font-bold ${getStatusColor(status)}`}>
                       {status.toUpperCase()}
                     </div>
                   </CardContent>
@@ -383,23 +383,23 @@ export default function UltimateDashboard() {
             </div>
           </div>
 
-          {/* Recent Activity - Compact List */}
+          {/* Recent Activity - Ultra Compact */}
           <div>
-            <h2 className="text-lg font-bold text-white text-center mb-4">RECENT ACTIVITY</h2>
-            <Card className="bg-slate-800 border-slate-600 border p-3">
-              <CardContent className="p-3">
-                <div className="space-y-3 max-h-48 overflow-y-auto">
+            <h2 className="text-sm font-bold text-white text-center mb-2">RECENT ACTIVITY</h2>
+            <Card className="bg-slate-800 border-slate-600 border p-1">
+              <CardContent className="p-1">
+                <div className="space-y-1 max-h-32 overflow-y-auto">
                   {stats?.recentActivities?.length ? (
                     stats.recentActivities.slice(0, 3).map((activity) => (
-                      <div key={activity.id} className="flex items-start gap-3 p-2 bg-slate-700 rounded-lg">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
+                      <div key={activity.id} className="flex items-start gap-2 p-1 bg-slate-700 rounded">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1 flex-shrink-0" />
                         <div className="flex-1">
-                          <p className="text-sm text-white font-medium mb-1">{activity.description}</p>
-                          <div className="flex items-center gap-2">
+                          <p className="text-xs text-white font-medium mb-1">{activity.description}</p>
+                          <div className="flex items-center gap-1">
                             <p className="text-xs text-slate-400 font-mono">
                               {format(new Date(activity.timestamp), 'MMM dd, HH:mm')}
                             </p>
-                            <Badge className="text-xs bg-blue-500/20 text-blue-400">
+                            <Badge className="text-xs bg-blue-500/20 text-blue-400 px-1 py-0">
                               {activity.type.toUpperCase()}
                             </Badge>
                           </div>
@@ -407,9 +407,9 @@ export default function UltimateDashboard() {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-6">
-                      <Activity className="w-8 h-8 mx-auto mb-2 text-slate-500" />
-                      <p className="text-sm text-slate-400">No recent activity</p>
+                    <div className="text-center py-3">
+                      <Activity className="w-5 h-5 mx-auto mb-1 text-slate-500" />
+                      <p className="text-xs text-slate-400">No recent activity</p>
                     </div>
                   )}
                 </div>
@@ -418,36 +418,36 @@ export default function UltimateDashboard() {
           </div>
         </div>
 
-        {/* Navigation Links - Compact */}
+        {/* Navigation Links - Ultra Compact */}
         <div className="text-center">
-          <h2 className="text-lg font-bold text-white mb-4">MAIN SECTIONS</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <h2 className="text-sm font-bold text-white mb-2">MAIN SECTIONS</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <Link href="/staff">
-              <Card className="bg-slate-800 border-slate-600 border hover:border-blue-500 transition-all p-4 cursor-pointer">
-                <CardContent className="text-center p-3">
-                  <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                  <h3 className="text-lg font-bold text-white mb-1">STAFF</h3>
-                  <p className="text-sm text-slate-300">Manage Personnel</p>
+              <Card className="bg-slate-800 border-slate-600 border hover:border-blue-500 transition-all p-2 cursor-pointer">
+                <CardContent className="text-center p-1">
+                  <Users className="w-5 h-5 text-blue-400 mx-auto mb-1" />
+                  <h3 className="text-sm font-bold text-white mb-1">STAFF</h3>
+                  <p className="text-xs text-slate-300">Manage Personnel</p>
                 </CardContent>
               </Card>
             </Link>
 
             <Link href="/clients">
-              <Card className="bg-slate-800 border-slate-600 border hover:border-green-500 transition-all p-4 cursor-pointer">
-                <CardContent className="text-center p-3">
-                  <Building2 className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                  <h3 className="text-lg font-bold text-white mb-1">CLIENTS</h3>
-                  <p className="text-sm text-slate-300">Client Relations</p>
+              <Card className="bg-slate-800 border-slate-600 border hover:border-green-500 transition-all p-2 cursor-pointer">
+                <CardContent className="text-center p-1">
+                  <Building2 className="w-5 h-5 text-green-400 mx-auto mb-1" />
+                  <h3 className="text-sm font-bold text-white mb-1">CLIENTS</h3>
+                  <p className="text-xs text-slate-300">Client Relations</p>
                 </CardContent>
               </Card>
             </Link>
 
             <Link href="/accounting">
-              <Card className="bg-slate-800 border-slate-600 border hover:border-purple-500 transition-all p-4 cursor-pointer">
-                <CardContent className="text-center p-3">
-                  <DollarSign className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-                  <h3 className="text-lg font-bold text-white mb-1">FINANCIAL</h3>
-                  <p className="text-sm text-slate-300">Billing & Payroll</p>
+              <Card className="bg-slate-800 border-slate-600 border hover:border-purple-500 transition-all p-2 cursor-pointer">
+                <CardContent className="text-center p-1">
+                  <DollarSign className="w-5 h-5 text-purple-400 mx-auto mb-1" />
+                  <h3 className="text-sm font-bold text-white mb-1">FINANCIAL</h3>
+                  <p className="text-xs text-slate-300">Billing & Payroll</p>
                 </CardContent>
               </Card>
             </Link>
