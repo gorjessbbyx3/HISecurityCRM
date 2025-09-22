@@ -88,14 +88,14 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
           {/* Logo - Centered */}
           <div className="flex items-center justify-center gap-4 flex-1">
             <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-                <Shield className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30 border border-blue-400/20">
+                <Shield className="w-7 h-7 text-white drop-shadow-sm" />
               </div>
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900 animate-pulse"></div>
             </div>
             <div className="text-center">
-              <h1 className="text-lg font-bold text-white">STREET PATROL</h1>
-              <p className="text-xs text-blue-400 font-medium uppercase tracking-wider">Enterprise Platform</p>
+              <h1 className="text-xl font-black text-white tracking-wide">STREET PATROL</h1>
+              <p className="text-xs text-blue-400 font-medium uppercase tracking-widest">SECURITY SERVICES</p>
             </div>
           </div>
 
@@ -104,7 +104,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
             {/* System Status */}
             <div className="hidden md:flex items-center gap-2 text-xs">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-green-400 font-medium">ONLINE</span>
+              <span className="text-green-400 font-semibold">PATROL ACTIVE</span>
             </div>
 
             {/* Notifications */}
@@ -144,8 +144,8 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 bg-slate-800 border-slate-700">
                 <DropdownMenuLabel className="text-slate-300">
-                  <div className="font-semibold">Account Management</div>
-                  <div className="text-xs text-slate-500 mt-1">Secure access controls</div>
+                  <div className="font-semibold">Officer Portal</div>
+                  <div className="text-xs text-slate-500 mt-1">Security access controls</div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-slate-700" />
                 <DropdownMenuItem className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700" data-testid="menu-profile">

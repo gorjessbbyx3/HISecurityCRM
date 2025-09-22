@@ -89,7 +89,7 @@
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
   }
 
   h2 {
@@ -612,14 +612,26 @@
     box-shadow: var(--shadow-medium);
   }
 
+  /* Street Patrol Logo */
   .enterprise-logo {
-    font-weight: 800;
+    font-weight: 900;
     font-size: 1.5rem;
-    background: var(--gradient-primary);
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: -0.01em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
+  }
+
+  /* Street Patrol Badge */
+  .patrol-badge {
+    background: linear-gradient(135deg, #1e40af 0%, #3730a3 50%, #581c87 100%);
+    border: 2px solid rgba(59, 130, 246, 0.3);
+    box-shadow: 
+      0 0 20px rgba(59, 130, 246, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 
   /* Scrollbar Styling */
