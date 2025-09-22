@@ -259,11 +259,11 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
         </div>
       </header>
 
-      {/* Navigation Tabs */}
-      <div className="bg-slate-900 border-b border-slate-800 px-4">
+      {/* Navigation Tabs - Moved to Top */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-blue-500/20 px-4 shadow-lg">
         <div className="max-w-7xl mx-auto">
           <Tabs value={getCurrentTabValue()} className="w-full">
-            <TabsList className="h-12 bg-slate-800/50 border border-slate-700 p-1 w-full justify-start overflow-x-auto">
+            <TabsList className="h-14 bg-slate-800/30 border border-slate-600/50 p-1 w-full justify-start overflow-x-auto backdrop-blur-sm">
               {tabItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
@@ -273,17 +273,18 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                     <TabsTrigger 
                       value={item.path}
                       className={`
-                        flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all
+                        flex items-center gap-3 px-6 py-3 text-sm font-bold transition-all rounded-lg
                         ${active 
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25' 
-                          : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/40 border border-blue-400/50' 
+                          : 'text-slate-300 hover:text-white hover:bg-slate-700/70 hover:border hover:border-slate-600'
                         }
-                        whitespace-nowrap min-w-fit
+                        whitespace-nowrap min-w-fit uppercase tracking-wider
                       `}
                       data-testid={`tab-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span className="hidden sm:inline">{item.name}</span>
+                      <Icon className="w-5 h-5" />
+                      <span className="hidden sm:inline font-semibold">{item.name}</span>
+                      {active && <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>}
                     </TabsTrigger>
                   </Link>
                 );
