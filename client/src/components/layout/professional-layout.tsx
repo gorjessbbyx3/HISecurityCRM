@@ -39,7 +39,11 @@ import {
   MapPin,
   TrendingUp,
   Zap,
-  Globe
+  Globe,
+  Siren,
+  Radio,
+  Wifi,
+  ShieldCheck
 } from "lucide-react";
 
 interface ProfessionalLayoutProps {
