@@ -85,16 +85,16 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
       {/* Header with Logo and User */}
       <header className="bg-slate-900 border-b border-slate-800 px-4 py-3">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
-          {/* Logo */}
-          <div className="flex items-center gap-4">
+          {/* Logo - Centered */}
+          <div className="flex items-center justify-center gap-4 flex-1">
             <div className="relative">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900 animate-pulse"></div>
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-white">Hawaii Security</h1>
+            <div className="text-center">
+              <h1 className="text-lg font-bold text-white">STREET PATROL</h1>
               <p className="text-xs text-blue-400 font-medium uppercase tracking-wider">Enterprise Platform</p>
             </div>
           </div>
