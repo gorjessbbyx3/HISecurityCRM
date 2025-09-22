@@ -189,19 +189,51 @@ export default function UltimateDashboard() {
   return (
     <div className="min-h-screen bg-slate-950 p-2">
       <div className="max-w-7xl mx-auto space-y-2">
-        {/* Ultra Compact Header */}
-        <div className="text-center mb-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mx-auto mb-1 shadow-lg">
-            <Shield className="w-5 h-5 text-white" />
+        {/* Modern Street Patrol Header */}
+        <div className="mb-4 bg-gradient-to-r from-slate-900/90 via-blue-900/30 to-indigo-900/20 rounded-xl border border-blue-500/20 p-4 backdrop-blur-sm">
+          <div className="flex items-center justify-center gap-4 mb-3">
+            <div className="relative">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-2xl shadow-blue-500/40 border-2 border-blue-400/30">
+                <Shield className="w-8 h-8 text-white drop-shadow-lg" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 animate-pulse shadow-lg shadow-green-500/50"></div>
+              <div className="absolute inset-0 w-16 h-16 border border-blue-400/20 rounded-xl animate-pulse"></div>
+            </div>
+            <div className="text-center">
+              <h1 className="text-2xl font-black text-white tracking-wider mb-1 enterprise-logo">
+                STREET PATROL
+              </h1>
+              <div className="text-sm text-blue-400 font-bold uppercase tracking-widest mb-2">
+                COMMAND CENTER
+              </div>
+              <div className="flex items-center justify-center gap-2 text-xs">
+                <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-green-400 font-bold">PATROL ACTIVE</span>
+                </div>
+                <div className="px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full">
+                  <span className="text-blue-400 font-mono text-xs">
+                    {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-white mb-1">
-            STREET PATROL Dashboard
-          </h1>
-          <p className="text-sm text-slate-400 mb-1">
-            Hawaii Security Enterprise Platform
-          </p>
-          <div className="text-xs text-green-400 font-semibold">
-            System Status: ONLINE • {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+          
+          {/* Quick Status Indicators */}
+          <div className="grid grid-cols-3 gap-2 mt-3">
+            <div className="text-center py-1 px-2 bg-green-500/10 border border-green-500/30 rounded-lg">
+              <div className="text-xs text-green-400 font-bold">SYSTEMS</div>
+              <div className="text-xs text-green-300">OPERATIONAL</div>
+            </div>
+            <div className="text-center py-1 px-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <div className="text-xs text-blue-400 font-bold">SECURITY</div>
+              <div className="text-xs text-blue-300">LEVEL 5</div>
+            </div>
+            <div className="text-center py-1 px-2 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+              <div className="text-xs text-purple-400 font-bold">ALERTS</div>
+              <div className="text-xs text-purple-300">MONITORED</div>
+            </div>
           </div>
         </div>
 
