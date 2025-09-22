@@ -137,6 +137,27 @@
     transition: opacity var(--duration-normal) ease;
   }
 
+  /* Mobile Optimizations */
+  .mobile-optimized {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
   /* Senior-Friendly Dashboard Styles */
   .senior-dashboard {
     font-size: 18px;
@@ -261,12 +282,23 @@
 
   .nav-item {
     position: relative;
-    padding: 0.875rem 1.25rem;
+    padding: 0.875rem 1rem;
     border-radius: var(--radius);
     transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     background: transparent;
     border: 1px solid transparent;
     margin: 0.25rem 0;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @media (min-width: 640px) {
+    .nav-item {
+      padding: 0.875rem 1.25rem;
+      min-height: auto;
+    }
   }
 
   .nav-item:hover {
@@ -707,10 +739,12 @@
 @media (max-width: 768px) {
   .enterprise-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .enterprise-grid-lg {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
 
   .metric-value {
@@ -724,11 +758,11 @@
   h2 {
     font-size: 1.5rem;
   }
-}
 
-@media (max-width: 480px) {
-  .nav-item {
-    padding: 0.75rem 1rem;
+  /* Mobile-specific improvements */
+  .enterprise-card {
+    margin: 0.5rem 0;
+    padding: 1rem;
   }
 
   .metric-card {
@@ -736,7 +770,63 @@
   }
 
   .enterprise-header {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  /* Better touch targets on mobile */
+  button, .btn-enterprise-primary, .btn-enterprise-secondary {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem 1rem;
+  }
+
+  /* Improved mobile text sizes */
+  .status-indicator {
+    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+  }
+
+  /* Mobile navigation improvements */
+  .enterprise-sidebar {
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-item {
+    padding: 0.75rem 0.75rem;
+    margin: 0.125rem 0;
+  }
+
+  .metric-card {
+    padding: 0.875rem;
+  }
+
+  .enterprise-header {
+    padding: 0.75rem;
+  }
+
+  /* Extra small screen optimizations */
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  .metric-value {
+    font-size: 1.75rem;
+  }
+
+  /* Compact sidebar on very small screens */
+  .enterprise-sidebar {
+    max-width: 90vw;
+  }
+
+  /* Improved touch spacing */
+  button, .btn-enterprise-primary, .btn-enterprise-secondary {
+    padding: 0.875rem 1.25rem;
   }
 }
 

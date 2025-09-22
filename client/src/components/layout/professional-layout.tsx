@@ -138,9 +138,37 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  // Touch gesture handlers for mobile sidebar
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartX) return;
+    
+    const currentX = e.touches[0].clientX;
+    const diffX = touchStartX - currentX;
+    
+    // Swipe left to close sidebar (threshold: 50px)
+    if (diffX > 50 && sidebarOpen) {
+      setSidebarOpen(false);
+      setTouchStartX(null);
+    }
+    // Swipe right to open sidebar (threshold: 50px, only from left edge)
+    else if (diffX < -50 && !sidebarOpen && touchStartX < 50) {
+      setSidebarOpen(true);
+      setTouchStartX(null);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStartX(null);
   };
 
   const filteredNavItems = navigationItems.filter(item =>
@@ -156,13 +184,19 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
   };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-slate-950">
+    <div 
+      className="h-screen flex overflow-hidden bg-slate-950"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Enterprise Sidebar */}
       <div className={`
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        fixed inset-y-0 left-0 z-50 w-80 enterprise-sidebar
+        fixed inset-y-0 left-0 z-50 w-80 sm:w-72 md:w-80 enterprise-sidebar
         transform transition-transform duration-300 ease-out
         lg:translate-x-0 lg:static lg:inset-0
+        max-w-[85vw] sm:max-w-none
       `}>
         <div className="flex flex-col h-full">
           {/* Logo Header */}
@@ -213,7 +247,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
           </div>
 
           {/* Enhanced Search */}
-          <div className="p-4">
+          <div className="p-3 sm:p-4">
             <div className="relative group">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
               <input
@@ -221,14 +255,14 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                 placeholder="Search features..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-300 placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition-all backdrop-blur-sm"
+                className="w-full pl-10 pr-4 py-3 sm:py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-300 placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm sm:text-sm transition-all backdrop-blur-sm touch-manipulation"
                 data-testid="input-search"
               />
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto px-4 pb-4 space-y-6">
+          <nav className="flex-1 overflow-y-auto px-3 sm:px-4 pb-4 space-y-4 sm:space-y-6">
             {searchQuery ? (
               /* Search Results */
               <div className="space-y-1">
@@ -240,7 +274,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                     <Link
                       key={item.path}
                       href={item.path}
-                      className={`nav-item group flex items-center gap-4 ${active ? 'active' : ''}`}
+                      className={`nav-item group flex items-center gap-3 sm:gap-4 min-h-[48px] sm:min-h-auto ${active ? 'active' : ''}`}
                       onClick={() => setSidebarOpen(false)}
                       data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                     >
@@ -275,7 +309,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                         <Link
                           key={item.path}
                           href={item.path}
-                          className={`nav-item group flex items-center gap-4 ${active ? 'active' : ''}`}
+                          className={`nav-item group flex items-center gap-3 sm:gap-4 min-h-[48px] sm:min-h-auto ${active ? 'active' : ''}`}
                           onClick={() => setSidebarOpen(false)}
                           data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                         >
@@ -385,41 +419,41 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Enhanced Top Bar */}
-        <header className="enterprise-header px-6 py-4">
+        <header className="enterprise-header px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden text-slate-400 hover:text-white hover:bg-slate-800"
+                className="lg:hidden text-slate-400 hover:text-white hover:bg-slate-800 p-2 min-h-[44px] min-w-[44px]"
                 data-testid="button-open-sidebar"
               >
                 <Menu className="w-5 h-5" />
               </Button>
               
-              <div className="flex items-center gap-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+              <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                <div className="w-8 h-8 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
                   {(() => {
                     const currentItem = navigationItems.find(item => isActive(item.path));
                     const Icon = currentItem?.icon || Home;
                     return <Icon className="w-4 h-4 text-white" />;
                   })()}
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg sm:text-xl font-bold text-white truncate">
                     {navigationItems.find(item => isActive(item.path))?.name || 'STREET PATROL'}
                   </h2>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-xs sm:text-sm text-slate-400 truncate hidden sm:block">
                     {navigationItems.find(item => isActive(item.path))?.description || 'System Overview'}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
               {/* System Status */}
-              <div className="hidden md:flex items-center gap-4">
+              <div className="hidden lg:flex items-center gap-4">
                 <div className="status-indicator status-online">
                   <span>System Online</span>
                 </div>
@@ -428,16 +462,21 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                 </div>
               </div>
 
+              {/* Mobile Status Indicator */}
+              <div className="lg:hidden">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              </div>
+
               {/* Notifications */}
-              <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hover:bg-slate-800 relative" data-testid="button-notifications">
+              <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hover:bg-slate-800 relative p-2 min-h-[44px] min-w-[44px]" data-testid="button-notifications">
                 <Bell className="w-5 h-5" />
                 <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg shadow-red-500/25">
                   <span className="text-xs text-white font-bold">3</span>
                 </div>
               </Button>
 
-              {/* Quick Actions */}
-              <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hover:bg-slate-800" data-testid="button-quick-actions">
+              {/* Quick Actions - Hidden on small screens */}
+              <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hover:bg-slate-800 p-2 min-h-[44px] min-w-[44px] hidden sm:flex" data-testid="button-quick-actions">
                 <Zap className="w-5 h-5" />
               </Button>
             </div>
