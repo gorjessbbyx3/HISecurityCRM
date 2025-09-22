@@ -408,7 +408,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-white">
-                    {navigationItems.find(item => isActive(item.path))?.name || 'Dashboard'}
+                    {navigationItems.find(item => isActive(item.path))?.name || 'STREET PATROL'}
                   </h2>
                   <p className="text-sm text-slate-400">
                     {navigationItems.find(item => isActive(item.path))?.description || 'System Overview'}
