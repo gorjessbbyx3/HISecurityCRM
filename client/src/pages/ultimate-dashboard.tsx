@@ -220,21 +220,7 @@ export default function UltimateDashboard() {
             </div>
           </div>
           
-          {/* Quick Status Indicators */}
-          <div className="grid grid-cols-3 gap-2 mt-3">
-            <div className="text-center py-1 px-2 bg-green-500/10 border border-green-500/30 rounded-lg">
-              <div className="text-xs text-green-400 font-bold">SYSTEMS</div>
-              <div className="text-xs text-green-300">OPERATIONAL</div>
-            </div>
-            <div className="text-center py-1 px-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-              <div className="text-xs text-blue-400 font-bold">SECURITY</div>
-              <div className="text-xs text-blue-300">LEVEL 5</div>
-            </div>
-            <div className="text-center py-1 px-2 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-              <div className="text-xs text-purple-400 font-bold">ALERTS</div>
-              <div className="text-xs text-purple-300">MONITORED</div>
-            </div>
-          </div>
+          
         </div>
 
         {/* Emergency Alerts - Top Priority */}
