@@ -82,124 +82,175 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
-      {/* Modern Header with Balanced Layout */}
-      <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-blue-500/30 px-6 py-4 shadow-lg shadow-slate-900/50">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          {/* Left: Status Indicators */}
-          <div className="flex items-center gap-6">
-            {/* System Status */}
-            <div className="flex items-center gap-3 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-green-400 font-bold text-sm uppercase tracking-wider">PATROL ACTIVE</span>
-            </div>
-            
-            {/* Live Time */}
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-              <Activity className="w-4 h-4 text-blue-400" />
-              <span className="text-blue-400 font-mono text-sm">
-                {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}
-              </span>
-            </div>
-          </div>
+      {/* Redesigned Modern Header */}
+      <header className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 border-b border-gradient-to-r from-blue-500/20 via-indigo-500/30 to-purple-500/20 shadow-2xl shadow-slate-950/80">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-0 left-1/4 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-0 right-1/4 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+          <div className="absolute bottom-0 left-1/2 w-36 h-36 bg-purple-500/5 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+        </div>
 
-          {/* Center: Brand Identity */}
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-2xl shadow-blue-500/40 border-2 border-blue-400/30 transition-all duration-300 group-hover:scale-105">
-                <Shield className="w-8 h-8 text-white drop-shadow-lg" />
-              </div>
-              <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-500 rounded-full border-3 border-slate-900 animate-pulse shadow-lg shadow-green-500/50"></div>
-              <div className="absolute inset-0 w-16 h-16 border border-blue-400/20 rounded-xl animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </div>
-            <div className="text-center">
-              <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 tracking-wider mb-1 enterprise-logo drop-shadow-lg">
-                STREET PATROL
-              </h1>
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-8 h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent"></div>
-                <p className="text-xs text-blue-400 font-bold uppercase tracking-[0.2em]">COMMAND HQ</p>
-                <div className="w-8 h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent"></div>
-              </div>
-            </div>
-          </div>
+        <div className="relative z-10 px-6 py-5">
+          <div className="max-w-7xl mx-auto">
+            {/* Top Row: Brand & Status */}
+            <div className="flex items-center justify-between mb-4">
+              {/* Left: Enhanced Brand Identity */}
+              <div className="flex items-center gap-5">
+                <div className="relative group">
+                  {/* Main Shield */}
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/50 border-3 border-blue-400/40 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
+                    <Shield className="w-10 h-10 text-white drop-shadow-2xl" />
+                  </div>
+                  
+                  {/* Status Indicator */}
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-green-400 to-green-600 rounded-full border-3 border-slate-950 flex items-center justify-center shadow-lg shadow-green-500/50">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  </div>
+                  
+                  {/* Animated Rings */}
+                  <div className="absolute inset-0 w-20 h-20 border-2 border-blue-400/30 rounded-2xl animate-spin opacity-60" style={{animationDuration: '8s'}}></div>
+                  <div className="absolute -inset-1 w-22 h-22 border border-indigo-400/20 rounded-2xl animate-spin opacity-40" style={{animationDuration: '12s', animationDirection: 'reverse'}}></div>
+                </div>
 
-          {/* Right: User Actions */}
-          <div className="flex items-center gap-3">
-            {/* Notifications */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-slate-400 hover:text-white hover:bg-slate-800/50 relative p-3 rounded-lg border border-slate-700/50 hover:border-blue-500/30 transition-all duration-300" 
-              data-testid="button-notifications"
-            >
-              <Bell className="w-5 h-5" />
-              <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg shadow-red-500/25 animate-pulse">
-                <span className="text-xs text-white font-bold">3</span>
+                <div className="space-y-1">
+                  <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-indigo-300 to-purple-300 tracking-wider enterprise-logo drop-shadow-2xl">
+                    STREET PATROL
+                  </h1>
+                  <div className="flex items-center gap-3">
+                    <div className="h-px bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 flex-1 max-w-16"></div>
+                    <p className="text-sm text-blue-300 font-bold uppercase tracking-[0.3em] px-2 py-1 bg-blue-500/10 border border-blue-500/30 rounded-md">
+                      COMMAND CENTER
+                    </p>
+                    <div className="h-px bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 flex-1 max-w-16"></div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-slate-400 font-mono">OPERATIONAL SINCE</span>
+                    <span className="text-blue-400 font-bold">2024</span>
+                    <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
+                    <span className="text-green-400 font-bold">HAWAII AUTHORIZED</span>
+                  </div>
+                </div>
               </div>
-            </Button>
 
-            {/* User Profile */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              {/* Right: System Status & User */}
+              <div className="flex items-center gap-4">
+                {/* System Status Panel */}
+                <div className="hidden lg:flex items-center gap-3 p-3 bg-slate-800/50 border border-slate-700/50 rounded-xl backdrop-blur-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
+                    <span className="text-green-400 font-bold text-sm uppercase tracking-wider">ONLINE</span>
+                  </div>
+                  <div className="w-px h-4 bg-slate-600"></div>
+                  <div className="text-xs text-slate-400 font-mono">
+                    {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+
+                {/* Emergency Alert Button */}
+                <Button 
+                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white border border-red-500/50 shadow-lg shadow-red-500/25 transition-all duration-300 hover:scale-105"
+                  size="sm"
+                >
+                  <Siren className="w-4 h-4 mr-2 animate-pulse" />
+                  ALERT
+                </Button>
+
+                {/* Notifications */}
                 <Button 
                   variant="ghost" 
-                  className="flex items-center gap-3 hover:bg-slate-800/50 p-3 rounded-lg border border-slate-700/50 hover:border-blue-500/30 transition-all duration-300"
-                  data-testid="button-user-menu"
+                  size="sm" 
+                  className="relative p-3 bg-slate-800/50 border border-slate-700/50 hover:border-blue-500/50 rounded-xl transition-all duration-300 hover:bg-slate-700/50 backdrop-blur-sm" 
+                  data-testid="button-notifications"
                 >
-                  <Avatar className="w-10 h-10 border-2 border-blue-500/50 shadow-lg shadow-blue-500/25">
-                    <AvatarImage src="" />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-sm">
-                      {user?.firstName?.[0] || user?.username?.[0] || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="text-left hidden lg:block">
-                    <div className="font-bold text-white text-sm tracking-wide">
-                      {user?.firstName && user?.lastName 
-                        ? `${user.firstName} ${user.lastName}`
-                        : user?.username || 'User'
-                      }
-                    </div>
-                    <Badge className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30 font-semibold uppercase tracking-wider">
-                      {user?.role || 'Officer'}
-                    </Badge>
+                  <Bell className="w-5 h-5 text-slate-300 hover:text-white" />
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center shadow-lg shadow-red-500/30 animate-pulse">
+                    <span className="text-xs text-white font-bold">3</span>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 hidden lg:block" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-72 bg-slate-800 border-slate-700 shadow-2xl shadow-slate-900/50">
-                <DropdownMenuLabel className="text-slate-300 p-4">
-                  <div className="font-bold text-base">Command Portal</div>
-                  <div className="text-xs text-slate-500 mt-1">Security access & controls</div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-slate-700" />
-                <DropdownMenuItem className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700 p-4" data-testid="menu-profile">
-                  <Settings className="mr-3 h-5 w-5 text-blue-400" />
-                  <div>
-                    <div className="font-semibold">Profile Settings</div>
-                    <div className="text-xs text-slate-500">Configure preferences</div>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700 p-4" data-testid="menu-notifications">
-                  <Bell className="mr-3 h-5 w-5 text-yellow-400" />
-                  <div>
-                    <div className="font-semibold">Alert Center</div>
-                    <div className="text-xs text-slate-500">Notification settings</div>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-slate-700" />
-                <DropdownMenuItem 
-                  onClick={handleLogout}
-                  className="text-red-400 hover:bg-red-500/10 focus:bg-red-500/10 p-4"
-                  data-testid="menu-logout"
-                >
-                  <LogOut className="mr-3 h-5 w-5" />
-                  <div>
-                    <div className="font-semibold">Secure Logout</div>
-                    <div className="text-xs text-red-500/70">End patrol session</div>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+                {/* User Profile */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      className="flex items-center gap-3 p-3 bg-slate-800/50 border border-slate-700/50 hover:border-blue-500/50 rounded-xl transition-all duration-300 hover:bg-slate-700/50 backdrop-blur-sm"
+                      data-testid="button-user-menu"
+                    >
+                      <Avatar className="w-10 h-10 border-2 border-blue-500/50 shadow-lg shadow-blue-500/25">
+                        <AvatarImage src="" />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-sm">
+                          {user?.firstName?.[0] || user?.username?.[0] || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="text-left hidden lg:block">
+                        <div className="font-bold text-white text-sm tracking-wide">
+                          {user?.firstName && user?.lastName 
+                            ? `${user.firstName} ${user.lastName}`
+                            : user?.username || 'User'
+                          }
+                        </div>
+                        <Badge className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30 font-semibold uppercase tracking-wider">
+                          {user?.role || 'Officer'}
+                        </Badge>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400 hidden lg:block" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-72 bg-slate-800/95 border-slate-700 shadow-2xl shadow-slate-950/80 backdrop-blur-sm">
+                    <DropdownMenuLabel className="text-slate-300 p-4">
+                      <div className="font-bold text-base">Command Portal</div>
+                      <div className="text-xs text-slate-500 mt-1">Security access & controls</div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-slate-700" />
+                    <DropdownMenuItem className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700 p-4" data-testid="menu-profile">
+                      <Settings className="mr-3 h-5 w-5 text-blue-400" />
+                      <div>
+                        <div className="font-semibold">Profile Settings</div>
+                        <div className="text-xs text-slate-500">Configure preferences</div>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700 p-4" data-testid="menu-notifications">
+                      <Bell className="mr-3 h-5 w-5 text-yellow-400" />
+                      <div>
+                        <div className="font-semibold">Alert Center</div>
+                        <div className="text-xs text-slate-500">Notification settings</div>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-slate-700" />
+                    <DropdownMenuItem 
+                      onClick={handleLogout}
+                      className="text-red-400 hover:bg-red-500/10 focus:bg-red-500/10 p-4"
+                      data-testid="menu-logout"
+                    >
+                      <LogOut className="mr-3 h-5 w-5" />
+                      <div>
+                        <div className="font-semibold">Secure Logout</div>
+                        <div className="text-xs text-red-500/70">End patrol session</div>
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+
+            {/* Bottom Row: Live Status Indicators */}
+            <div className="flex items-center justify-center gap-6">
+              <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/30 rounded-full backdrop-blur-sm">
+                <Radio className="w-4 h-4 text-green-400" />
+                <span className="text-green-400 font-bold text-sm uppercase tracking-wider">PATROL ACTIVE</span>
+              </div>
+              
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 border border-blue-500/30 rounded-full backdrop-blur-sm">
+                <Wifi className="w-4 h-4 text-blue-400" />
+                <span className="text-blue-400 font-bold text-sm uppercase tracking-wider">CONNECTED</span>
+              </div>
+              
+              <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full backdrop-blur-sm">
+                <ShieldCheck className="w-4 h-4 text-purple-400" />
+                <span className="text-purple-400 font-bold text-sm uppercase tracking-wider">SECURE</span>
+              </div>
+            </div>
           </div>
         </div>
       </header>
