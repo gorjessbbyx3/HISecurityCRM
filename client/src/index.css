@@ -137,6 +137,110 @@
     transition: opacity var(--duration-normal) ease;
   }
 
+  /* Senior-Friendly Dashboard Styles */
+  .senior-dashboard {
+    font-size: 18px;
+    line-height: 1.6;
+  }
+  
+  .senior-dashboard h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+  }
+  
+  .senior-dashboard h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+  }
+  
+  .senior-dashboard h3 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  
+  .senior-dashboard .card-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+  }
+  
+  .senior-dashboard .card-value {
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+  
+  .senior-dashboard .card-description {
+    font-size: 1.25rem;
+    color: rgb(148 163 184);
+  }
+  
+  .senior-dashboard .button-large {
+    padding: 1.5rem 2rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    border-radius: 12px;
+    min-height: 4rem;
+  }
+  
+  .senior-dashboard .status-indicator {
+    font-size: 1.25rem;
+    font-weight: 700;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+  }
+  
+  .senior-dashboard .activity-item {
+    padding: 1.5rem;
+    background: rgb(51 65 85);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+  
+  .senior-dashboard .activity-text {
+    font-size: 1.125rem;
+    line-height: 1.6;
+    color: white;
+  }
+  
+  .senior-dashboard .timestamp {
+    font-size: 1rem;
+    color: rgb(148 163 184);
+    font-family: 'Courier New', monospace;
+  }
+  
+  /* High Contrast Colors for Better Visibility */
+  .senior-dashboard .text-primary {
+    color: rgb(59 130 246) !important;
+  }
+  
+  .senior-dashboard .text-success {
+    color: rgb(34 197 94) !important;
+  }
+  
+  .senior-dashboard .text-warning {
+    color: rgb(251 191 36) !important;
+  }
+  
+  .senior-dashboard .text-danger {
+    color: rgb(239 68 68) !important;
+  }
+  
+  .senior-dashboard .bg-card {
+    background: rgb(30 41 59) !important;
+    border: 2px solid rgb(71 85 105);
+  }
+  
+  .senior-dashboard .bg-card:hover {
+    border-color: rgb(59 130 246);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  }
+
   .enterprise-card:hover {
     transform: translateY(-2px);
     border-color: hsl(var(--enterprise-primary) / 0.3);
