@@ -129,9 +129,12 @@ export function useAuth() {
   }, []);
 
   return {
-    ...state,
+    user: state.user,
+    isLoading: state.isLoading,
+    isAuthenticated: state.isAuthenticated,
+    error: state.error,
     login,
     logout,
-    checkAuthStatus
+    checkAuth: () => checkAuthStatus()
   };
 }
