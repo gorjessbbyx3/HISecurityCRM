@@ -3,6 +3,26 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Camera, MapPin, Clock } from "lucide-react";
 
+const PatrolReportsWidget = () => {
+  const { data: reports, isLoading } = useQuery({
+    queryKey: ["/api/patrol-reports"],
+    queryFn: async () => {
+      const response = await fetch("/api/patrol-reports");
+      if (!response.ok) {
+        throw new Error("Failed to fetch patrol reports");
+      }
+      return response.json();
+    },
+    staleTime: 15000,
+    cacheTime: 60000,
+  });
+
+  // Component implementation would go here
+  return null;
+};
+
+export default PatrolReportsWidget;
+
 interface PatrolReport {
   id: string;
   officerId: string;

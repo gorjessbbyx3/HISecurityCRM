@@ -6,6 +6,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 
+const EvidenceGallery = () => {
+  const { data: evidence, isLoading } = useQuery({
+    queryKey: ["/api/evidence"],
+    queryFn: async () => {
+      const response = await fetch("/api/evidence");
+      if (!response.ok) {
+        throw new Error("Failed to fetch evidence");
+      }
+      return response.json();
+    },
+    staleTime: 15000,
+    cacheTime: 60000,
+  });
+
+  // Component implementation would go here
+  return null;
+};
+
+export default EvidenceGallery;
+
 interface Evidence {
   id: string;
   incidentId: string;

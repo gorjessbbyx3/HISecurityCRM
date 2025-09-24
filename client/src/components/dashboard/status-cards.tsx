@@ -5,6 +5,13 @@ import { memo } from "react";
 const StatusCards = memo(() => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["/api/dashboard/stats"],
+    queryFn: async () => {
+      const response = await fetch("/api/dashboard/stats");
+      if (!response.ok) {
+        throw new Error("Failed to fetch dashboard stats");
+      }
+      return response.json();
+    },
     staleTime: 15000,
     cacheTime: 60000,
   });

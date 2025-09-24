@@ -5,6 +5,26 @@ import { memo } from "react";
 const StatsCards = memo(() => {
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
+    queryFn: async () => {
+      const response = await fetch("/api/dashboard/stats");
+      if (!response.ok) {
+        throw new Error("Failed to fetch dashboard stats");
+      }
+      return response.json();
+    },
+    staleTime: 15000,
+    cacheTime: 60000,
+  });
+
+  // Component implementation would go here
+  return null;
+});
+
+export default StatsCards;
+
+const StatsCards = memo(() => {
+  const { data: stats, isLoading } = useQuery<DashboardStats>({
+    queryKey: ["/api/dashboard/stats"],
     staleTime: 15000,
     cacheTime: 60000,
   });
