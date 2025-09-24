@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface User {
   id: string;
@@ -17,15 +17,15 @@ interface AuthState {
 }
 
 export function useAuth() {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    isLoading: true,
-    isAuthenticated: false,
-    error: null
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
 
   const login = async (username: string, password: string) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    setIsLoading(true);
+    setError(null);
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -39,31 +39,25 @@ export function useAuth() {
       const data = await response.json();
 
       if (response.ok) {
-        setState({
-          user: data.user,
-          isLoading: false,
-          isAuthenticated: true,
-          error: null
-        });
+        localStorage.setItem('auth_token', data.token);
+        setUser(data.user);
+        setIsAuthenticated(true);
+        setError(null);
         return { success: true };
       } else {
-        setState({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-          error: data.message || 'Login failed'
-        });
+        setError(data.message || 'Login failed');
+        setUser(null);
+        setIsAuthenticated(false);
         return { success: false, error: data.message };
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Network error';
-      setState({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        error: errorMessage
-      });
+      setError(errorMessage);
+      setUser(null);
+      setIsAuthenticated(false);
       return { success: false, error: errorMessage };
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -74,67 +68,76 @@ export function useAuth() {
       console.error('Logout error:', error);
     }
 
-    setState({
-      user: null,
-      isLoading: false,
-      isAuthenticated: false,
-      error: null
-    });
+    localStorage.removeItem('auth_token');
+    setUser(null);
+    setIsAuthenticated(false);
+    setError(null);
+    setIsLoading(false);
   };
 
-  const checkAuthStatus = async () => {
-    console.log('Checking authentication status...');
-    setState(prev => ({ ...prev, isLoading: true }));
-
+  const checkAuth = useCallback(async () => {
     try {
-      const response = await fetch('/api/auth/me');
+      console.log('Checking authentication status...');
+      setIsCheckingAuth(true);
+      const token = localStorage.getItem('auth_token');
 
-      if (response.ok) {
-        const data = await response.json();
+      if (!token) {
+        setUser(null);
+        setError(null);
+        return;
+      }
+
+      const response = await fetch('/api/auth/status', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Auth check failed: ${response.status}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Invalid response format - expected JSON');
+      }
+
+      const data = await response.json();
+
+      if (data.authenticated) {
+        setUser(data.user || data); // Assuming data.user or data itself contains user info
+        setError(null);
+        setIsAuthenticated(true);
         console.log('✅ Authentication status verified');
-        console.log('useAuth state:', {
-          user: data,
-          isLoading: false,
-          isAuthenticated: true,
-          error: null
-        });
-
-        setState({
-          user: data.user || data,
-          isLoading: false,
-          isAuthenticated: true,
-          error: null
-        });
       } else {
-        setState({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-          error: null
-        });
+        setUser(null);
+        setIsAuthenticated(false);
+        localStorage.removeItem('auth_token');
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      setState({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        error: error instanceof Error ? error.message : 'Auth check failed'
-      });
+      setUser(null);
+      setIsAuthenticated(false);
+      setError(error instanceof Error ? error.message : 'Authentication failed');
+      localStorage.removeItem('auth_token');
+    } finally {
+      setIsCheckingAuth(false);
+      setIsLoading(false); // Ensure loading is set to false after auth check
     }
-  };
-
-  useEffect(() => {
-    checkAuthStatus();
   }, []);
 
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]); // Depend on checkAuth
+
   return {
-    user: state.user,
-    isLoading: state.isLoading,
-    isAuthenticated: state.isAuthenticated,
-    error: state.error,
+    user: user,
+    isLoading: isCheckingAuth,
+    isAuthenticated: isAuthenticated,
+    error: error,
     login,
     logout,
-    checkAuth: () => checkAuthStatus()
+    checkAuth
   };
 }

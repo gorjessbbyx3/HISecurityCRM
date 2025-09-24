@@ -194,6 +194,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication status endpoint (handled by memoryAuth)
   app.get('/api/auth/status', async (req: Request, res: Response) => {
     try {
+      // Ensure we always send JSON response
+      res.setHeader('Content-Type', 'application/json');
+      
       const authHeader = req.headers['authorization'];
       const token = authHeader && authHeader.split(' ')[1];
 
@@ -202,16 +205,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verify token and return user info if valid
-      const jwtSecret = process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET || process.env.SESSION_SECRET;
-      if (!jwtSecret) {
-        return res.json({ authenticated: false });
-      }
-
+      const jwtSecret = process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET || process.env.SESSION_SECRET || 'your-super-secret-key';
+      
       const jwt = await import('jsonwebtoken');
       const user = jwt.default.verify(token, jwtSecret);
       res.json({ authenticated: true, user });
     } catch (error) {
       console.error('❌ Auth status error:', error);
+      res.setHeader('Content-Type', 'application/json');
       res.json({ authenticated: false });
     }
   });
