@@ -133,7 +133,6 @@
     right: 0;
     height: 1px;
     background: linear-gradient(90deg, transparent 0%, hsl(var(--enterprise-primary)) 50%, transparent 100%);
-    opacity: 0;
     transition: opacity var(--duration-normal) ease;
   }
 
