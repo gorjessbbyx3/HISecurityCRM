@@ -161,6 +161,13 @@ export default function UltimateDashboard() {
   // Fetch dashboard statistics
   const { data: stats, isLoading, error } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
+    queryFn: async () => {
+      const response = await fetch("/api/dashboard/stats");
+      if (!response.ok) {
+        throw new Error("Failed to fetch dashboard stats");
+      }
+      return response.json();
+    },
     refetchInterval: refreshInterval,
     staleTime: 15000,
     cacheTime: 60000,
