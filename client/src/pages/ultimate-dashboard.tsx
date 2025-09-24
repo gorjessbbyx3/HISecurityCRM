@@ -22,8 +22,11 @@ import {
   FileCheck,
   DollarSign,
   Plus,
-  Eye
+  Eye,
+  BarChart3,
+  TrendingUp
 } from "lucide-react";
+import InsightsCharts from "@/components/dashboard/insights-charts";
 import { Link } from "wouter";
 import { format } from "date-fns";
 
@@ -395,6 +398,11 @@ export default function UltimateDashboard() {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Security Insights & Analytics */}
+        <div>
+          <InsightsCharts />
         </div>
 
         {/* Navigation Links - Large Cards */}

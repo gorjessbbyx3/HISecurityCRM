@@ -6,11 +6,25 @@ export default function CrimeMap() {
 
   const { data: crimeData, isLoading, refetch } = useQuery({
     queryKey: ['/api/crime-data/live'],
+    queryFn: async () => {
+      const response = await fetch('/api/crime-data/live');
+      if (!response.ok) {
+        throw new Error('Failed to fetch crime data');
+      }
+      return response.json();
+    },
     staleTime: 300000, // 5 minutes
   });
 
   const { data: analytics } = useQuery({
     queryKey: ['/api/crime-data/analytics'],
+    queryFn: async () => {
+      const response = await fetch('/api/crime-data/analytics');
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics');
+      }
+      return response.json();
+    },
     staleTime: 600000, // 10 minutes
   });
 

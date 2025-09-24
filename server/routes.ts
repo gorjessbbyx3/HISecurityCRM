@@ -43,25 +43,25 @@ import { WebSocketServer, WebSocket } from "ws";
 // Role-based access control for evidence
 function checkEvidencePermissions(user: any, evidence: any, action: 'read' | 'write' | 'delete'): boolean {
   if (!user) return false;
-  
+
   // Admin and supervisor can do everything
   if (user.role === 'admin' || user.role === 'supervisor') {
     return true;
   }
-  
+
   // Check access level permissions
   const userClearanceLevel = getUserClearanceLevel(user.role);
   const evidenceClearanceRequired = getRequiredClearanceLevel(evidence.accessLevel);
-  
+
   if (userClearanceLevel < evidenceClearanceRequired) {
     return false;
   }
-  
+
   // For write/delete operations, user must be owner or have elevated privileges
   if (action === 'write' || action === 'delete') {
     return evidence.uploadedBy === user.id || user.role === 'supervisor' || user.role === 'admin';
   }
-  
+
   return true;
 }
 
@@ -91,34 +91,34 @@ function filterEvidenceByPermissions(evidenceList: any[], user: any): any[] {
 // Role-based access control for crime intelligence
 function checkCrimeIntelligencePermissions(user: any, crimeIntelligence: any, action: 'read' | 'write' | 'delete'): boolean {
   if (!user) return false;
-  
+
   // Admin and supervisor can do everything
   if (user.role === 'admin' || user.role === 'supervisor') {
     return true;
   }
-  
+
   // Check classification level permissions
   const userClearanceLevel = getUserClearanceLevel(user.role);
   const requiredClearanceLevel = getCrimeIntelligenceRequiredClearanceLevel(crimeIntelligence.classification);
-  
+
   if (userClearanceLevel < requiredClearanceLevel) {
     return false;
   }
-  
+
   // For write/delete operations, user must be assigned analyst or have elevated privileges
   if (action === 'write' || action === 'delete') {
     return crimeIntelligence.assignedAnalyst === user.id || 
            user.role === 'supervisor' || 
            user.role === 'admin';
   }
-  
+
   // For read access, check distribution list if specified
   if (crimeIntelligence.distributionList && crimeIntelligence.distributionList.length > 0) {
     return crimeIntelligence.distributionList.includes(user.id) || 
            user.role === 'supervisor' || 
            user.role === 'admin';
   }
-  
+
   return true;
 }
 
@@ -139,19 +139,19 @@ function filterCrimeIntelligenceByPermissions(intelligenceList: any[], user: any
 // Filter confidential notes based on clearance level
 function sanitizeCrimeIntelligenceForUser(intelligence: any, user: any): any {
   const sanitized = { ...intelligence };
-  
+
   // Remove confidential notes if user doesn't have sufficient clearance
   if (intelligence.confidentialNotes && 
       getCrimeIntelligenceRequiredClearanceLevel('confidential') > getUserClearanceLevel(user.role)) {
     delete sanitized.confidentialNotes;
   }
-  
+
   // Remove distribution list for non-privileged users
   if (intelligence.distributionList && 
       user.role !== 'admin' && user.role !== 'supervisor') {
     delete sanitized.distributionList;
   }
-  
+
   return sanitized;
 }
 
@@ -266,6 +266,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
       res.status(500).json({ message: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  // Insights charts data
+  app.get('/api/insights/charts', authenticateToken, async (req, res) => {
+    try {
+      const insights = await storage.getInsightsChartsData();
+      res.json(insights);
+    } catch (error) {
+      console.error('Failed to get insights charts data:', error);
+      res.status(500).json({ error: 'Failed to get insights charts data' });
     }
   });
 
@@ -727,10 +738,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...(status && { status: status as string }),
         ...(uploadedBy && { uploadedBy: uploadedBy as string })
       };
-      
+
       const evidence = await storage.getEvidence(Object.keys(filter).length > 0 ? filter : undefined);
       const filteredEvidence = filterEvidenceByPermissions(evidence, req.user);
-      
+
       res.json(filteredEvidence);
     } catch (error) {
       console.error("Error fetching evidence:", error);
@@ -789,7 +800,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { entityType, entityId } = req.params;
       const evidence = await storage.getEvidenceByEntity(entityType, entityId);
       const filteredEvidence = filterEvidenceByPermissions(evidence, req.user);
-      
+
       res.json(filteredEvidence);
     } catch (error) {
       console.error("Error fetching evidence by entity:", error);
@@ -809,7 +820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Determine access level based on user clearance (server-side controlled)
       const userClearanceLevel = getUserClearanceLevel(req.user.role);
       let accessLevel: 'public' | 'restricted' | 'confidential';
-      
+
       // Set access level based on user role - guards can only create public evidence
       if (userClearanceLevel >= 3) {
         accessLevel = 'confidential'; // Admin/supervisor default to confidential
@@ -828,7 +839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const evidence = await storage.createEvidence(serverData);
-      
+
       await storage.createActivity({
         userId: req.user.id,
         activityType: "evidence_uploaded",
@@ -836,7 +847,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityId: evidence.id,
         description: `Uploaded evidence: ${evidence.fileName}`,
       });
-      
+
       res.status(201).json(evidence);
     } catch (error) {
       if (error instanceof Error && error.name === 'ZodError') {
@@ -876,7 +887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const evidence = await storage.updateEvidence(req.params.id, clientUpdates);
-      
+
       await storage.createActivity({
         userId: req.user.id,
         activityType: "evidence_updated",
@@ -884,7 +895,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityId: req.params.id,
         description: `Updated evidence metadata: ${evidence.fileName}`,
       });
-      
+
       res.json(evidence);
     } catch (error) {
       if (error instanceof Error && error.name === 'ZodError') {
@@ -924,7 +935,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userClearanceLevel = getUserClearanceLevel(req.user.role);
         const newClearanceRequired = getRequiredClearanceLevel(accessLevel);
         const currentClearanceRequired = getRequiredClearanceLevel(existingEvidence.accessLevel);
-        
+
         // Check if user has clearance for new level
         if (userClearanceLevel < newClearanceRequired) {
           return res.status(403).json({ 
@@ -952,7 +963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const evidence = await storage.updateEvidence(req.params.id, updates);
-      
+
       await storage.createActivity({
         userId: req.user.id,
         activityType: "evidence_admin_update",
@@ -961,7 +972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: `Admin updated evidence security settings: ${evidence.fileName}`,
         metadata: { changes: updates, previousAccessLevel: existingEvidence.accessLevel, previousStatus: existingEvidence.status },
       });
-      
+
       res.json(evidence);
     } catch (error) {
       console.error("Error in admin evidence update:", error);
@@ -990,7 +1001,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!deleted) {
         return res.status(404).json({ message: "Evidence not found" });
       }
-      
+
       await storage.createActivity({
         userId: req.user.id,
         activityType: "evidence_deleted",
@@ -998,7 +1009,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityId: req.params.id,
         description: `Deleted evidence: ${existingEvidence.fileName}`,
       });
-      
+
       res.json({ message: "Evidence deleted successfully" });
     } catch (error) {
       console.error("Error deleting evidence:", error);
@@ -1015,7 +1026,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { category, city, status, priority, tags, searchTerm } = req.query;
       const filter: any = {};
-      
+
       if (category) filter.category = category as string;
       if (city) filter.city = city as string;
       if (status) filter.status = status as string;
@@ -1053,7 +1064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { id } = req.params;
       const resource = await storage.getCommunityResourceById(id);
-      
+
       if (!resource) {
         return res.status(404).json({ message: "Community resource not found" });
       }
@@ -1093,7 +1104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate request body using client-safe schema
       const resourceData = createCommunityResourceInputSchema.parse(req.body);
-      
+
       // Create resource using server schema (adds verification info if admin)
       const serverData = insertCommunityResourceSchema.parse({
         ...resourceData,
@@ -1133,7 +1144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { id } = req.params;
-      
+
       // Get existing resource
       const existingResource = await storage.getCommunityResourceById(id);
       if (!existingResource) {
@@ -1142,7 +1153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate request body using client-safe schema
       const updates = updateCommunityResourceInputSchema.parse(req.body);
-      
+
       // Prepare server updates (add verification info if admin)
       const serverUpdates = updateCommunityResourceSchema.parse({
         ...updates,
@@ -1183,7 +1194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { id } = req.params;
-      
+
       // Get existing resource for logging
       const existingResource = await storage.getCommunityResourceById(id);
       if (!existingResource) {
@@ -1278,7 +1289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const lawReference = await storage.getLawReferenceById(id);
-      
+
       if (!lawReference) {
         return res.status(404).json({ message: "Law reference not found" });
       }
@@ -1294,7 +1305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { category } = req.params;
       const { subcategory, priority, relevanceToSecurity } = req.query;
-      
+
       const filters = {
         category,
         subcategory: subcategory as string,
@@ -1375,7 +1386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { id } = req.params;
-      
+
       // Get existing law reference for comparison
       const existingLawRef = await storage.getLawReferenceById(id);
       if (!existingLawRef) {
@@ -1425,7 +1436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { id } = req.params;
-      
+
       // Get existing law reference for logging
       const existingLawRef = await storage.getLawReferenceById(id);
       if (!existingLawRef) {
@@ -1763,22 +1774,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined,
         tags: req.query.tags ? (req.query.tags as string).split(',') : undefined,
       };
-      
+
       // Filter out undefined values
       const cleanFilter = Object.fromEntries(
         Object.entries(filter).filter(([_, value]) => value !== undefined)
       );
-      
+
       const allCrimeIntelligence = await storage.getCrimeIntelligence(cleanFilter);
-      
+
       // Apply RBAC filtering based on user clearance and permissions
       const authorizedCrimeIntelligence = filterCrimeIntelligenceByPermissions(allCrimeIntelligence, req.user);
-      
+
       // Sanitize data based on user clearance level
       const sanitizedCrimeIntelligence = authorizedCrimeIntelligence.map(intelligence => 
         sanitizeCrimeIntelligenceForUser(intelligence, req.user)
       );
-      
+
       res.json(sanitizedCrimeIntelligence);
     } catch (error) {
       console.error("Error fetching crime intelligence:", error);
@@ -1803,15 +1814,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!crimeIntelligence) {
         return res.status(404).json({ message: "Crime intelligence not found" });
       }
-      
+
       // Check if user has permission to read this intelligence
       if (!checkCrimeIntelligencePermissions(req.user, crimeIntelligence, 'read')) {
         return res.status(403).json({ message: "Insufficient clearance to access this intelligence" });
       }
-      
+
       // Sanitize data based on user clearance level
       const sanitizedCrimeIntelligence = sanitizeCrimeIntelligenceForUser(crimeIntelligence, req.user);
-      
+
       res.json(sanitizedCrimeIntelligence);
     } catch (error) {
       console.error("Error fetching crime intelligence:", error);
@@ -1822,26 +1833,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/crime-intelligence", authenticateToken, async (req, res) => {
     try {
       const validatedData = createCrimeIntelligenceInputSchema.parse(req.body);
-      
+
       // Validate user can create intelligence with the specified classification level
       const userClearanceLevel = getUserClearanceLevel(req.user?.role);
       const requiredClearanceLevel = getCrimeIntelligenceRequiredClearanceLevel(validatedData.classification || 'restricted');
-      
+
       if (userClearanceLevel < requiredClearanceLevel) {
         return res.status(403).json({ 
           message: `Insufficient clearance to create ${validatedData.classification || 'restricted'} intelligence` 
         });
       }
-      
+
       // Set server-controlled fields
       const dataWithServerFields = {
         ...validatedData,
         assignedAnalyst: validatedData.assignedAnalyst || req.user?.id,
         classification: validatedData.classification || 'restricted', // Ensure classification is set
       };
-      
+
       const crimeIntelligence = await storage.createCrimeIntelligence(dataWithServerFields);
-      
+
       await storage.createActivity({
         userId: req.user?.id,
         activityType: "crime_intelligence_created",
@@ -1854,10 +1865,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           classification: crimeIntelligence.classification
         }
       });
-      
+
       // Sanitize response based on user clearance
       const sanitizedResponse = sanitizeCrimeIntelligenceForUser(crimeIntelligence, req.user);
-      
+
       res.status(201).json(sanitizedResponse);
     } catch (error) {
       console.error("Error creating crime intelligence:", error);
@@ -1872,32 +1883,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const updates = updateCrimeIntelligenceInputSchema.parse(req.body);
-      
+
       // Check if user has permission to update
       const existing = await storage.getCrimeIntelligenceById(id);
       if (!existing) {
         return res.status(404).json({ message: "Crime intelligence not found" });
       }
-      
+
       // Use RBAC permission system
       if (!checkCrimeIntelligencePermissions(req.user, existing, 'write')) {
         return res.status(403).json({ message: "Insufficient permissions to update this intelligence" });
       }
-      
+
       // If classification is being updated, validate user has clearance for new classification
       if (updates.classification) {
         const userClearanceLevel = getUserClearanceLevel(req.user?.role);
         const requiredClearanceLevel = getCrimeIntelligenceRequiredClearanceLevel(updates.classification);
-        
+
         if (userClearanceLevel < requiredClearanceLevel) {
           return res.status(403).json({ 
             message: `Insufficient clearance to set classification to ${updates.classification}` 
           });
         }
       }
-      
+
       const updatedCrimeIntelligence = await storage.updateCrimeIntelligence(id, updates);
-      
+
       await storage.createActivity({
         userId: req.user?.id,
         activityType: "crime_intelligence_updated",
@@ -1910,10 +1921,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           classification: updatedCrimeIntelligence.classification
         }
       });
-      
+
       // Sanitize response based on user clearance
       const sanitizedResponse = sanitizeCrimeIntelligenceForUser(updatedCrimeIntelligence, req.user);
-      
+
       res.json(sanitizedResponse);
     } catch (error) {
       console.error("Error updating crime intelligence:", error);
@@ -1927,23 +1938,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/crime-intelligence/:id", authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
-      
+
       // Check if user has permission to delete
       const existing = await storage.getCrimeIntelligenceById(id);
       if (!existing) {
         return res.status(404).json({ message: "Crime intelligence not found" });
       }
-      
+
       // Use RBAC permission system
       if (!checkCrimeIntelligencePermissions(req.user, existing, 'delete')) {
         return res.status(403).json({ message: "Insufficient permissions to delete crime intelligence" });
       }
-      
+
       const success = await storage.deleteCrimeIntelligence(id);
       if (!success) {
         return res.status(404).json({ message: "Crime intelligence not found" });
       }
-      
+
       await storage.createActivity({
         userId: req.user?.id,
         activityType: "crime_intelligence_deleted",
@@ -1955,7 +1966,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           classification: existing.classification
         }
       });
-      
+
       res.json({ message: "Crime intelligence archived successfully" });
     } catch (error) {
       console.error("Error deleting crime intelligence:", error);
@@ -1973,15 +1984,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         classification: req.query.classification as string,
         limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
       };
-      
+
       const allResults = await storage.searchCrimeIntelligence(query, options);
-      
+
       // Apply RBAC filtering
       const authorizedResults = filterCrimeIntelligenceByPermissions(allResults, req.user);
       const sanitizedResults = authorizedResults.map(intelligence => 
         sanitizeCrimeIntelligenceForUser(intelligence, req.user)
       );
-      
+
       res.json(sanitizedResults);
     } catch (error) {
       console.error("Error searching crime intelligence:", error);
@@ -1994,13 +2005,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { incidentId } = req.params;
       const allCrimeIntelligence = await storage.getCrimeIntelligenceByIncident(incidentId);
-      
+
       // Apply RBAC filtering
       const authorizedIntelligence = filterCrimeIntelligenceByPermissions(allCrimeIntelligence, req.user);
       const sanitizedIntelligence = authorizedIntelligence.map(intelligence => 
         sanitizeCrimeIntelligenceForUser(intelligence, req.user)
       );
-      
+
       res.json(sanitizedIntelligence);
     } catch (error) {
       console.error("Error fetching crime intelligence by incident:", error);
@@ -2013,13 +2024,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { threatLevel } = req.params;
       const allCrimeIntelligence = await storage.getCrimeIntelligenceByThreatLevel(threatLevel);
-      
+
       // Apply RBAC filtering
       const authorizedIntelligence = filterCrimeIntelligenceByPermissions(allCrimeIntelligence, req.user);
       const sanitizedIntelligence = authorizedIntelligence.map(intelligence => 
         sanitizeCrimeIntelligenceForUser(intelligence, req.user)
       );
-      
+
       res.json(sanitizedIntelligence);
     } catch (error) {
       console.error("Error fetching crime intelligence by threat level:", error);
@@ -2031,13 +2042,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/crime-intelligence/review/required", authenticateToken, async (req, res) => {
     try {
       const allCrimeIntelligence = await storage.getCrimeIntelligenceRequiringReview();
-      
+
       // Apply RBAC filtering
       const authorizedIntelligence = filterCrimeIntelligenceByPermissions(allCrimeIntelligence, req.user);
       const sanitizedIntelligence = authorizedIntelligence.map(intelligence => 
         sanitizeCrimeIntelligenceForUser(intelligence, req.user)
       );
-      
+
       res.json(sanitizedIntelligence);
     } catch (error) {
       console.error("Error fetching crime intelligence requiring review:", error);
@@ -2050,7 +2061,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const options = patternAnalysisRequestSchema.parse(req.body);
       const analysis = await storage.analyzeCrimePatterns(options);
-      
+
       await storage.createActivity({
         userId: req.user?.id,
         activityType: "pattern_analysis_performed",
@@ -2058,7 +2069,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: "Performed crime pattern analysis",
         metadata: { analysisOptions: options, resultCount: analysis.patterns.length }
       });
-      
+
       res.json(analysis);
     } catch (error) {
       console.error("Error performing pattern analysis:", error);
@@ -2074,7 +2085,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const params = threatAssessmentRequestSchema.parse(req.body);
       const assessment = await storage.assessThreat(params);
-      
+
       await storage.createActivity({
         userId: req.user?.id,
         activityType: "threat_assessment_performed",
@@ -2086,7 +2097,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           confidence: assessment.confidence
         }
       });
-      
+
       res.json(assessment);
     } catch (error) {
       console.error("Error performing threat assessment:", error);
@@ -2114,7 +2125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const options = req.body;
       const correlation = await storage.correlateExternalCrimeData(options);
-      
+
       await storage.createActivity({
         userId: req.user?.id,
         activityType: "external_data_correlation",
@@ -2125,7 +2136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           options: options
         }
       });
-      
+
       res.json(correlation);
     } catch (error) {
       console.error("Error performing external data correlation:", error);
@@ -2146,7 +2157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const options = req.body;
       const syncResult = await storage.syncExternalData(options);
-      
+
       await storage.createActivity({
         userId: req.user?.id,
         activityType: "external_data_sync",
@@ -2157,7 +2168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           options: options
         }
       });
-      
+
       res.json(syncResult);
     } catch (error) {
       console.error("Error syncing external data:", error);
@@ -2195,7 +2206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalCorrelations: 89,
         highConfidenceMatches: 34
       };
-      
+
       res.json(status);
     } catch (error) {
       console.error("Error fetching integration status:", error);
@@ -2257,7 +2268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Parse and validate request body
       const clientData = createScheduleInputSchema.parse(req.body);
-      
+
       // Add server-controlled fields
       const fullScheduleData = {
         ...clientData,
@@ -2266,7 +2277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate with full schema and ensure duration is calculated
       const validatedData = insertScheduleSchema.parse(fullScheduleData);
-      
+
       // Ensure duration is calculated if not provided
       const finalScheduleData = {
         ...validatedData,
@@ -2274,7 +2285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           Math.round((new Date(validatedData.endTime).getTime() - new Date(validatedData.startTime).getTime()) / (1000 * 60)),
         scheduledBy: req.user.id, // Ensure scheduledBy is included
       };
-      
+
       const schedule = await storage.createSchedule(finalScheduleData);
 
       // Log activity
@@ -2318,7 +2329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Parse and validate request body
       const updates = updateScheduleInputSchema.parse(req.body);
-      
+
       // Add server-controlled fields
       const fullUpdates = {
         ...updates,
@@ -2362,7 +2373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const success = await storage.deleteSchedule(id);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Schedule not found" });
       }
@@ -2557,7 +2568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const success = await storage.deleteShiftTemplate(id);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Shift template not found" });
       }
@@ -2585,7 +2596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         templateId: id
       });
-      
+
       const schedules = await storage.applyShiftTemplate(
         applicationData.templateId,
         applicationData.startDate,
