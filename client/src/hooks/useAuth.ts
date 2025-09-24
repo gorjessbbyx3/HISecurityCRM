@@ -1,11 +1,12 @@
+
 import { useState, useEffect, useCallback } from 'react';
 
 interface User {
   id: string;
   username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
   role: string;
 }
 
@@ -18,64 +19,12 @@ interface AuthState {
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
 
-  const login = async (username: string, password: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('auth_token', data.token);
-        setUser(data.user);
-        setIsAuthenticated(true);
-        setError(null);
-        return { success: true };
-      } else {
-        setError(data.message || 'Login failed');
-        setUser(null);
-        setIsAuthenticated(false);
-        return { success: false, error: data.message };
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Network error';
-      setError(errorMessage);
-      setUser(null);
-      setIsAuthenticated(false);
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-
-    localStorage.removeItem('auth_token');
-    setUser(null);
-    setIsAuthenticated(false);
-    setError(null);
-    setIsLoading(false);
-  };
-
-  const checkAuth = useCallback(async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
       console.log('Checking authentication status...');
       setIsCheckingAuth(true);
@@ -93,13 +42,10 @@ export function useAuth() {
       const response = await fetch('/api/auth/status', {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
       });
-
-      if (!response.ok) {
-        throw new Error(`Auth check failed: ${response.status}`);
-      }
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
@@ -111,31 +57,85 @@ export function useAuth() {
 
       const data = await response.json();
 
-      if (data.authenticated) {
-        setUser(data.user || data); // Assuming data.user or data itself contains user info
-        setError(null);
+      if (data.authenticated && data.user) {
+        const userData = data.user;
+        setUser(userData);
         setIsAuthenticated(true);
+        setError(null);
         console.log('✅ Authentication status verified');
+        console.log('useAuth state:', { user: data, isLoading: false, isAuthenticated: true, error: null });
       } else {
         setUser(null);
         setIsAuthenticated(false);
         localStorage.removeItem('auth_token');
+        setError(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       setUser(null);
       setIsAuthenticated(false);
-      setError(error instanceof Error ? error.message : 'Authentication failed');
+      setError(error instanceof Error ? error.message : 'Authentication check failed');
       localStorage.removeItem('auth_token');
     } finally {
+      setIsLoading(false);
       setIsCheckingAuth(false);
-      setIsLoading(false); // Ensure loading is set to false after auth check
     }
   }, []);
 
+  const login = useCallback(async (username: string, password: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+        credentials: 'include',
+      });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error('Login response body:', textResponse.substring(0, 200));
+        throw new Error('Server returned HTML instead of JSON during login');
+      }
+
+      const data = await response.json();
+
+      if (response.ok && data.token) {
+        localStorage.setItem('auth_token', data.token);
+        setUser(data.user);
+        setIsAuthenticated(true);
+        setError(null);
+        return data;
+      } else {
+        throw new Error(data.message || 'Login failed');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      setError(errorMessage);
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem('auth_token');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('auth_token');
+    setUser(null);
+    setIsAuthenticated(false);
+    setError(null);
+  }, []);
+
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]); // Depend on checkAuth
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   return {
     user: user,
@@ -144,6 +144,6 @@ export function useAuth() {
     error: error,
     login,
     logout,
-    checkAuth
+    checkAuthStatus,
   };
 }
