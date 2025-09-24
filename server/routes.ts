@@ -35,6 +35,11 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { WebSocketServer, WebSocket } from "ws";
+import jwt from 'jsonwebtoken'; // Import jsonwebtoken
+
+// Mock JWT_SECRET for example purposes. In a real app, this would come from environment variables.
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key';
+
 
 // Role-based access control for evidence
 function checkEvidencePermissions(user: any, evidence: any, action: 'read' | 'write' | 'delete'): boolean {
@@ -238,6 +243,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/logout', (req: Request, res: Response) => {
     res.json({ success: true });
   });
+
+  // Auth check endpoint with improved error handling
+  app.get('/api/auth/check', async (req, res) => {
+    try {
+      // Ensure we always send JSON response
+      res.setHeader('Content-Type', 'application/json');
+
+      const token = req.cookies.auth_token;
+
+      if (!token) {
+        return res.status(401).json({ authenticated: false, message: 'No token provided' });
+      }
+
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const user = await storage.getUserById(decoded.userId);
+
+      if (!user) {
+        return res.status(401).json({ authenticated: false, message: 'User not found' });
+      }
+
+      res.json({ 
+        authenticated: true, 
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email, 
+          firstName: user.firstName, 
+          lastName: user.lastName, 
+          role: user.role 
+        } 
+      });
+    } catch (error) {
+      console.error('Auth check error:', error);
+      res.setHeader('Content-Type', 'application/json');
+      res.status(401).json({ authenticated: false, message: 'Invalid token' });
+    }
+  });
+
 
   // Advanced Analytics endpoints
   app.get('/api/analytics/heatmap', authenticateToken, async (req, res) => {
@@ -2888,6 +2931,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
   // Real-time operations endpoints
   app.get('/api/incidents/live', authenticateToken, async (req, res) => {
     try {
@@ -2923,7 +2967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(liveIncidents);
     } catch (error) {
       console.error("Error fetching live incidents:", error);
-      res.status(500).json({ message: "Failed to fetch live incidents" });
+      res.status(500).json({ message: ""Failed to fetch live incidents" });
     }
   });
 

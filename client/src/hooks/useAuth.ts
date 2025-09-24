@@ -130,8 +130,8 @@ export function useAuth() {
 
   return {
     user: state.user,
-    isAuthenticated: state.isAuthenticated,
     isLoading: state.isLoading,
+    isAuthenticated: state.isAuthenticated,
     error: state.error,
     login,
     logout,
