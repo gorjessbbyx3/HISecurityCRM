@@ -469,7 +469,7 @@ export default function AdvancedAnalytics() {
                         <span className="text-green-400">-15% incidents</span>
                       </div>
                       <div className="flex justify-between items-center p-3 bg-slate-700 rounded">
-                        <span className="text-slate-300">Hot Days (>85°F)</span>
+                        <span className="text-slate-300">Hot Days (&gt;85°F)</span>
                         <span className="text-red-400">+22% incidents</span>
                       </div>
                       <div className="flex justify-between items-center p-3 bg-slate-700 rounded">
