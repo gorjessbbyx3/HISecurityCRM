@@ -49,17 +49,17 @@ export const optionalAuth: RequestHandler = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    req.user = null;
+    req.user = undefined;
     return next();
   }
 
   if (!jwtSecret) {
-    req.user = null;
+    req.user = undefined;
     return next();
   }
 
   jwt.verify(token, jwtSecret, (err: any, user: any) => {
-    req.user = err ? null : user;
+    req.user = err ? undefined : user;
     next();
   });
 };

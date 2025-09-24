@@ -127,12 +127,8 @@ export interface FinancialRecord {
   recordType: string;
   amount: number;
   description: string;
-  category?: string;
-  taxCategory?: string;
   transactionDate: string;
-  paymentMethod?: string;
-  referenceNumber?: string;
-  status: string;
+  status: 'pending' | 'paid' | 'overdue';
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -1627,9 +1623,6 @@ class MemoryStorage {
       tags: ['vehicle_crime', 'downtown', 'pattern_analysis', 'prevention'],
       followUpRequired: true,
       nextReviewDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-      externalReferences: {
-        policeReportNumber: 'HPD-2024-005678'
-      }
     });
 
     // Surveillance intelligence report

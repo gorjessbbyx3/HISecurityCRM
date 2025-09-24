@@ -34,6 +34,7 @@ export default defineConfig({
     hmr: {
       port: 5173,
       host: "0.0.0.0",
+      clientPort: 5173,
     },
     fs: {
       strict: true,
@@ -41,8 +42,9 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: "http://0.0.0.0:5000",
         changeOrigin: true,
+        secure: false,
       },
     },
   },

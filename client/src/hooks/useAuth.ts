@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 
 interface User {
@@ -19,7 +18,7 @@ interface AuthState {
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setIsLoading] = useState(true); // Renamed to 'loading' to match the return object fix
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,13 +136,14 @@ export function useAuth() {
     checkAuthStatus();
   }, [checkAuthStatus]);
 
+  // Corrected the return object to use 'loading' for isLoading
   return {
-    user: user,
-    isLoading: isLoading || isCheckingAuth,
-    isAuthenticated: isAuthenticated,
-    error: error,
+    user,
+    isAuthenticated,
     login,
     logout,
-    checkAuthStatus,
+    checkAuthStatus, // Renamed from checkAuth to match the function name
+    isLoading: loading, // Corrected to use the 'loading' state variable
+    error
   };
 }

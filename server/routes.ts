@@ -195,7 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/status', async (req: Request, res: Response) => {
     // Always set JSON content type first
     res.setHeader('Content-Type', 'application/json');
-    
+
     try {
       const authHeader = req.headers['authorization'];
       const token = authHeader && authHeader.split(' ')[1];
@@ -206,12 +206,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify token and return user info if valid
       const jwtSecret = process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET || process.env.SESSION_SECRET || 'your-super-secret-key';
-      
+
       const jwt = await import('jsonwebtoken');
       try {
         const decoded = jwt.default.verify(token, jwtSecret) as any;
         const user = await storage.getUserById(decoded.userId || decoded.id);
-        
+
         if (!user) {
           return res.status(200).json({ authenticated: false });
         }
@@ -241,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/login', async (req: Request, res: Response) => {
     // Always set JSON content type first
     res.setHeader('Content-Type', 'application/json');
-    
+
     try {
       const { username, password } = req.body;
       console.log('🔐 Login attempt for:', username);
@@ -1035,7 +1035,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/financial/records', authenticateToken, async (req, res) => {
     try {
       const recordData = insertFinancialRecordSchema.parse(req.body);
-      const record = await storage.createFinancialRecord(recordData);
+      const record = await storage.createFinancialRecord({
+        type: req.body.recordType,
+        recordType: req.body.recordType,
+        amount: req.body.amount,
+        description: req.body.description,
+        transactionDate: req.body.transactionDate,
+        status: req.body.status,
+        clientId: req.body.clientId,
+        category: req.body.category,
+        taxCategory: req.body.taxCategory,
+        paymentMethod: req.body.paymentMethod,
+        referenceNumber: req.body.referenceNumber,
+        notes: req.body.notes
+      });
       res.status(201).json(record);
     } catch (error) {
       console.error("Error creating financial record:", error);

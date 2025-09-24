@@ -107,7 +107,8 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     }
 
     const PORT = process.env.PORT || 5000;
-    server.listen(parseInt(PORT.toString()), "0.0.0.0", () => {
+    const portNumber = parseInt(PORT.toString(), 10);
+    server.listen(portNumber, "0.0.0.0", () => {
       console.log(`🌐 Server listening on http://0.0.0.0:${PORT}`);
       console.log(`🎯 Health check: http://0.0.0.0:${PORT}/api/health`);
       console.log('✨ Hawaii Security CRM is ready!');
