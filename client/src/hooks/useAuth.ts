@@ -1,5 +1,26 @@
 import { useState, useEffect, useCallback } from 'react';
 
+// Assuming authUtils is imported or defined elsewhere with getStoredToken, isTokenExpired, and removeStoredToken
+// For the purpose of this example, let's define a mock authUtils if it's not provided
+const authUtils = {
+  getStoredToken: () => localStorage.getItem('auth_token'),
+  isTokenExpired: (token: string) => {
+    // Mock implementation: token expires after 1 hour
+    const tokenData = token.split('.')[1]; // JWT payload is typically the second part
+    if (!tokenData) return true;
+    try {
+      const decoded = JSON.parse(atob(tokenData));
+      const now = Math.floor(Date.now() / 1000);
+      return decoded.exp < now;
+    } catch (e) {
+      console.error("Error decoding token:", e);
+      return true; // Consider expired if decoding fails
+    }
+  },
+  removeStoredToken: () => localStorage.removeItem('auth_token'),
+};
+
+
 interface User {
   id: string;
   username: string;
@@ -50,66 +71,60 @@ export function useAuth() {
 
 
   const checkAuthStatus = useCallback(async () => {
+    if (isLoading) return; // Prevent multiple concurrent checks
+
     console.log('Checking authentication status...');
-
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      setAuthStateInternal({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null
-      });
-      return;
-    }
-
+    setIsLoading(true);
     try {
+      const token = authUtils.getStoredToken();
+      if (!token) {
+        setUser(null);
+        setIsAuthenticated(false);
+        setError(null);
+        return;
+      }
+
+      if (authUtils.isTokenExpired(token)) {
+        authUtils.removeStoredToken();
+        setUser(null);
+        setIsAuthenticated(false);
+        setError(null);
+        return;
+      }
+
       const response = await fetch('/api/auth/status', {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        },
       });
 
       if (response.ok) {
         const data = await response.json();
         if (data.authenticated && data.user) {
-          setAuthStateInternal({
-            user: data.user,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null
-          });
+          setUser(data.user);
+          setIsAuthenticated(true);
+          setError(null);
           console.log('✅ Authentication status verified');
         } else {
-          localStorage.removeItem('auth_token');
-          setAuthStateInternal({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: 'Session expired'
-          });
+          setUser(null);
+          setIsAuthenticated(false);
+          setError(null);
         }
       } else {
-        localStorage.removeItem('auth_token');
-        setAuthStateInternal({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: 'Authentication failed'
-        });
+        authUtils.removeStoredToken();
+        setUser(null);
+        setIsAuthenticated(false);
+        setError(null);
       }
     } catch (error) {
       console.error('Auth status check failed:', error);
-      localStorage.removeItem('auth_token');
-      setAuthStateInternal({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: 'Network error'
-      });
+      setUser(null);
+      setIsAuthenticated(false);
+      setError(error as Error);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [isLoading]);
 
   const login = async (username: string, password: string) => {
     console.log('🔐 Attempting login for:', username);
@@ -165,7 +180,7 @@ export function useAuth() {
           error: null,
         });
         console.log('✅ Login successful - redirecting to dashboard');
-        
+
         // Force a small delay to ensure state is updated before redirect
         setTimeout(() => {
           console.log('🎯 Authentication state updated');
@@ -208,19 +223,13 @@ export function useAuth() {
   };
 
   useEffect(() => {
-    // Only check auth status on mount if we don't have a current auth state
-    const token = localStorage.getItem('auth_token');
-    if (token && !authState.isAuthenticated) {
+    const timeoutId = setTimeout(() => {
       checkAuthStatus();
-    } else if (!token) {
-      setAuthStateInternal({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null
-      });
-    }
-  }, [checkAuthStatus, authState.isAuthenticated]);
+    }, 100); // Small delay to debounce multiple calls
+
+    return () => clearTimeout(timeoutId);
+  }, [checkAuthStatus]);
+
 
   console.log('useAuth state:', authState);
 
