@@ -21,7 +21,8 @@ import {
   Calendar,
   FileCheck,
   DollarSign,
-  Plus
+  Plus,
+  Eye
 } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
@@ -78,8 +79,8 @@ interface Activity {
   metadata?: any;
 }
 
-// Memoized stat card component
-const StatCard = ({ title, value, icon: Icon, color, href, testId }: {
+// Senior-friendly stat card with larger text and clearer design
+const SeniorStatCard = ({ title, value, icon: Icon, color, href, testId }: {
   title: string;
   value: number;
   icon: any;
@@ -87,26 +88,27 @@ const StatCard = ({ title, value, icon: Icon, color, href, testId }: {
   href: string;
   testId: string;
 }) => (
-  <Card className="bg-slate-800 border-slate-600 hover:border-blue-500 transition-all duration-200">
-    <CardContent className="p-3">
-      <div className="flex items-center justify-between mb-2">
-        <Icon className={`w-5 h-5 ${color}`} />
-        <div className={`text-xl font-bold ${color}`} data-testid={testId}>
+  <Card className="senior-dashboard bg-card hover:bg-slate-600 transition-all duration-300 border-2 border-slate-600 hover:border-blue-500">
+    <CardContent className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <Icon className={`w-8 h-8 ${color}`} />
+        <div className={`card-value ${color}`} data-testid={testId}>
           {value}
         </div>
       </div>
-      <h3 className="text-xs font-bold text-white mb-2">{title}</h3>
+      <h3 className="card-title mb-4">{title}</h3>
       <Link href={href}>
-        <Button className="w-full h-7 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold">
-          MANAGE
+        <Button className="button-large w-full bg-blue-600 hover:bg-blue-700 text-white font-bold">
+          <Eye className="w-5 h-5 mr-2" />
+          VIEW DETAILS
         </Button>
       </Link>
     </CardContent>
   </Card>
 );
 
-// Memoized system status component
-const SystemStatusGrid = ({ systemStatus }: { systemStatus?: SystemStatus }) => {
+// Senior-friendly system status with larger indicators
+const SeniorSystemStatus = ({ systemStatus }: { systemStatus?: SystemStatus }) => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'online':
@@ -129,13 +131,20 @@ const SystemStatusGrid = ({ systemStatus }: { systemStatus?: SystemStatus }) => 
   if (!systemStatus) return null;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {Object.entries(systemStatus).map(([system, status]) => (
-        <Card key={system} className="bg-slate-800 border-slate-600 p-2">
-          <CardContent className="text-center p-1">
-            <div className={`w-3 h-3 rounded-full mx-auto mb-1 ${getStatusColor(status)} animate-pulse`} />
-            <h3 className="text-xs font-bold text-white mb-1 uppercase">{system}</h3>
-            <div className="text-xs font-bold text-slate-300">
+        <Card key={system} className="senior-dashboard bg-card p-6">
+          <CardContent className="text-center p-2">
+            <div className={`w-6 h-6 rounded-full mx-auto mb-4 ${getStatusColor(status)} animate-pulse`} />
+            <h3 className="card-title mb-2 uppercase">{system}</h3>
+            <div className={`status-indicator ${
+              status.toLowerCase().includes('online') || status.toLowerCase().includes('connected') || 
+              status.toLowerCase().includes('active') || status.toLowerCase().includes('operational') || 
+              status.toLowerCase().includes('ready') ? 'text-success' : 
+              status.toLowerCase().includes('degraded') || status.toLowerCase().includes('slow') || 
+              status.toLowerCase().includes('limited') || status.toLowerCase().includes('impaired') || 
+              status.toLowerCase().includes('testing') ? 'text-warning' : 'text-danger'
+            }`}>
               {status.toUpperCase()}
             </div>
           </CardContent>
@@ -146,18 +155,18 @@ const SystemStatusGrid = ({ systemStatus }: { systemStatus?: SystemStatus }) => 
 };
 
 export default function UltimateDashboard() {
-  const [refreshInterval] = useState(30000); // Fixed refresh interval
+  const [refreshInterval] = useState(30000);
   const queryClient = useQueryClient();
 
-  // Fetch dashboard statistics with optimized caching
+  // Fetch dashboard statistics
   const { data: stats, isLoading, error } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
     refetchInterval: refreshInterval,
-    staleTime: 15000, // Consider data fresh for 15 seconds
-    cacheTime: 60000, // Keep in cache for 1 minute
+    staleTime: 15000,
+    cacheTime: 60000,
   });
 
-  // Auto-refresh effect
+  // Auto-refresh
   useEffect(() => {
     const interval = setInterval(() => {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
@@ -165,66 +174,66 @@ export default function UltimateDashboard() {
     return () => clearInterval(interval);
   }, [refreshInterval, queryClient]);
 
-  // Memoized stat cards to prevent unnecessary re-renders
+  // Senior-friendly stat cards
   const statCards = useMemo(() => [
     {
-      title: "ACTIVE PATROLS",
+      title: "SECURITY PATROLS",
       value: stats?.activePatrols || 0,
       icon: Radio,
-      color: "text-blue-400",
+      color: "text-primary",
       href: "/patrol-reports",
       testId: "stat-active-patrols"
     },
     {
-      title: "STAFF ON DUTY",
+      title: "STAFF WORKING",
       value: stats?.onDutyStaff || 0,
       icon: UserCheck,
-      color: "text-green-400",
+      color: "text-success",
       href: "/staff",
       testId: "stat-on-duty-staff"
     },
     {
-      title: "OPEN INCIDENTS",
+      title: "INCIDENTS TODAY",
       value: stats?.openIncidents || 0,
       icon: AlertTriangle,
-      color: "text-orange-400",
+      color: "text-warning",
       href: "/reports",
       testId: "stat-open-incidents"
     },
     {
-      title: "PROPERTIES",
+      title: "PROPERTIES SECURE",
       value: stats?.activeProperties || 0,
       icon: Building2,
-      color: "text-purple-400",
+      color: "text-primary",
       href: "/properties",
       testId: "stat-active-properties"
     }
   ], [stats]);
 
-  // Loading state
+  // Loading state with larger elements
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
         <div className="text-center">
-          <div className="w-16 h-16 bg-blue-500 rounded-full mx-auto mb-6 animate-pulse"></div>
-          <h2 className="text-2xl font-bold text-white mb-4">Loading Dashboard...</h2>
-          <p className="text-slate-400">Gathering security data...</p>
+          <div className="w-24 h-24 bg-blue-500 rounded-full mx-auto mb-8 animate-pulse"></div>
+          <h2 className="senior-dashboard text-4xl font-bold text-white mb-6">Loading Security Dashboard...</h2>
+          <p className="senior-dashboard card-description text-2xl">Please wait while we gather your security data...</p>
         </div>
       </div>
     );
   }
 
-  // Error state
+  // Error state with clear messaging
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-red-400 mb-4">System Error</h2>
-          <p className="text-slate-400 mb-6">Unable to load dashboard data.</p>
-          <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
-            <Activity className="w-4 h-4 mr-2" />
-            Refresh Dashboard
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+        <div className="text-center max-w-2xl">
+          <AlertTriangle className="w-24 h-24 text-red-400 mx-auto mb-8" />
+          <h2 className="senior-dashboard text-4xl font-bold text-red-400 mb-6">System Error</h2>
+          <p className="senior-dashboard card-description text-2xl mb-8">Unable to load dashboard data. Please try refreshing the page.</p>
+          <Button onClick={() => window.location.reload()} className="button-large bg-blue-600 hover:bg-blue-700">
+            <Activity className="w-6 h-6 mr-3" />
+            REFRESH DASHBOARD
           </Button>
         </div>
       </div>
@@ -232,28 +241,28 @@ export default function UltimateDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-3">
-      <div className="max-w-7xl mx-auto space-y-4">
-        {/* Optimized Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-blue-900/30 to-indigo-900/20 rounded-xl border border-blue-500/20 p-4">
-          <div className="flex items-center justify-center gap-4">
+    <div className="senior-dashboard min-h-screen bg-slate-950 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Large, Clear Header */}
+        <div className="bg-gradient-to-r from-slate-900 via-blue-900/30 to-indigo-900/20 rounded-2xl border-2 border-blue-500/30 p-8">
+          <div className="flex items-center justify-center gap-6">
             <div className="relative">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Shield className="w-10 h-10 text-white" />
               </div>
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full animate-pulse border-2 border-white"></div>
             </div>
             <div className="text-center">
-              <h1 className="text-xl font-black text-white tracking-wider">STREET PATROL</h1>
-              <div className="text-xs text-blue-400 font-bold uppercase tracking-widest">COMMAND CENTER</div>
-              <div className="flex items-center justify-center gap-2 text-xs mt-1">
-                <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-green-400 font-bold">ACTIVE</span>
+              <h1 className="text-5xl font-black text-white tracking-wider mb-2">SECURITY COMMAND CENTER</h1>
+              <div className="card-description text-2xl mb-4">Hawaii Street Patrol Management System</div>
+              <div className="flex items-center justify-center gap-4 text-xl">
+                <div className="flex items-center gap-2 px-4 py-3 bg-green-500/20 border-2 border-green-500/30 rounded-full">
+                  <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-success font-bold text-xl">SYSTEM ONLINE</span>
                 </div>
-                <div className="px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full">
-                  <span className="text-blue-400 font-mono text-xs">
-                    {format(new Date(), 'MMM dd, HH:mm')}
+                <div className="px-4 py-3 bg-blue-500/20 border-2 border-blue-500/30 rounded-full">
+                  <span className="text-primary font-mono text-xl">
+                    {format(new Date(), 'MMM dd, yyyy - HH:mm')}
                   </span>
                 </div>
               </div>
@@ -261,24 +270,24 @@ export default function UltimateDashboard() {
           </div>
         </div>
 
-        {/* Emergency Alerts - Conditional Rendering */}
+        {/* Emergency Alerts - Large and Prominent */}
         {stats?.emergencyAlerts && stats.emergencyAlerts.length > 0 && (
-          <div className="bg-red-600 text-white p-3 rounded-lg">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Siren className="w-5 h-5 animate-pulse" />
-              <h2 className="text-sm font-bold">EMERGENCY ALERTS</h2>
+          <div className="bg-red-600 text-white p-8 rounded-2xl border-2 border-red-500">
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <Siren className="w-10 h-10 animate-pulse" />
+              <h2 className="text-3xl font-bold">EMERGENCY ALERTS</h2>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-4">
               {stats.emergencyAlerts.slice(0, 2).map((alert) => (
-                <div key={alert.id} className="bg-red-700/50 p-2 rounded border border-red-500/50">
-                  <div className="flex items-start gap-2">
-                    <AlertOctagon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <div key={alert.id} className="bg-red-700/50 p-6 rounded-xl border-2 border-red-500/50">
+                  <div className="flex items-start gap-4">
+                    <AlertOctagon className="w-8 h-8 flex-shrink-0 mt-1" />
                     <div className="flex-1">
-                      <h3 className="text-sm font-bold">{alert.title}</h3>
-                      <p className="text-xs opacity-90">{alert.description}</p>
+                      <h3 className="text-2xl font-bold mb-2">{alert.title}</h3>
+                      <p className="text-xl opacity-90 mb-3">{alert.description}</p>
                       {alert.location && (
-                        <div className="flex items-center gap-1 text-xs mt-1">
-                          <MapPin className="w-3 h-3" />
+                        <div className="flex items-center gap-2 text-lg">
+                          <MapPin className="w-5 h-5" />
                           <span>{alert.location}</span>
                         </div>
                       )}
@@ -290,84 +299,89 @@ export default function UltimateDashboard() {
           </div>
         )}
 
-        {/* Key Metrics - Optimized Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {statCards.map((card, index) => (
-            <StatCard key={index} {...card} />
-          ))}
+        {/* Key Metrics - Large Cards */}
+        <div>
+          <h2 className="text-3xl font-bold text-white text-center mb-6">SECURITY STATUS OVERVIEW</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+            {statCards.map((card, index) => (
+              <SeniorStatCard key={index} {...card} />
+            ))}
+          </div>
         </div>
 
-        {/* Quick Actions - Streamlined */}
+        {/* Quick Actions - Large Buttons */}
         <div>
-          <h2 className="text-sm font-bold text-white text-center mb-3">QUICK ACTIONS</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <h2 className="text-3xl font-bold text-white text-center mb-6">QUICK ACTIONS</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Link href="/patrol-reports">
-              <Button className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex flex-col items-center gap-1">
-                <FileCheck className="w-4 h-4" />
-                PATROL REPORT
+              <Button className="button-large w-full h-24 bg-blue-600 hover:bg-blue-700 text-white flex flex-col items-center gap-3">
+                <FileCheck className="w-8 h-8" />
+                <span className="text-xl font-bold">CREATE PATROL REPORT</span>
               </Button>
             </Link>
             <Link href="/reports">
-              <Button className="w-full h-14 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex flex-col items-center gap-1">
-                <AlertTriangle className="w-4 h-4" />
-                LOG INCIDENT
+              <Button className="button-large w-full h-24 bg-orange-600 hover:bg-orange-700 text-white flex flex-col items-center gap-3">
+                <AlertTriangle className="w-8 h-8" />
+                <span className="text-xl font-bold">LOG INCIDENT</span>
               </Button>
             </Link>
             <Link href="/scheduling">
-              <Button className="w-full h-14 bg-green-600 hover:bg-green-700 text-white text-xs font-bold flex flex-col items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                SCHEDULE
+              <Button className="button-large w-full h-24 bg-green-600 hover:bg-green-700 text-white flex flex-col items-center gap-3">
+                <Calendar className="w-8 h-8" />
+                <span className="text-xl font-bold">VIEW SCHEDULE</span>
               </Button>
             </Link>
             <Button
-              className="w-full h-14 bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex flex-col items-center gap-1"
+              className="button-large w-full h-24 bg-red-600 hover:bg-red-700 text-white flex flex-col items-center gap-3"
               onClick={() => {
-                if (confirm('Activate emergency response?')) {
-                  alert('Emergency response activated!');
+                if (confirm('Are you sure you want to activate emergency response?')) {
+                  alert('Emergency response has been activated!');
                 }
               }}
             >
-              <PhoneCall className="w-4 h-4 animate-pulse" />
-              EMERGENCY
+              <PhoneCall className="w-8 h-8 animate-pulse" />
+              <span className="text-xl font-bold">EMERGENCY CALL</span>
             </Button>
           </div>
         </div>
 
-        {/* System Status & Activity - Optimized Two Column */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* System Status & Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* System Status */}
           <div>
-            <h2 className="text-sm font-bold text-white text-center mb-3">SYSTEM STATUS</h2>
-            <SystemStatusGrid systemStatus={stats?.systemStatus} />
+            <h2 className="text-3xl font-bold text-white text-center mb-6">SYSTEM STATUS</h2>
+            <SeniorSystemStatus systemStatus={stats?.systemStatus} />
           </div>
 
           {/* Recent Activity */}
           <div>
-            <h2 className="text-sm font-bold text-white text-center mb-3">RECENT ACTIVITY</h2>
-            <Card className="bg-slate-800 border-slate-600">
-              <CardContent className="p-3">
-                <div className="space-y-2 max-h-40 overflow-y-auto">
+            <h2 className="text-3xl font-bold text-white text-center mb-6">RECENT ACTIVITY</h2>
+            <Card className="senior-dashboard bg-card">
+              <CardContent className="p-6">
+                <div className="space-y-4 max-h-80 overflow-y-auto">
                   {stats?.recentActivities?.length ? (
-                    stats.recentActivities.slice(0, 4).map((activity) => (
-                      <div key={activity.id} className="flex items-start gap-2 p-2 bg-slate-700 rounded">
-                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-white font-medium truncate">{activity.description}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <p className="text-xs text-slate-400 font-mono">
-                              {format(new Date(activity.timestamp), 'MMM dd, HH:mm')}
-                            </p>
-                            <Badge className="text-xs bg-blue-500/20 text-blue-400 px-1 py-0">
-                              {activity.type.toUpperCase()}
-                            </Badge>
+                    stats.recentActivities.slice(0, 3).map((activity) => (
+                      <div key={activity.id} className="activity-item">
+                        <div className="flex items-start gap-4">
+                          <div className="w-4 h-4 bg-blue-500 rounded-full mt-3 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="activity-text">{activity.description}</p>
+                            <div className="flex items-center gap-4 mt-2">
+                              <p className="timestamp">
+                                {format(new Date(activity.timestamp), 'MMM dd, yyyy - HH:mm')}
+                              </p>
+                              <Badge className="text-lg bg-blue-500/20 text-blue-400 px-3 py-1">
+                                {activity.type.toUpperCase()}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-6">
-                      <Activity className="w-6 h-6 mx-auto mb-2 text-slate-500" />
-                      <p className="text-xs text-slate-400">No recent activity</p>
+                    <div className="text-center py-12">
+                      <Activity className="w-12 h-12 mx-auto mb-4 text-slate-500" />
+                      <p className="card-description">No recent activity to display</p>
                     </div>
                   )}
                 </div>
@@ -376,34 +390,34 @@ export default function UltimateDashboard() {
           </div>
         </div>
 
-        {/* Navigation Links - Simplified */}
+        {/* Navigation Links - Large Cards */}
         <div>
-          <h2 className="text-sm font-bold text-white text-center mb-3">MAIN SECTIONS</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <h2 className="text-3xl font-bold text-white text-center mb-6">MAIN SECTIONS</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Link href="/staff">
-              <Card className="bg-slate-800 border-slate-600 hover:border-blue-500 transition-all cursor-pointer">
-                <CardContent className="text-center p-4">
-                  <Users className="w-6 h-6 text-blue-400 mx-auto mb-2" />
-                  <h3 className="text-sm font-bold text-white mb-1">STAFF</h3>
-                  <p className="text-xs text-slate-300">Manage Personnel</p>
+              <Card className="senior-dashboard bg-card hover:bg-slate-600 transition-all cursor-pointer h-48">
+                <CardContent className="text-center p-8 h-full flex flex-col justify-center">
+                  <Users className="w-16 h-16 text-primary mx-auto mb-4" />
+                  <h3 className="card-title mb-2">STAFF MANAGEMENT</h3>
+                  <p className="card-description">Manage Security Personnel</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/clients">
-              <Card className="bg-slate-800 border-slate-600 hover:border-green-500 transition-all cursor-pointer">
-                <CardContent className="text-center p-4">
-                  <Building2 className="w-6 h-6 text-green-400 mx-auto mb-2" />
-                  <h3 className="text-sm font-bold text-white mb-1">CLIENTS</h3>
-                  <p className="text-xs text-slate-300">Client Relations</p>
+              <Card className="senior-dashboard bg-card hover:bg-slate-600 transition-all cursor-pointer h-48">
+                <CardContent className="text-center p-8 h-full flex flex-col justify-center">
+                  <Building2 className="w-16 h-16 text-success mx-auto mb-4" />
+                  <h3 className="card-title mb-2">CLIENT RELATIONS</h3>
+                  <p className="card-description">Manage Client Accounts</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/accounting">
-              <Card className="bg-slate-800 border-slate-600 hover:border-purple-500 transition-all cursor-pointer">
-                <CardContent className="text-center p-4">
-                  <DollarSign className="w-6 h-6 text-purple-400 mx-auto mb-2" />
-                  <h3 className="text-sm font-bold text-white mb-1">FINANCIAL</h3>
-                  <p className="text-xs text-slate-300">Billing & Payroll</p>
+              <Card className="senior-dashboard bg-card hover:bg-slate-600 transition-all cursor-pointer h-48">
+                <CardContent className="text-center p-8 h-full flex flex-col justify-center">
+                  <DollarSign className="w-16 h-16 text-warning mx-auto mb-4" />
+                  <h3 className="card-title mb-2">FINANCIAL REPORTS</h3>
+                  <p className="card-description">Billing & Payroll</p>
                 </CardContent>
               </Card>
             </Link>
