@@ -45,9 +45,13 @@ function AppContent() {
       }
     };
 
-    // Only run auto-login after initial auth check
-    if (!isLoading) {
-      autoLogin();
+    // Only run auto-login after initial auth check is complete
+    if (!isLoading && !isAuthenticated) {
+      const timer = setTimeout(() => {
+        autoLogin();
+      }, 100); // Small delay to ensure state is stable
+      
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, isLoading, login]);
 

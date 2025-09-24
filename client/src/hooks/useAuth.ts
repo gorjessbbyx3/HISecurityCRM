@@ -103,7 +103,10 @@ export function useAuth() {
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Invalid response format - expected JSON');
+        console.error('Server returned non-JSON response:', contentType);
+        const textResponse = await response.text();
+        console.error('Response body:', textResponse.substring(0, 200));
+        throw new Error('Server returned HTML instead of JSON - authentication endpoint may be down');
       }
 
       const data = await response.json();
@@ -136,7 +139,7 @@ export function useAuth() {
 
   return {
     user: user,
-    isLoading: isCheckingAuth,
+    isLoading: isCheckingAuth || isLoading,
     isAuthenticated: isAuthenticated,
     error: error,
     login,
