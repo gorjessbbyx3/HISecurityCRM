@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, Suspense, lazy } from "react";
 import { Route, Switch } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,26 +7,35 @@ import { queryClient } from "@/lib/queryClient";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import ProfessionalLayout from "@/components/layout/professional-layout";
 
-// Pages
-import Login from "@/pages/login";
-import Dashboard from "@/pages/ultimate-dashboard";
-import Staff from "@/pages/staff";
-import Clients from "@/pages/clients";
-import Properties from "@/pages/properties";
-import Reports from "@/pages/reports";
-import CrimeIntelligence from "@/pages/crime-intelligence";
-import LawReference from "@/pages/law-reference";
-import CommunityOutreach from "@/pages/community-outreach";
-import Accounting from "@/pages/accounting";
-import StaffManagement from "@/pages/staff-management";
-import Scheduling from "@/pages/scheduling";
-import PatrolReports from "@/pages/patrol-reports";
-import HawaiiLaw from "@/pages/hawaii-law";
-import NotFound from "@/pages/not-found";
-import AdvancedAnalytics from "@/pages/advanced-analytics";
-import SecurityCompliance from "@/pages/security-compliance";
-import RealTimeOperations from "./pages/real-time-operations";
-import AIAutomation from "./pages/ai-automation";
+// Lazy load pages for code splitting
+const Dashboard = lazy(() => import("@/pages/ultimate-dashboard"));
+const Staff = lazy(() => import("@/pages/staff"));
+const Clients = lazy(() => import("@/pages/clients"));
+const Properties = lazy(() => import("@/pages/properties"));
+const Reports = lazy(() => import("@/pages/reports"));
+const CrimeIntelligence = lazy(() => import("@/pages/crime-intelligence"));
+const LawReference = lazy(() => import("@/pages/law-reference"));
+const CommunityOutreach = lazy(() => import("@/pages/community-outreach"));
+const Accounting = lazy(() => import("@/pages/accounting"));
+const StaffManagement = lazy(() => import("@/pages/staff-management"));
+const Scheduling = lazy(() => import("@/pages/scheduling"));
+const PatrolReports = lazy(() => import("@/pages/patrol-reports"));
+const HawaiiLaw = lazy(() => import("@/pages/hawaii-law"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+const AdvancedAnalytics = lazy(() => import("@/pages/advanced-analytics"));
+const SecurityCompliance = lazy(() => import("@/pages/security-compliance"));
+const RealTimeOperations = lazy(() => import("./pages/real-time-operations"));
+const AIAutomation = lazy(() => import("./pages/ai-automation"));
+
+// Loading component
+const PageLoader = () => (
+  <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-slate-400">Loading...</p>
+    </div>
+  </div>
+);
 
 
 function AppContent() {
@@ -75,27 +84,29 @@ function AppContent() {
   }
 
   return (
-    <Switch>
-      <Route path="/" component={() => <ProfessionalLayout><Dashboard /></ProfessionalLayout>} />
-      <Route path="/dashboard" component={() => <ProfessionalLayout><Dashboard /></ProfessionalLayout>} />
-      <Route path="/staff" component={() => <ProfessionalLayout><Staff /></ProfessionalLayout>} />
-      <Route path="/clients" component={() => <ProfessionalLayout><Clients /></ProfessionalLayout>} />
-      <Route path="/properties" component={() => <ProfessionalLayout><Properties /></ProfessionalLayout>} />
-      <Route path="/reports" component={() => <ProfessionalLayout><Reports /></ProfessionalLayout>} />
-      <Route path="/crime-intelligence" component={() => <ProfessionalLayout><CrimeIntelligence /></ProfessionalLayout>} />
-      <Route path="/law-reference" component={() => <ProfessionalLayout><LawReference /></ProfessionalLayout>} />
-      <Route path="/community-outreach" component={() => <ProfessionalLayout><CommunityOutreach /></ProfessionalLayout>} />
-      <Route path="/accounting" component={() => <ProfessionalLayout><Accounting /></ProfessionalLayout>} />
-      <Route path="/staff-management" component={() => <ProfessionalLayout><StaffManagement /></ProfessionalLayout>} />
-      <Route path="/scheduling" component={() => <ProfessionalLayout><Scheduling /></ProfessionalLayout>} />
-      <Route path="/patrol-reports" component={() => <ProfessionalLayout><PatrolReports /></ProfessionalLayout>} />
-      <Route path="/hawaii-law" component={() => <ProfessionalLayout><HawaiiLaw /></ProfessionalLayout>} />
-      <Route path="/advanced-analytics" component={() => <ProfessionalLayout><AdvancedAnalytics /></ProfessionalLayout>} />
-      <Route path="/security-compliance" component={() => <ProfessionalLayout><SecurityCompliance /></ProfessionalLayout>} />
-      <Route path="/real-time-operations" component={() => <ProfessionalLayout><RealTimeOperations /></ProfessionalLayout>} />
-      <Route path="/ai-automation" component={() => <ProfessionalLayout><AIAutomation /></ProfessionalLayout>} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<PageLoader />}>
+      <Switch>
+        <Route path="/" component={() => <ProfessionalLayout><Dashboard /></ProfessionalLayout>} />
+        <Route path="/dashboard" component={() => <ProfessionalLayout><Dashboard /></ProfessionalLayout>} />
+        <Route path="/staff" component={() => <ProfessionalLayout><Staff /></ProfessionalLayout>} />
+        <Route path="/clients" component={() => <ProfessionalLayout><Clients /></ProfessionalLayout>} />
+        <Route path="/properties" component={() => <ProfessionalLayout><Properties /></ProfessionalLayout>} />
+        <Route path="/reports" component={() => <ProfessionalLayout><Reports /></ProfessionalLayout>} />
+        <Route path="/crime-intelligence" component={() => <ProfessionalLayout><CrimeIntelligence /></ProfessionalLayout>} />
+        <Route path="/law-reference" component={() => <ProfessionalLayout><LawReference /></ProfessionalLayout>} />
+        <Route path="/community-outreach" component={() => <ProfessionalLayout><CommunityOutreach /></ProfessionalLayout>} />
+        <Route path="/accounting" component={() => <ProfessionalLayout><Accounting /></ProfessionalLayout>} />
+        <Route path="/staff-management" component={() => <ProfessionalLayout><StaffManagement /></ProfessionalLayout>} />
+        <Route path="/scheduling" component={() => <ProfessionalLayout><Scheduling /></ProfessionalLayout>} />
+        <Route path="/patrol-reports" component={() => <ProfessionalLayout><PatrolReports /></ProfessionalLayout>} />
+        <Route path="/hawaii-law" component={() => <ProfessionalLayout><HawaiiLaw /></ProfessionalLayout>} />
+        <Route path="/advanced-analytics" component={() => <ProfessionalLayout><AdvancedAnalytics /></ProfessionalLayout>} />
+        <Route path="/security-compliance" component={() => <ProfessionalLayout><SecurityCompliance /></ProfessionalLayout>} />
+        <Route path="/real-time-operations" component={() => <ProfessionalLayout><RealTimeOperations /></ProfessionalLayout>} />
+        <Route path="/ai-automation" component={() => <ProfessionalLayout><AIAutomation /></ProfessionalLayout>} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
