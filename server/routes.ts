@@ -208,8 +208,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const jwtSecret = process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET || process.env.SESSION_SECRET || 'your-super-secret-key';
       
       const jwt = await import('jsonwebtoken');
-      const user = jwt.default.verify(token, jwtSecret);
-      res.json({ authenticated: true, user });
+      try {
+        const decoded = jwt.default.verify(token, jwtSecret) as any;
+        const user = await storage.getUserById(decoded.userId || decoded.id);
+        
+        if (!user) {
+          return res.json({ authenticated: false });
+        }
+
+        res.json({ 
+          authenticated: true, 
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role
+          }
+        });
+      } catch (jwtError) {
+        console.error('JWT verification failed:', jwtError);
+        res.json({ authenticated: false });
+      }
     } catch (error) {
       console.error('❌ Auth status error:', error);
       res.setHeader('Content-Type', 'application/json');

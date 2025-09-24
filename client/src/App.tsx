@@ -37,15 +37,22 @@ function AppContent() {
     const autoLogin = async () => {
       if (!isAuthenticated && !isLoading && !localStorage.getItem('auth_token')) {
         console.log('🔐 Auto-logging in with default admin credentials...');
-        await login('STREETPATROL808', 'Password3211');
+        try {
+          await login('STREETPATROL808', 'Password3211');
+        } catch (error) {
+          console.error('Auto-login failed:', error);
+        }
       }
     };
 
-    autoLogin();
+    // Only run auto-login after initial auth check
+    if (!isLoading) {
+      autoLogin();
+    }
   }, [isAuthenticated, isLoading, login]);
 
-  // Show loading while auto-login is in progress
-  if (isLoading || (!isAuthenticated && !localStorage.getItem('auth_token'))) {
+  // Show loading while authentication is being checked
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-center">

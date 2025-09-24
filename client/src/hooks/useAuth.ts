@@ -79,11 +79,14 @@ export function useAuth() {
     try {
       console.log('Checking authentication status...');
       setIsCheckingAuth(true);
+      setIsLoading(true);
       const token = localStorage.getItem('auth_token');
 
       if (!token) {
         setUser(null);
         setError(null);
+        setIsAuthenticated(false);
+        setIsLoading(false);
         return;
       }
 
