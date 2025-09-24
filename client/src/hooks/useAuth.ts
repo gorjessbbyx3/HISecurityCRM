@@ -71,7 +71,7 @@ export function useAuth() {
 
 
   const checkAuthStatus = useCallback(async () => {
-    if (isLoading) return; // Prevent multiple concurrent checks
+    if (authState.isLoading) return; // Prevent multiple concurrent checks
 
     console.log('Checking authentication status...');
     setIsLoading(true);
