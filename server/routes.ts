@@ -24,10 +24,6 @@ import {
   createScheduleInputSchema,
   insertScheduleSchema,
   updateScheduleInputSchema,
-  updateScheduleSchema,
-  createShiftTemplateInputSchema,
-  insertShiftTemplateSchema,
-  updateShiftTemplateInputSchema,
   scheduleConflictCheckSchema,
   staffAvailabilityCheckSchema,
   applyShiftTemplateSchema,
@@ -247,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/analytics/heatmap', authenticateToken, async (req, res) => {
     try {
       const { days = 30 } = req.query;
-      
+
       // Mock heat map data
       const heatMapData = [
         { location: "Waikiki Beach", incidents: 45, patrolCoverage: 85, riskScore: 7.2, coordinates: { lat: 21.2793, lng: -157.8311 } },
@@ -267,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/analytics/performance', authenticateToken, async (req, res) => {
     try {
       const { days = 30 } = req.query;
-      
+
       // Mock performance metrics
       const performanceData = [
         { officerId: "OFF001", name: "John Smith", responseTime: 7.2, incidentsHandled: 28, patrolEfficiency: 94, clientSatisfaction: 96, hoursWorked: 168, overtimeHours: 8, kpiScore: 92 },
@@ -328,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { days = 7, action, search } = req.query;
-      
+
       // Mock audit log data
       const auditLogs = [
         {
@@ -2845,6 +2841,347 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Apply shift template to create schedules
+  app.post('/api/shift-templates/:id/apply', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const applicationData = applyShiftTemplateSchema.parse({
+        ...req.body,
+        templateId: id
+      });
+
+      const schedules = await storage.applyShiftTemplate(
+        applicationData.templateId,
+        applicationData.startDate,
+        applicationData.endDate,
+        applicationData.staffId
+      );
+
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "template_applied",
+        entityType: "shift_template",
+        entityId: id,
+        description: `Applied shift template to create ${schedules.length} schedules`,
+        metadata: {
+          templateId: id,
+          staffId: applicationData.staffId,
+          schedulesCreated: schedules.length
+        }
+      });
+
+      res.json({ 
+        message: `Successfully created ${schedules.length} schedules from template`,
+        schedules 
+      });
+    } catch (error) {
+      console.error("Error applying shift template:", error);
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: (error as any).errors 
+        });
+      }
+      if (error instanceof Error && error.message?.includes('not found')) {
+        return res.status(404).json({ message: "Shift template not found" });
+      }
+      res.status(500).json({ message: "Failed to apply shift template" });
+    }
+  });
+
+  // Real-time operations endpoints
+  app.get('/api/incidents/live', authenticateToken, async (req, res) => {
+    try {
+      // Mock live incidents data
+      const liveIncidents = [
+        {
+          id: "live-001",
+          type: "Theft",
+          description: "Reported vehicle break-in at parking structure level 3",
+          location: "Ala Moana Center Parking",
+          coordinates: { lat: 21.2911, lng: -157.8420 },
+          severity: "medium",
+          timestamp: new Date(Date.now() - 300000).toISOString(),
+          reportedBy: "Security Camera AI",
+          status: "active",
+          assignedOfficer: "Officer Johnson",
+          estimatedResponseTime: 8
+        },
+        {
+          id: "live-002",
+          type: "Trespassing",
+          description: "Unauthorized person detected on property after hours",
+          location: "Diamond Head Property",
+          coordinates: { lat: 21.2620, lng: -157.8055 },
+          severity: "high",
+          timestamp: new Date(Date.now() - 600000).toISOString(),
+          reportedBy: "Motion Sensor",
+          status: "investigating",
+          assignedOfficer: "Officer Chen",
+          estimatedResponseTime: 5
+        }
+      ];
+      res.json(liveIncidents);
+    } catch (error) {
+      console.error("Error fetching live incidents:", error);
+      res.status(500).json({ message: "Failed to fetch live incidents" });
+    }
+  });
+
+  app.get('/api/officers/locations', authenticateToken, async (req, res) => {
+    try {
+      // Mock officer location data
+      const officerLocations = [
+        {
+          id: "off-001",
+          name: "Officer Smith",
+          coordinates: { lat: 21.3099, lng: -157.8581 },
+          status: "on_patrol",
+          lastUpdate: new Date(Date.now() - 60000).toISOString(),
+          currentProperty: "Downtown Business District",
+          speed: 25,
+          heading: 45,
+          batteryLevel: 87,
+          signalStrength: 4
+        },
+        {
+          id: "off-002",
+          name: "Officer Johnson",
+          coordinates: { lat: 21.2911, lng: -157.8420 },
+          status: "responding",
+          lastUpdate: new Date(Date.now() - 30000).toISOString(),
+          currentProperty: "Ala Moana Center",
+          speed: 0,
+          heading: 180,
+          batteryLevel: 92,
+          signalStrength: 5
+        }
+      ];
+      res.json(officerLocations);
+    } catch (error) {
+      console.error("Error fetching officer locations:", error);
+      res.status(500).json({ message: "Failed to fetch officer locations" });
+    }
+  });
+
+  app.get('/api/voice-reports', authenticateToken, async (req, res) => {
+    try {
+      // Mock voice reports data
+      const voiceReports = [
+        {
+          id: "voice-001",
+          audioUrl: "/audio/report-001.wav",
+          transcript: "Patrol report for Waikiki Beach area. Everything appears normal. No incidents to report. Continuing routine patrol.",
+          confidence: 0.94,
+          duration: 15,
+          timestamp: new Date(Date.now() - 1800000).toISOString(),
+          officerId: "off-001",
+          status: "completed"
+        },
+        {
+          id: "voice-002",
+          audioUrl: "/audio/report-002.wav",
+          transcript: "Investigating suspicious activity near parking structure. Individual appears to be checking car door handles. Requesting backup.",
+          confidence: 0.87,
+          duration: 23,
+          timestamp: new Date(Date.now() - 900000).toISOString(),
+          officerId: "off-002",
+          incidentId: "live-001",
+          status: "completed"
+        }
+      ];
+      res.json(voiceReports);
+    } catch (error) {
+      console.error("Error fetching voice reports:", error);
+      res.status(500).json({ message: "Failed to fetch voice reports" });
+    }
+  });
+
+  app.post('/api/voice-reports', authenticateToken, async (req, res) => {
+    try {
+      // In production, this would process the audio file and transcribe it
+      const { timestamp } = req.body;
+      const voiceReport = {
+        id: `voice-${Date.now()}`,
+        timestamp,
+        officerId: req.user?.id,
+        status: "transcribing"
+      };
+      res.status(201).json(voiceReport);
+    } catch (error) {
+      console.error("Error creating voice report:", error);
+      res.status(500).json({ message: "Failed to create voice report" });
+    }
+  });
+
+  app.get('/api/photo-evidence', authenticateToken, async (req, res) => {
+    try {
+      // Mock photo evidence data
+      const photoEvidence = [
+        {
+          id: "photo-001",
+          imageUrl: "/evidence/photo-001.jpg",
+          thumbnail: "/evidence/thumb-001.jpg",
+          coordinates: { lat: 21.2911, lng: -157.8420 },
+          timestamp: new Date(Date.now() - 1200000).toISOString(),
+          officerId: "off-001",
+          incidentId: "live-001",
+          description: "Vehicle with broken window - evidence of break-in",
+          uploadStatus: "completed"
+        },
+        {
+          id: "photo-002",
+          imageUrl: "/evidence/photo-002.jpg",
+          thumbnail: "/evidence/thumb-002.jpg",
+          coordinates: { lat: 21.2620, lng: -157.8055 },
+          timestamp: new Date(Date.now() - 600000).toISOString(),
+          officerId: "off-002",
+          description: "Suspicious individual near property entrance",
+          uploadStatus: "completed"
+        }
+      ];
+      res.json(photoEvidence);
+    } catch (error) {
+      console.error("Error fetching photo evidence:", error);
+      res.status(500).json({ message: "Failed to fetch photo evidence" });
+    }
+  });
+
+  app.post('/api/photo-evidence', authenticateToken, async (req, res) => {
+    try {
+      // In production, this would save the photo and extract GPS data
+      const { coordinates, timestamp } = req.body;
+      const photoEvidence = {
+        id: `photo-${Date.now()}`,
+        coordinates: JSON.parse(coordinates),
+        timestamp,
+        officerId: req.user?.id,
+        uploadStatus: "uploading"
+      };
+      res.status(201).json(photoEvidence);
+    } catch (error) {
+      console.error("Error creating photo evidence:", error);
+      res.status(500).json({ message: "Failed to create photo evidence" });
+    }
+  });
+
+  // AI automation endpoints
+  app.get('/api/ai/predictive-analytics', authenticateToken, async (req, res) => {
+    try {
+      const { days = 7 } = req.query;
+      // Mock predictive analytics data
+      const analytics = [
+        {
+          id: "pred-001",
+          type: "crime_pattern",
+          title: "Vehicle Break-in Pattern Detected",
+          confidence: 87,
+          impact: "high",
+          timeframe: "Next 48 hours",
+          location: "Downtown Parking District",
+          findings: [
+            "Increased incidents during lunch hours (11AM-2PM)",
+            "Targeting vehicles with visible electronics",
+            "Pattern consistent with previous holiday periods"
+          ],
+          recommendations: [
+            "Increase patrol frequency in identified hotspots",
+            "Deploy undercover units during peak times",
+            "Issue public awareness alerts about vehicle security"
+          ],
+          generatedAt: new Date().toISOString(),
+          status: "monitoring"
+        }
+      ];
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching predictive analytics:", error);
+      res.status(500).json({ message: "Failed to fetch predictive analytics" });
+    }
+  });
+
+  app.get('/api/ai/smart-alerts', authenticateToken, async (req, res) => {
+    try {
+      // Mock smart alerts data
+      const alerts = [
+        {
+          id: "alert-001",
+          type: "anomaly_detected",
+          title: "Unusual Activity Pattern",
+          description: "AI detected 40% increase in trespassing incidents at Waikiki Beach area compared to historical average",
+          severity: "warning",
+          confidence: 82,
+          location: "Waikiki Beach",
+          timestamp: new Date(Date.now() - 1800000).toISOString(),
+          aiModel: "Pattern Recognition v2.1",
+          actionRequired: true,
+          relatedIncidents: ["INC-2024-0891", "INC-2024-0892"]
+        }
+      ];
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching smart alerts:", error);
+      res.status(500).json({ message: "Failed to fetch smart alerts" });
+    }
+  });
+
+  app.get('/api/ai/automated-schedules', authenticateToken, async (req, res) => {
+    try {
+      // Mock automated schedules data
+      const schedules = [
+        {
+          id: "sched-001",
+          title: "Optimized Weekend Patrol Schedule",
+          type: "patrol_optimization",
+          scheduleDate: "2024-02-03",
+          optimizationScore: 94,
+          staffEfficiency: 87,
+          coverageImprovement: 23,
+          costSavings: 1250,
+          generatedBy: "ai_scheduler",
+          status: "proposed",
+          affectedStaff: 12,
+          affectedProperties: 8
+        }
+      ];
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching automated schedules:", error);
+      res.status(500).json({ message: "Failed to fetch automated schedules" });
+    }
+  });
+
+  app.get('/api/ai/risk-assessments', authenticateToken, async (req, res) => {
+    try {
+      // Mock risk assessments data
+      const assessments = [
+        {
+          propertyId: "prop-001",
+          propertyName: "Waikiki Beach Resort",
+          currentRiskScore: 7.2,
+          previousRiskScore: 6.8,
+          riskTrend: "increasing",
+          riskFactors: [
+            { factor: "High foot traffic", impact: 0.8, confidence: 92 },
+            { factor: "Recent incidents", impact: 0.6, confidence: 87 },
+            { factor: "Limited lighting", impact: 0.4, confidence: 78 }
+          ],
+          lastUpdated: new Date(Date.now() - 7200000).toISOString(),
+          nextAssessment: new Date(Date.now() + 86400000).toISOString(),
+          recommendedActions: [
+            "Increase evening patrol frequency",
+            "Install additional lighting",
+            "Review security camera coverage"
+          ]
+        }
+      ];
+      res.json(assessments);
+    } catch (error) {
+      console.error("Error fetching risk assessments:", error);
+      res.status(500).json({ message: "Failed to fetch risk assessments" });
+    }
+  });
+
+  // Generate recurring schedules endpoint
   app.post('/api/shift-templates/:id/apply', authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;

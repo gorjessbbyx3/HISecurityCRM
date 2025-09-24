@@ -25,6 +25,9 @@ import HawaiiLaw from "@/pages/hawaii-law";
 import NotFound from "@/pages/not-found";
 import AdvancedAnalytics from "@/pages/advanced-analytics";
 import SecurityCompliance from "@/pages/security-compliance";
+import RealTimeOperations from "./pages/real-time-operations";
+import AIAutomation from "./pages/ai-automation";
+
 
 function AppContent() {
   const { isAuthenticated, isLoading, login } = useAuth();
@@ -78,6 +81,8 @@ function AppContent() {
       <Route path="/hawaii-law" component={() => <ProfessionalLayout><HawaiiLaw /></ProfessionalLayout>} />
       <Route path="/advanced-analytics" component={() => <ProfessionalLayout><AdvancedAnalytics /></ProfessionalLayout>} />
       <Route path="/security-compliance" component={() => <ProfessionalLayout><SecurityCompliance /></ProfessionalLayout>} />
+      <Route path="/real-time-operations" component={() => <ProfessionalLayout><RealTimeOperations /></ProfessionalLayout>} />
+      <Route path="/ai-automation" component={() => <ProfessionalLayout><AIAutomation /></ProfessionalLayout>} />
       <Route component={NotFound} />
     </Switch>
   );
