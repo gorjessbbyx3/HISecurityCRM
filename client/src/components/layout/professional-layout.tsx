@@ -90,7 +90,7 @@ export default function ProfessionalLayout({ children }: ProfessionalLayoutProps
             </div>
             {!sidebarCollapsed && (
               <div>
-                <h1 className="text-lg font-bold text-white">TRACKTIK</h1>
+                <h1 className="text-lg font-bold text-white">STREET PATROL</h1>
                 <p className="text-xs text-slate-400">Security Management</p>
               </div>
             )}
