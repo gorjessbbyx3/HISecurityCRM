@@ -124,7 +124,7 @@ export function useAuth() {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading]);
+  }, []);
 
   const login = async (username: string, password: string) => {
     console.log('🔐 Attempting login for:', username);
