@@ -243,6 +243,228 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   });
 
+  // Advanced Analytics endpoints
+  app.get('/api/analytics/heatmap', authenticateToken, async (req, res) => {
+    try {
+      const { days = 30 } = req.query;
+      
+      // Mock heat map data
+      const heatMapData = [
+        { location: "Waikiki Beach", incidents: 45, patrolCoverage: 85, riskScore: 7.2, coordinates: { lat: 21.2793, lng: -157.8311 } },
+        { location: "Downtown Honolulu", incidents: 32, patrolCoverage: 92, riskScore: 6.1, coordinates: { lat: 21.3099, lng: -157.8581 } },
+        { location: "Ala Moana", incidents: 28, patrolCoverage: 78, riskScore: 5.8, coordinates: { lat: 21.2911, lng: -157.8420 } },
+        { location: "Pearl Harbor", incidents: 15, patrolCoverage: 95, riskScore: 3.2, coordinates: { lat: 21.3731, lng: -157.9519 } },
+        { location: "Diamond Head", incidents: 22, patrolCoverage: 70, riskScore: 4.9, coordinates: { lat: 21.2620, lng: -157.8055 } },
+      ];
+
+      res.json(heatMapData);
+    } catch (error) {
+      console.error("Error fetching heat map data:", error);
+      res.status(500).json({ message: "Failed to fetch heat map data" });
+    }
+  });
+
+  app.get('/api/analytics/performance', authenticateToken, async (req, res) => {
+    try {
+      const { days = 30 } = req.query;
+      
+      // Mock performance metrics
+      const performanceData = [
+        { officerId: "OFF001", name: "John Smith", responseTime: 7.2, incidentsHandled: 28, patrolEfficiency: 94, clientSatisfaction: 96, hoursWorked: 168, overtimeHours: 8, kpiScore: 92 },
+        { officerId: "OFF002", name: "Sarah Johnson", responseTime: 8.1, incidentsHandled: 24, patrolEfficiency: 89, clientSatisfaction: 94, hoursWorked: 160, overtimeHours: 4, kpiScore: 88 },
+        { officerId: "OFF003", name: "Mike Wilson", responseTime: 6.8, incidentsHandled: 31, patrolEfficiency: 96, clientSatisfaction: 98, hoursWorked: 172, overtimeHours: 12, kpiScore: 95 },
+        { officerId: "OFF004", name: "Lisa Chen", responseTime: 9.2, incidentsHandled: 19, patrolEfficiency: 85, clientSatisfaction: 91, hoursWorked: 156, overtimeHours: 2, kpiScore: 84 },
+      ];
+
+      res.json(performanceData);
+    } catch (error) {
+      console.error("Error fetching performance metrics:", error);
+      res.status(500).json({ message: "Failed to fetch performance metrics" });
+    }
+  });
+
+  app.get('/api/analytics/trends', authenticateToken, async (req, res) => {
+    try {
+      // Mock trend analysis data
+      const trendData = [
+        { month: "Jan", year: 2024, incidents: 145, crimeTypes: { theft: 45, vandalism: 32, trespassing: 28, assault: 15, other: 25 }, seasonalIndex: 0.8, weatherFactor: 0.9 },
+        { month: "Feb", year: 2024, incidents: 132, crimeTypes: { theft: 42, vandalism: 28, trespassing: 25, assault: 12, other: 25 }, seasonalIndex: 0.8, weatherFactor: 0.85 },
+        { month: "Mar", year: 2024, incidents: 158, crimeTypes: { theft: 52, vandalism: 35, trespassing: 31, assault: 18, other: 22 }, seasonalIndex: 1.0, weatherFactor: 0.95 },
+        { month: "Apr", year: 2024, incidents: 142, crimeTypes: { theft: 48, vandalism: 30, trespassing: 28, assault: 16, other: 20 }, seasonalIndex: 1.1, weatherFactor: 1.0 },
+        { month: "May", year: 2024, incidents: 136, crimeTypes: { theft: 45, vandalism: 28, trespassing: 26, assault: 14, other: 23 }, seasonalIndex: 1.2, weatherFactor: 1.1 },
+        { month: "Jun", year: 2024, incidents: 165, crimeTypes: { theft: 58, vandalism: 38, trespassing: 32, assault: 20, other: 17 }, seasonalIndex: 1.3, weatherFactor: 1.2 },
+      ];
+
+      res.json(trendData);
+    } catch (error) {
+      console.error("Error fetching trend data:", error);
+      res.status(500).json({ message: "Failed to fetch trend data" });
+    }
+  });
+
+  app.get('/api/analytics/cost-analysis', authenticateToken, async (req, res) => {
+    try {
+      // Mock cost analysis data
+      const costData = [
+        { category: "Patrol Operations", investment: 450000, roi: 2.3, costPerIncident: 285, savings: 125000, efficiency: 87 },
+        { category: "Technology Systems", investment: 180000, roi: 3.1, costPerIncident: 115, savings: 95000, efficiency: 92 },
+        { category: "Training Programs", investment: 75000, roi: 4.2, costPerIncident: 48, savings: 65000, efficiency: 95 },
+        { category: "Equipment & Vehicles", investment: 320000, roi: 1.8, costPerIncident: 205, savings: 85000, efficiency: 82 },
+        { category: "Personnel", investment: 1200000, roi: 2.7, costPerIncident: 765, savings: 280000, efficiency: 89 },
+      ];
+
+      res.json(costData);
+    } catch (error) {
+      console.error("Error fetching cost analysis:", error);
+      res.status(500).json({ message: "Failed to fetch cost analysis" });
+    }
+  });
+
+  // Security & Compliance endpoints
+  app.get('/api/security/audit-logs', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user || !['admin', 'supervisor'].includes(req.user.role)) {
+        return res.status(403).json({ message: 'Admin or supervisor access required' });
+      }
+
+      const { days = 7, action, search } = req.query;
+      
+      // Mock audit log data
+      const auditLogs = [
+        {
+          id: "1",
+          timestamp: new Date(),
+          userId: "admin-001",
+          userName: "Admin User",
+          action: "LOGIN",
+          resource: "Authentication System",
+          details: "Successful admin login",
+          ipAddress: "192.168.1.100",
+          userAgent: "Mozilla/5.0...",
+          riskLevel: "low",
+          status: "success"
+        },
+        {
+          id: "2",
+          timestamp: new Date(Date.now() - 300000),
+          userId: "off-002",
+          userName: "John Smith",
+          action: "EVIDENCE_ACCESS",
+          resource: "Evidence ID: EV-2024-001",
+          details: "Accessed confidential evidence file",
+          ipAddress: "192.168.1.105",
+          userAgent: "Mozilla/5.0...",
+          riskLevel: "medium",
+          status: "success"
+        },
+        {
+          id: "3",
+          timestamp: new Date(Date.now() - 600000),
+          userId: "unknown",
+          userName: "Unknown User",
+          action: "LOGIN_ATTEMPT",
+          resource: "Authentication System",
+          details: "Failed login attempt - invalid credentials",
+          ipAddress: "203.45.67.89",
+          userAgent: "Bot/1.0",
+          riskLevel: "high",
+          status: "blocked"
+        }
+      ];
+
+      // Apply filters
+      let filteredLogs = auditLogs;
+      if (action && action !== 'all') {
+        filteredLogs = filteredLogs.filter(log => log.action === action);
+      }
+      if (search) {
+        filteredLogs = filteredLogs.filter(log => 
+          log.details.toLowerCase().includes(search.toString().toLowerCase()) ||
+          log.userName.toLowerCase().includes(search.toString().toLowerCase())
+        );
+      }
+
+      res.json(filteredLogs);
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      res.status(500).json({ message: "Failed to fetch audit logs" });
+    }
+  });
+
+  app.get('/api/security/compliance-reports', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user || !['admin', 'supervisor'].includes(req.user.role)) {
+        return res.status(403).json({ message: 'Admin or supervisor access required' });
+      }
+
+      // Mock compliance reports
+      const reports = [
+        {
+          id: "1",
+          type: "SOX Compliance",
+          period: "Q4 2024",
+          status: "completed",
+          lastGenerated: new Date(Date.now() - 86400000),
+          nextDue: new Date(Date.now() + 86400000 * 90),
+          complianceScore: 94,
+          findings: ["Minor documentation gaps", "All critical controls functioning"]
+        },
+        {
+          id: "2",
+          type: "GDPR Privacy Audit",
+          period: "December 2024",
+          status: "pending",
+          lastGenerated: new Date(Date.now() - 86400000 * 30),
+          nextDue: new Date(Date.now() + 86400000 * 7),
+          complianceScore: 87,
+          findings: ["Data retention policy needs review", "Consent management operational"]
+        }
+      ];
+
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching compliance reports:", error);
+      res.status(500).json({ message: "Failed to fetch compliance reports" });
+    }
+  });
+
+  app.get('/api/security/policies', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user || !['admin', 'supervisor'].includes(req.user.role)) {
+        return res.status(403).json({ message: 'Admin or supervisor access required' });
+      }
+
+      // Mock security policies
+      const policies = [
+        {
+          id: "1",
+          name: "Access Control Policy",
+          category: "Authentication",
+          status: "active",
+          lastReviewed: new Date(Date.now() - 86400000 * 30),
+          nextReview: new Date(Date.now() + 86400000 * 335),
+          riskLevel: "High",
+          description: "Defines user access levels and authentication requirements"
+        },
+        {
+          id: "2",
+          name: "Data Encryption Standard",
+          category: "Data Protection",
+          status: "active",
+          lastReviewed: new Date(Date.now() - 86400000 * 15),
+          nextReview: new Date(Date.now() + 86400000 * 350),
+          riskLevel: "Critical",
+          description: "Encryption requirements for data at rest and in transit"
+        }
+      ];
+
+      res.json(policies);
+    } catch (error) {
+      console.error("Error fetching security policies:", error);
+      res.status(500).json({ message: "Failed to fetch security policies" });
+    }
+  });
+
   // Database initialization route (should be removed in production)
   app.post('/api/admin/seed-database', authenticateToken, async (req, res) => {
     try {

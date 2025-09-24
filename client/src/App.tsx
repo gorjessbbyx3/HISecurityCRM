@@ -23,6 +23,8 @@ import Scheduling from "@/pages/scheduling";
 import PatrolReports from "@/pages/patrol-reports";
 import HawaiiLaw from "@/pages/hawaii-law";
 import NotFound from "@/pages/not-found";
+import AdvancedAnalytics from "@/pages/advanced-analytics";
+import SecurityCompliance from "@/pages/security-compliance";
 
 function AppContent() {
   const { isAuthenticated, isLoading, login } = useAuth();
@@ -74,6 +76,8 @@ function AppContent() {
       <Route path="/scheduling" component={() => <ProfessionalLayout><Scheduling /></ProfessionalLayout>} />
       <Route path="/patrol-reports" component={() => <ProfessionalLayout><PatrolReports /></ProfessionalLayout>} />
       <Route path="/hawaii-law" component={() => <ProfessionalLayout><HawaiiLaw /></ProfessionalLayout>} />
+      <Route path="/advanced-analytics" component={() => <ProfessionalLayout><AdvancedAnalytics /></ProfessionalLayout>} />
+      <Route path="/security-compliance" component={() => <ProfessionalLayout><SecurityCompliance /></ProfessionalLayout>} />
       <Route component={NotFound} />
     </Switch>
   );
