@@ -3,30 +3,15 @@ import { QueryClient } from "@tanstack/react-query";
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: async ({ queryKey }) => {
-        const url = queryKey[0] as string;
-        const token = localStorage.getItem('auth_token');
-        const res = await fetch(url, {
-          headers: {
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-        });
-        
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`${res.status}: ${errorText}`);
-        }
-        
-        return res.json();
-      },
-      retry: (failureCount, error) => {
-        // Don't retry on 401 errors
-        if (error.message.includes('401')) {
-          return false;
-        }
-        return failureCount < 3;
-      },
+      retry: 2,
+      staleTime: 1000 * 15, // 15 seconds
+      cacheTime: 1000 * 60, // 1 minute
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      refetchInterval: false,
+    },
+    mutations: {
+      retry: 1,
     },
   },
 });
@@ -50,7 +35,7 @@ export async function apiRequest(url: string, options: RequestInit = {}) {
   };
 
   const response = await fetch(url, mergedOptions);
-  
+
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`${response.status}: ${errorText}`);

@@ -1,51 +1,26 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { useState, useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertTriangle,
   Shield,
   Users,
   MapPin,
   Clock,
-  TrendingUp,
-  TrendingDown,
   Activity,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Eye,
-  Camera,
-  PhoneCall,
-  Car,
-  FileText,
-  DollarSign,
-  Calendar,
-  BarChart3,
-  PieChart,
-  Target,
-  Zap,
-  ShieldCheck,
-  Radio,
-  Navigation,
-  Headphones,
-  Timer,
-  Building2,
-  UserCheck,
-  FileCheck,
   AlertOctagon,
   Siren,
-  Globe,
-  Wifi,
-  Battery,
-  Signal,
-  Gauge,
-  ArrowUpRight,
-  ArrowDownRight,
-  Home,
+  Radio,
+  UserCheck,
+  Building2,
+  PhoneCall,
+  Calendar,
+  FileCheck,
+  DollarSign,
   Plus
 } from "lucide-react";
 import { Link } from "wouter";
@@ -103,27 +78,35 @@ interface Activity {
   metadata?: any;
 }
 
-export default function UltimateDashboard() {
-  const [selectedTimeRange, setSelectedTimeRange] = useState("24h");
-  const [refreshInterval, setRefreshInterval] = useState(30000);
+// Memoized stat card component
+const StatCard = ({ title, value, icon: Icon, color, href, testId }: {
+  title: string;
+  value: number;
+  icon: any;
+  color: string;
+  href: string;
+  testId: string;
+}) => (
+  <Card className="bg-slate-800 border-slate-600 hover:border-blue-500 transition-all duration-200">
+    <CardContent className="p-3">
+      <div className="flex items-center justify-between mb-2">
+        <Icon className={`w-5 h-5 ${color}`} />
+        <div className={`text-xl font-bold ${color}`} data-testid={testId}>
+          {value}
+        </div>
+      </div>
+      <h3 className="text-xs font-bold text-white mb-2">{title}</h3>
+      <Link href={href}>
+        <Button className="w-full h-7 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold">
+          MANAGE
+        </Button>
+      </Link>
+    </CardContent>
+  </Card>
+);
 
-  const queryClient = useQueryClient();
-
-  // Fetch dashboard statistics
-  const { data: stats, isLoading, error } = useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard/stats", selectedTimeRange],
-    refetchInterval: refreshInterval,
-  });
-
-  // Real-time updates via WebSocket simulation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-    }, refreshInterval);
-
-    return () => clearInterval(interval);
-  }, [refreshInterval, queryClient]);
-
+// Memoized system status component
+const SystemStatusGrid = ({ systemStatus }: { systemStatus?: SystemStatus }) => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'online':
@@ -131,54 +114,116 @@ export default function UltimateDashboard() {
       case 'active':
       case 'operational':
       case 'ready':
-        return 'text-green-400 bg-green-500/20 border-green-500/50';
+        return 'bg-green-500';
       case 'degraded':
       case 'slow':
       case 'limited':
       case 'impaired':
       case 'testing':
-        return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/50';
-      case 'offline':
-      case 'disconnected':
-      case 'down':
-      case 'unavailable':
-        return 'text-red-400 bg-red-500/20 border-red-500/50';
+        return 'bg-yellow-500';
       default:
-        return 'text-slate-400 bg-slate-500/20 border-slate-500/50';
+        return 'bg-red-500';
     }
   };
 
-  const getAlertColor = (type: string) => {
-    switch (type) {
-      case 'critical': return 'border-red-500/50 bg-red-500/10 text-red-300';
-      case 'high': return 'border-orange-500/50 bg-orange-500/10 text-orange-300';
-      case 'medium': return 'border-yellow-500/50 bg-yellow-500/10 text-yellow-300';
-      case 'low': return 'border-blue-500/50 bg-blue-500/10 text-blue-300';
-      default: return 'border-slate-500/50 bg-slate-500/10 text-slate-300';
-    }
-  };
+  if (!systemStatus) return null;
 
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+      {Object.entries(systemStatus).map(([system, status]) => (
+        <Card key={system} className="bg-slate-800 border-slate-600 p-2">
+          <CardContent className="text-center p-1">
+            <div className={`w-3 h-3 rounded-full mx-auto mb-1 ${getStatusColor(status)} animate-pulse`} />
+            <h3 className="text-xs font-bold text-white mb-1 uppercase">{system}</h3>
+            <div className="text-xs font-bold text-slate-300">
+              {status.toUpperCase()}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+export default function UltimateDashboard() {
+  const [refreshInterval] = useState(30000); // Fixed refresh interval
+  const queryClient = useQueryClient();
+
+  // Fetch dashboard statistics with optimized caching
+  const { data: stats, isLoading, error } = useQuery<DashboardStats>({
+    queryKey: ["/api/dashboard/stats"],
+    refetchInterval: refreshInterval,
+    staleTime: 15000, // Consider data fresh for 15 seconds
+    cacheTime: 60000, // Keep in cache for 1 minute
+  });
+
+  // Auto-refresh effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+    }, refreshInterval);
+    return () => clearInterval(interval);
+  }, [refreshInterval, queryClient]);
+
+  // Memoized stat cards to prevent unnecessary re-renders
+  const statCards = useMemo(() => [
+    {
+      title: "ACTIVE PATROLS",
+      value: stats?.activePatrols || 0,
+      icon: Radio,
+      color: "text-blue-400",
+      href: "/patrol-reports",
+      testId: "stat-active-patrols"
+    },
+    {
+      title: "STAFF ON DUTY",
+      value: stats?.onDutyStaff || 0,
+      icon: UserCheck,
+      color: "text-green-400",
+      href: "/staff",
+      testId: "stat-on-duty-staff"
+    },
+    {
+      title: "OPEN INCIDENTS",
+      value: stats?.openIncidents || 0,
+      icon: AlertTriangle,
+      color: "text-orange-400",
+      href: "/reports",
+      testId: "stat-open-incidents"
+    },
+    {
+      title: "PROPERTIES",
+      value: stats?.activeProperties || 0,
+      icon: Building2,
+      color: "text-purple-400",
+      href: "/properties",
+      testId: "stat-active-properties"
+    }
+  ], [stats]);
+
+  // Loading state
   if (isLoading) {
     return (
-      <div className="p-8 space-y-8 bg-slate-950 min-h-screen">
-        <div className="text-center py-20">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
           <div className="w-16 h-16 bg-blue-500 rounded-full mx-auto mb-6 animate-pulse"></div>
-          <h2 className="text-3xl font-bold text-white mb-4">Loading Dashboard...</h2>
-          <p className="text-xl text-slate-400">Please wait while we gather your security data</p>
+          <h2 className="text-2xl font-bold text-white mb-4">Loading Dashboard...</h2>
+          <p className="text-slate-400">Gathering security data...</p>
         </div>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="p-8 bg-slate-950 min-h-screen">
-        <div className="max-w-2xl mx-auto text-center py-20">
-          <AlertTriangle className="w-20 h-20 text-red-400 mx-auto mb-8" />
-          <h2 className="text-4xl font-bold text-red-400 mb-6">System Error</h2>
-          <p className="text-xl text-slate-400 mb-8">Unable to load dashboard data. Please refresh the page or contact support.</p>
-          <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg">
-            <Activity className="w-6 h-6 mr-3" />
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-6" />
+          <h2 className="text-2xl font-bold text-red-400 mb-4">System Error</h2>
+          <p className="text-slate-400 mb-6">Unable to load dashboard data.</p>
+          <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
+            <Activity className="w-4 h-4 mr-2" />
             Refresh Dashboard
           </Button>
         </div>
@@ -187,76 +232,56 @@ export default function UltimateDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-2">
-      <div className="max-w-7xl mx-auto space-y-2">
-        {/* Modern Street Patrol Header */}
-        <div className="mb-4 bg-gradient-to-r from-slate-900/90 via-blue-900/30 to-indigo-900/20 rounded-xl border border-blue-500/20 p-4 backdrop-blur-sm">
-          <div className="flex items-center justify-center gap-4 mb-3">
+    <div className="min-h-screen bg-slate-950 p-3">
+      <div className="max-w-7xl mx-auto space-y-4">
+        {/* Optimized Header */}
+        <div className="bg-gradient-to-r from-slate-900 via-blue-900/30 to-indigo-900/20 rounded-xl border border-blue-500/20 p-4">
+          <div className="flex items-center justify-center gap-4">
             <div className="relative">
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-2xl shadow-blue-500/40 border-2 border-blue-400/30">
-                <Shield className="w-8 h-8 text-white drop-shadow-lg" />
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <Shield className="w-6 h-6 text-white" />
               </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 animate-pulse shadow-lg shadow-green-500/50"></div>
-              <div className="absolute inset-0 w-16 h-16 border border-blue-400/20 rounded-xl animate-pulse"></div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
             </div>
             <div className="text-center">
-              <h1 className="text-2xl font-black text-white tracking-wider mb-1 enterprise-logo">
-                STREET PATROL
-              </h1>
-              <div className="text-sm text-blue-400 font-bold uppercase tracking-widest mb-2">
-                COMMAND CENTER
-              </div>
-              <div className="flex items-center justify-center gap-2 text-xs">
+              <h1 className="text-xl font-black text-white tracking-wider">STREET PATROL</h1>
+              <div className="text-xs text-blue-400 font-bold uppercase tracking-widest">COMMAND CENTER</div>
+              <div className="flex items-center justify-center gap-2 text-xs mt-1">
                 <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-green-400 font-bold">PATROL ACTIVE</span>
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-green-400 font-bold">ACTIVE</span>
                 </div>
                 <div className="px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full">
                   <span className="text-blue-400 font-mono text-xs">
-                    {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}
+                    {format(new Date(), 'MMM dd, HH:mm')}
                   </span>
                 </div>
               </div>
             </div>
           </div>
-          
-          
         </div>
 
-        {/* Emergency Alerts - Top Priority */}
+        {/* Emergency Alerts - Conditional Rendering */}
         {stats?.emergencyAlerts && stats.emergencyAlerts.length > 0 && (
-          <div className="mb-2">
-            <div className="bg-red-600 text-white p-2 rounded-lg mb-2 text-center">
-              <Siren className="w-5 h-5 mx-auto mb-1 animate-pulse" />
-              <h2 className="text-sm font-bold mb-1">EMERGENCY ALERTS</h2>
-              <p className="text-xs">Immediate attention required</p>
+          <div className="bg-red-600 text-white p-3 rounded-lg">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Siren className="w-5 h-5 animate-pulse" />
+              <h2 className="text-sm font-bold">EMERGENCY ALERTS</h2>
             </div>
-
-            <div className="grid gap-2">
-              {stats.emergencyAlerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className={`p-2 rounded-lg border ${getAlertColor(alert.type)}`}
-                >
+            <div className="space-y-2">
+              {stats.emergencyAlerts.slice(0, 2).map((alert) => (
+                <div key={alert.id} className="bg-red-700/50 p-2 rounded border border-red-500/50">
                   <div className="flex items-start gap-2">
-                    <AlertOctagon className="w-5 h-5 flex-shrink-0 animate-pulse" />
+                    <AlertOctagon className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <h3 className="text-sm font-bold mb-1">{alert.title}</h3>
-                      <p className="text-xs mb-1">{alert.description}</p>
+                      <h3 className="text-sm font-bold">{alert.title}</h3>
+                      <p className="text-xs opacity-90">{alert.description}</p>
                       {alert.location && (
-                        <div className="flex items-center gap-1 text-xs mb-1">
+                        <div className="flex items-center gap-1 text-xs mt-1">
                           <MapPin className="w-3 h-3" />
-                          <span className="font-semibold">Location: {alert.location}</span>
+                          <span>{alert.location}</span>
                         </div>
                       )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono">
-                          {format(new Date(alert.timestamp), 'MMM dd, HH:mm:ss')}
-                        </span>
-                        <Badge className="text-xs px-1 py-0 font-bold">
-                          {alert.status.toUpperCase()}
-                        </Badge>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -265,106 +290,39 @@ export default function UltimateDashboard() {
           </div>
         )}
 
-        {/* Key Metrics - Ultra Compact */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
-          {/* Active Patrols */}
-          <Card className="bg-slate-800 border-slate-600 border hover:border-blue-500 transition-all p-1">
-            <CardContent className="text-center p-1">
-              <Radio className="w-5 h-5 text-blue-400 mx-auto mb-1" />
-              <h3 className="text-xs font-bold text-white mb-1">ACTIVE PATROLS</h3>
-              <div className="text-lg font-bold text-blue-400 mb-1" data-testid="stat-active-patrols">
-                {stats?.activePatrols || 0}
-              </div>
-              <p className="text-xs text-slate-300 mb-1">Units Deployed</p>
-              <Link href="/patrol-reports">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-1 text-xs font-bold h-6">
-                  MANAGE
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* Staff Status */}
-          <Card className="bg-slate-800 border-slate-600 border hover:border-green-500 transition-all p-1">
-            <CardContent className="text-center p-1">
-              <UserCheck className="w-5 h-5 text-green-400 mx-auto mb-1" />
-              <h3 className="text-xs font-bold text-white mb-1">STAFF ON DUTY</h3>
-              <div className="text-lg font-bold text-green-400 mb-1" data-testid="stat-on-duty-staff">
-                {stats?.onDutyStaff || 0}
-              </div>
-              <p className="text-xs text-slate-300 mb-1">Officers Available</p>
-              <Link href="/staff">
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-1 text-xs font-bold h-6">
-                  VIEW STAFF
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* Open Incidents */}
-          <Card className="bg-slate-800 border-slate-600 border hover:border-orange-500 transition-all p-1">
-            <CardContent className="text-center p-1">
-              <AlertTriangle className="w-5 h-5 text-orange-400 mx-auto mb-1" />
-              <h3 className="text-xs font-bold text-white mb-1">OPEN INCIDENTS</h3>
-              <div className="text-lg font-bold text-orange-400 mb-1" data-testid="stat-open-incidents">
-                {stats?.openIncidents || 0}
-              </div>
-              <p className="text-xs text-slate-300 mb-1">Active Cases</p>
-              <Link href="/reports">
-                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white py-1 text-xs font-bold h-6">
-                  VIEW INCIDENTS
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* Properties */}
-          <Card className="bg-slate-800 border-slate-600 border hover:border-purple-500 transition-all p-1">
-            <CardContent className="text-center p-1">
-              <Building2 className="w-5 h-5 text-purple-400 mx-auto mb-1" />
-              <h3 className="text-xs font-bold text-white mb-1">PROPERTIES</h3>
-              <div className="text-lg font-bold text-purple-400 mb-1" data-testid="stat-active-properties">
-                {stats?.activeProperties || 0}
-              </div>
-              <p className="text-xs text-slate-300 mb-1">Under Protection</p>
-              <Link href="/properties">
-                <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-1 text-xs font-bold h-6">
-                  MANAGE
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+        {/* Key Metrics - Optimized Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {statCards.map((card, index) => (
+            <StatCard key={index} {...card} />
+          ))}
         </div>
 
-        {/* Quick Actions - Ultra Compact */}
-        <div className="mb-3">
-          <h2 className="text-sm font-bold text-white text-center mb-2">QUICK ACTIONS</h2>
+        {/* Quick Actions - Streamlined */}
+        <div>
+          <h2 className="text-sm font-bold text-white text-center mb-3">QUICK ACTIONS</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <Link href="/patrol-reports">
-              <Button className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex flex-col items-center gap-1 p-2">
+              <Button className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex flex-col items-center gap-1">
                 <FileCheck className="w-4 h-4" />
                 PATROL REPORT
               </Button>
             </Link>
-
             <Link href="/reports">
-              <Button className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex flex-col items-center gap-1 p-2">
+              <Button className="w-full h-14 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex flex-col items-center gap-1">
                 <AlertTriangle className="w-4 h-4" />
                 LOG INCIDENT
               </Button>
             </Link>
-
             <Link href="/scheduling">
-              <Button className="w-full h-12 bg-green-600 hover:bg-green-700 text-white text-xs font-bold flex flex-col items-center gap-1 p-2">
+              <Button className="w-full h-14 bg-green-600 hover:bg-green-700 text-white text-xs font-bold flex flex-col items-center gap-1">
                 <Calendar className="w-4 h-4" />
                 SCHEDULE
               </Button>
             </Link>
-
             <Button
-              className="w-full h-12 bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex flex-col items-center gap-1 p-2"
+              className="w-full h-14 bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex flex-col items-center gap-1"
               onClick={() => {
-                if (confirm('This will activate emergency response. Continue?')) {
+                if (confirm('Activate emergency response?')) {
                   alert('Emergency response activated!');
                 }
               }}
@@ -375,45 +333,27 @@ export default function UltimateDashboard() {
           </div>
         </div>
 
-        {/* System Status & Activity - Ultra Compact Two Column */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
-          {/* System Status - Ultra Compact */}
+        {/* System Status & Activity - Optimized Two Column */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* System Status */}
           <div>
-            <h2 className="text-sm font-bold text-white text-center mb-2">SYSTEM STATUS</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
-              {stats?.systemStatus && Object.entries(stats.systemStatus).map(([system, status]) => (
-                <Card key={system} className="bg-slate-800 border-slate-600 border p-1">
-                  <CardContent className="text-center p-1">
-                    <div className={`w-3 h-3 rounded-full mx-auto mb-1 ${
-                      status === 'online' || status === 'connected' || status === 'active' || status === 'operational' || status === 'ready'
-                        ? 'bg-green-500'
-                        : status === 'degraded' || status === 'slow' || status === 'limited' || status === 'impaired' || status === 'testing'
-                        ? 'bg-yellow-500'
-                        : 'bg-red-500'
-                    } animate-pulse`} />
-                    <h3 className="text-xs font-bold text-white mb-1 uppercase">{system}</h3>
-                    <div className={`px-1 py-0.5 rounded text-xs font-bold ${getStatusColor(status)}`}>
-                      {status.toUpperCase()}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <h2 className="text-sm font-bold text-white text-center mb-3">SYSTEM STATUS</h2>
+            <SystemStatusGrid systemStatus={stats?.systemStatus} />
           </div>
 
-          {/* Recent Activity - Ultra Compact */}
+          {/* Recent Activity */}
           <div>
-            <h2 className="text-sm font-bold text-white text-center mb-2">RECENT ACTIVITY</h2>
-            <Card className="bg-slate-800 border-slate-600 border p-1">
-              <CardContent className="p-1">
-                <div className="space-y-1 max-h-32 overflow-y-auto">
+            <h2 className="text-sm font-bold text-white text-center mb-3">RECENT ACTIVITY</h2>
+            <Card className="bg-slate-800 border-slate-600">
+              <CardContent className="p-3">
+                <div className="space-y-2 max-h-40 overflow-y-auto">
                   {stats?.recentActivities?.length ? (
-                    stats.recentActivities.slice(0, 3).map((activity) => (
-                      <div key={activity.id} className="flex items-start gap-2 p-1 bg-slate-700 rounded">
-                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1 flex-shrink-0" />
-                        <div className="flex-1">
-                          <p className="text-xs text-white font-medium mb-1">{activity.description}</p>
-                          <div className="flex items-center gap-1">
+                    stats.recentActivities.slice(0, 4).map((activity) => (
+                      <div key={activity.id} className="flex items-start gap-2 p-2 bg-slate-700 rounded">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-white font-medium truncate">{activity.description}</p>
+                          <div className="flex items-center gap-2 mt-1">
                             <p className="text-xs text-slate-400 font-mono">
                               {format(new Date(activity.timestamp), 'MMM dd, HH:mm')}
                             </p>
@@ -425,8 +365,8 @@ export default function UltimateDashboard() {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-3">
-                      <Activity className="w-5 h-5 mx-auto mb-1 text-slate-500" />
+                    <div className="text-center py-6">
+                      <Activity className="w-6 h-6 mx-auto mb-2 text-slate-500" />
                       <p className="text-xs text-slate-400">No recent activity</p>
                     </div>
                   )}
@@ -436,34 +376,32 @@ export default function UltimateDashboard() {
           </div>
         </div>
 
-        {/* Navigation Links - Ultra Compact */}
-        <div className="text-center">
-          <h2 className="text-sm font-bold text-white mb-2">MAIN SECTIONS</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        {/* Navigation Links - Simplified */}
+        <div>
+          <h2 className="text-sm font-bold text-white text-center mb-3">MAIN SECTIONS</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Link href="/staff">
-              <Card className="bg-slate-800 border-slate-600 border hover:border-blue-500 transition-all p-2 cursor-pointer">
-                <CardContent className="text-center p-1">
-                  <Users className="w-5 h-5 text-blue-400 mx-auto mb-1" />
+              <Card className="bg-slate-800 border-slate-600 hover:border-blue-500 transition-all cursor-pointer">
+                <CardContent className="text-center p-4">
+                  <Users className="w-6 h-6 text-blue-400 mx-auto mb-2" />
                   <h3 className="text-sm font-bold text-white mb-1">STAFF</h3>
                   <p className="text-xs text-slate-300">Manage Personnel</p>
                 </CardContent>
               </Card>
             </Link>
-
             <Link href="/clients">
-              <Card className="bg-slate-800 border-slate-600 border hover:border-green-500 transition-all p-2 cursor-pointer">
-                <CardContent className="text-center p-1">
-                  <Building2 className="w-5 h-5 text-green-400 mx-auto mb-1" />
+              <Card className="bg-slate-800 border-slate-600 hover:border-green-500 transition-all cursor-pointer">
+                <CardContent className="text-center p-4">
+                  <Building2 className="w-6 h-6 text-green-400 mx-auto mb-2" />
                   <h3 className="text-sm font-bold text-white mb-1">CLIENTS</h3>
                   <p className="text-xs text-slate-300">Client Relations</p>
                 </CardContent>
               </Card>
             </Link>
-
             <Link href="/accounting">
-              <Card className="bg-slate-800 border-slate-600 border hover:border-purple-500 transition-all p-2 cursor-pointer">
-                <CardContent className="text-center p-1">
-                  <DollarSign className="w-5 h-5 text-purple-400 mx-auto mb-1" />
+              <Card className="bg-slate-800 border-slate-600 hover:border-purple-500 transition-all cursor-pointer">
+                <CardContent className="text-center p-4">
+                  <DollarSign className="w-6 h-6 text-purple-400 mx-auto mb-2" />
                   <h3 className="text-sm font-bold text-white mb-1">FINANCIAL</h3>
                   <p className="text-xs text-slate-300">Billing & Payroll</p>
                 </CardContent>

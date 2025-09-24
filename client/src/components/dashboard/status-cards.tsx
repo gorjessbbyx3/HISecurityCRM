@@ -1,9 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
+import { memo } from "react";
 
-export default function StatusCards() {
+const StatusCards = memo(() => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["/api/dashboard/stats"],
+    staleTime: 15000,
+    cacheTime: 60000,
   });
 
   const statusData = [
@@ -96,4 +99,8 @@ export default function StatusCards() {
       ))}
     </div>
   );
-}
+});
+
+StatusCards.displayName = 'StatusCards';
+
+export default StatusCards;
