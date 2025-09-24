@@ -193,15 +193,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication status endpoint (handled by memoryAuth)
   app.get('/api/auth/status', async (req: Request, res: Response) => {
+    // Always set JSON content type first
+    res.setHeader('Content-Type', 'application/json');
+    
     try {
-      // Ensure we always send JSON response
-      res.setHeader('Content-Type', 'application/json');
-      
       const authHeader = req.headers['authorization'];
       const token = authHeader && authHeader.split(' ')[1];
 
       if (!token) {
-        return res.json({ authenticated: false });
+        return res.status(200).json({ authenticated: false });
       }
 
       // Verify token and return user info if valid
@@ -213,10 +213,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const user = await storage.getUserById(decoded.userId || decoded.id);
         
         if (!user) {
-          return res.json({ authenticated: false });
+          return res.status(200).json({ authenticated: false });
         }
 
-        res.json({ 
+        return res.status(200).json({ 
           authenticated: true, 
           user: {
             id: user.id,
@@ -229,17 +229,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } catch (jwtError) {
         console.error('JWT verification failed:', jwtError);
-        res.json({ authenticated: false });
+        return res.status(200).json({ authenticated: false });
       }
     } catch (error) {
       console.error('❌ Auth status error:', error);
-      res.setHeader('Content-Type', 'application/json');
-      res.json({ authenticated: false });
+      return res.status(200).json({ authenticated: false });
     }
   });
 
   // JWT-based login route
   app.post('/api/auth/login', async (req: Request, res: Response) => {
+    // Always set JSON content type first
+    res.setHeader('Content-Type', 'application/json');
+    
     try {
       const { username, password } = req.body;
       console.log('🔐 Login attempt for:', username);
@@ -248,14 +250,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (result.success) {
         console.log('✅ User logged in successfully:', username);
-        res.json(result);
+        return res.status(200).json(result);
       } else {
         console.log('❌ Login failed for:', username);
-        res.status(401).json(result);
+        return res.status(401).json(result);
       }
     } catch (error) {
       console.error('Login error:', error);
-      res.status(500).json({ success: false, message: 'Login failed' });
+      return res.status(500).json({ success: false, message: 'Login failed' });
     }
   });
 

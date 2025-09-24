@@ -139,7 +139,7 @@ export function useAuth() {
 
   return {
     user: user,
-    isLoading: isCheckingAuth || isLoading,
+    isLoading: isLoading || isCheckingAuth,
     isAuthenticated: isAuthenticated,
     error: error,
     login,
