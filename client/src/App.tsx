@@ -59,25 +59,23 @@ function AppContent() {
   }
 
   return (
-    <ProfessionalLayout>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/staff" component={Staff} />
-        <Route path="/clients" component={Clients} />
-        <Route path="/properties" component={Properties} />
-        <Route path="/reports" component={Reports} />
-        <Route path="/crime-intelligence" component={CrimeIntelligence} />
-        <Route path="/law-reference" component={LawReference} />
-        <Route path="/community-outreach" component={CommunityOutreach} />
-        <Route path="/accounting" component={Accounting} />
-        <Route path="/staff-management" component={StaffManagement} />
-        <Route path="/scheduling" component={Scheduling} />
-        <Route path="/patrol-reports" component={PatrolReports} />
-        <Route path="/hawaii-law" component={HawaiiLaw} />
-        <Route component={NotFound} />
-      </Switch>
-    </ProfessionalLayout>
+    <Switch>
+      <Route path="/" component={() => <ProfessionalLayout><Dashboard /></ProfessionalLayout>} />
+      <Route path="/dashboard" component={() => <ProfessionalLayout><Dashboard /></ProfessionalLayout>} />
+      <Route path="/staff" component={() => <ProfessionalLayout><Staff /></ProfessionalLayout>} />
+      <Route path="/clients" component={() => <ProfessionalLayout><Clients /></ProfessionalLayout>} />
+      <Route path="/properties" component={() => <ProfessionalLayout><Properties /></ProfessionalLayout>} />
+      <Route path="/reports" component={() => <ProfessionalLayout><Reports /></ProfessionalLayout>} />
+      <Route path="/crime-intelligence" component={() => <ProfessionalLayout><CrimeIntelligence /></ProfessionalLayout>} />
+      <Route path="/law-reference" component={() => <ProfessionalLayout><LawReference /></ProfessionalLayout>} />
+      <Route path="/community-outreach" component={() => <ProfessionalLayout><CommunityOutreach /></ProfessionalLayout>} />
+      <Route path="/accounting" component={() => <ProfessionalLayout><Accounting /></ProfessionalLayout>} />
+      <Route path="/staff-management" component={() => <ProfessionalLayout><StaffManagement /></ProfessionalLayout>} />
+      <Route path="/scheduling" component={() => <ProfessionalLayout><Scheduling /></ProfessionalLayout>} />
+      <Route path="/patrol-reports" component={() => <ProfessionalLayout><PatrolReports /></ProfessionalLayout>} />
+      <Route path="/hawaii-law" component={() => <ProfessionalLayout><HawaiiLaw /></ProfessionalLayout>} />
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 

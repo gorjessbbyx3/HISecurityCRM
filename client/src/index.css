@@ -65,10 +65,7 @@
   }
 
   body {
-    background: 
-      radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
-      radial-gradient(circle at 75% 75%, rgba(16, 185, 129, 0.04) 0%, transparent 50%),
-      linear-gradient(180deg, rgb(2, 6, 23) 0%, rgb(15, 23, 42) 50%, rgb(30, 41, 59) 100%);
+    background: rgb(15, 23, 42);
     color: hsl(var(--foreground));
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     margin: 0;
@@ -114,6 +111,43 @@
 }
 
 @layer components {
+  /* TRACKTIK-style components */
+  .tracktik-metric-card {
+    @apply rounded-lg p-4 text-white shadow-lg transition-all duration-200 hover:shadow-xl;
+  }
+
+  .tracktik-sidebar {
+    @apply bg-slate-800 border-r border-slate-700;
+  }
+
+  .tracktik-nav-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg transition-colors cursor-pointer;
+  }
+
+  .tracktik-nav-item.active {
+    @apply bg-blue-600 text-white;
+  }
+
+  .tracktik-nav-item:not(.active) {
+    @apply text-slate-300 hover:text-white hover:bg-slate-700;
+  }
+
+  .tracktik-activity-item {
+    @apply flex items-start gap-3 p-3 hover:bg-slate-700/50 rounded-lg transition-colors;
+  }
+
+  .tracktik-top-nav {
+    @apply bg-slate-800 border-b border-slate-700 px-6 py-3;
+  }
+
+  .tracktik-map-area {
+    @apply flex-1 relative bg-slate-700;
+  }
+
+  .tracktik-panel {
+    @apply bg-slate-800 border-slate-700;
+  }
+
   /* Enterprise Cards */
   .enterprise-card {
     background: var(--gradient-card);
