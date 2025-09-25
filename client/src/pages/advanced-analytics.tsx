@@ -110,17 +110,6 @@ export default function AdvancedAnalytics() {
     { officerId: "OFF004", name: "Lisa Chen", responseTime: 9.2, incidentsHandled: 19, patrolEfficiency: 85, clientSatisfaction: 91, hoursWorked: 156, overtimeHours: 2, kpiScore: 84 },
   ];
 
-  // Real-time trend data from API
-  const { data: trendData = [], isLoading: trendLoading } = useQuery({
-    queryKey: ['/api/analytics/trends'],
-    queryFn: async () => {
-      const response = await fetch('/api/analytics/trends');
-      if (!response.ok) throw new Error('Failed to fetch trend data');
-      return response.json();
-    },
-    staleTime: 600000, // 10 minutes
-  });
-
   const mockTrendData: TrendData[] = trendData.length > 0 ? trendData : [
     { month: "Jan", year: 2024, incidents: 145, crimeTypes: { theft: 45, vandalism: 32, trespassing: 28, assault: 15, other: 25 }, seasonalIndex: 0.8, weatherFactor: 0.9 },
     { month: "Feb", year: 2024, incidents: 132, crimeTypes: { theft: 42, vandalism: 28, trespassing: 25, assault: 12, other: 25 }, seasonalIndex: 0.8, weatherFactor: 0.85 },
