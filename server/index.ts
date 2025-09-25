@@ -112,6 +112,10 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
       console.log(`🌐 Server listening on http://0.0.0.0:${PORT}`);
       console.log(`🎯 Health check: http://0.0.0.0:${PORT}/api/health`);
       console.log('✨ Hawaii Security CRM is ready!');
+      
+      // Additional debug info
+      console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔧 Vite dev server should be on port 5173`);
     });
 
     // Handle graceful shutdown
