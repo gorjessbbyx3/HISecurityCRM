@@ -1,8 +1,12 @@
+
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 export default function CrimeMap() {
   const [refreshing, setRefreshing] = useState(false);
+  const [map, setMap] = useState<L.Map | null>(null);
 
   const { data: crimeData, isLoading, refetch } = useQuery({
     queryKey: ['/api/crime-data/live'],
@@ -28,6 +32,54 @@ export default function CrimeMap() {
     staleTime: 600000, // 10 minutes
   });
 
+  useEffect(() => {
+    if (!map && typeof window !== 'undefined') {
+      // Initialize map centered on Honolulu
+      const mapInstance = L.map('crime-map').setView([21.3099, -157.8581], 11);
+      
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(mapInstance);
+
+      setMap(mapInstance);
+    }
+
+    return () => {
+      if (map) {
+        map.remove();
+        setMap(null);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (map && crimeData && Array.isArray(crimeData)) {
+      // Clear existing markers
+      map.eachLayer((layer) => {
+        if (layer instanceof L.Marker) {
+          map.removeLayer(layer);
+        }
+      });
+
+      // Add crime markers
+      crimeData.forEach((crime: any) => {
+        if (crime.coordinates?.lat && crime.coordinates?.lng) {
+          const marker = L.marker([crime.coordinates.lat, crime.coordinates.lng]);
+          
+          const popupContent = `
+            <div class="text-sm">
+              <strong>${crime.type || 'Unknown'}</strong><br>
+              <span class="text-gray-600">${crime.location || 'Location unknown'}</span><br>
+              <span class="text-xs text-gray-500">${crime.date ? new Date(crime.date).toLocaleDateString() : 'Date unknown'}</span>
+            </div>
+          `;
+          
+          marker.bindPopup(popupContent).addTo(map);
+        }
+      });
+    }
+  }, [map, crimeData]);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await refetch();
@@ -38,7 +90,7 @@ export default function CrimeMap() {
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white" data-testid="text-crime-intelligence-title">
-          {import.meta.env.VITE_CRIME_MAP_TITLE || 'Crime Intelligence Dashboard'}
+          Crime Intelligence Dashboard
         </h3>
         <div className="flex space-x-2">
           <button 
@@ -84,21 +136,17 @@ export default function CrimeMap() {
         </div>
       )}
 
-      {/* Crime Map Placeholder */}
+      {/* Real Crime Map */}
       <div className="bg-slate-700 rounded-lg h-64 mb-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <i className="fas fa-map-marked-alt text-4xl text-amber-500 mb-3"></i>
-            <p className="text-white font-medium">Interactive Crime Map</p>
-            <p className="text-slate-400 text-sm">Real-time incident tracking</p>
+        <div id="crime-map" className="w-full h-full rounded-lg"></div>
+        {isLoading && (
+          <div className="absolute inset-0 bg-slate-800/90 flex items-center justify-center">
+            <div className="text-center">
+              <i className="fas fa-spinner fa-spin text-4xl text-amber-500 mb-3"></i>
+              <p className="text-white font-medium">Loading Crime Data...</p>
+            </div>
           </div>
-        </div>
-        
-        {/* Crime Markers */}
-        <div className="absolute top-4 left-4 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-        <div className="absolute top-12 right-8 w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
-        <div className="absolute bottom-8 left-12 w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+        )}
       </div>
 
       {/* Recent Incidents from Live Data */}

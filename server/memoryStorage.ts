@@ -3439,6 +3439,47 @@ class MemoryStorage {
   // DATA INTEGRATION AND CORRELATION CAPABILITIES
   // ===============================================
 
+  // Get analytics trends data
+  async getAnalyticsTrends(months: number = 6): Promise<any[]> {
+    const trends = [];
+    const currentDate = new Date();
+    
+    for (let i = months - 1; i >= 0; i--) {
+      const monthDate = new Date(currentDate);
+      monthDate.setMonth(monthDate.getMonth() - i);
+      
+      const monthName = monthDate.toLocaleString('default', { month: 'short' });
+      const year = monthDate.getFullYear();
+      
+      // Generate realistic data based on incidents
+      const monthIncidents = Array.from(this.incidents.values()).filter(incident => {
+        const incidentDate = new Date(incident.createdAt);
+        return incidentDate.getMonth() === monthDate.getMonth() && 
+               incidentDate.getFullYear() === year;
+      });
+      
+      const crimeTypes = {
+        theft: monthIncidents.filter(i => i.type?.toLowerCase().includes('theft')).length,
+        vandalism: monthIncidents.filter(i => i.type?.toLowerCase().includes('vandalism')).length,
+        trespassing: monthIncidents.filter(i => i.type?.toLowerCase().includes('trespassing')).length,
+        assault: monthIncidents.filter(i => i.type?.toLowerCase().includes('assault')).length,
+        other: monthIncidents.filter(i => !['theft', 'vandalism', 'trespassing', 'assault'].some(type => 
+          i.type?.toLowerCase().includes(type))).length
+      };
+      
+      trends.push({
+        month: monthName,
+        year,
+        incidents: monthIncidents.length,
+        crimeTypes,
+        seasonalIndex: 0.8 + (Math.random() * 0.6), // 0.8 to 1.4
+        weatherFactor: 0.8 + (Math.random() * 0.4) // 0.8 to 1.2
+      });
+    }
+    
+    return trends;
+  }
+
   // External data integration for live Honolulu PD data correlation
   async correlateExternalCrimeData(options?: {
     timeframe?: { start: Date; end: Date };
