@@ -1,4 +1,3 @@
-
 import Groq from 'groq-sdk';
 
 interface IncidentData {
@@ -33,17 +32,18 @@ interface PatrolSummary {
 }
 
 class AIService {
-  private groq: Groq | null = null;
+  private groq: any;
 
   constructor() {
-    // Initialize Groq client if API key is available
-    if (process.env.GROQ_API_KEY) {
-      this.groq = new Groq({
-        apiKey: process.env.GROQ_API_KEY,
-      });
-    } else {
-      console.warn('GROQ_API_KEY not found, AI features will be limited');
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey || !Groq) {
+      console.warn('GROQ_API_KEY not set or groq-sdk not available, AI features will be disabled');
+      return;
     }
+
+    this.groq = new Groq({
+      apiKey: apiKey,
+    });
   }
 
   async analyzeIncident(incident: IncidentData): Promise<IncidentAnalysis> {
@@ -54,7 +54,7 @@ class AIService {
     try {
       const systemPrompt = process.env.AI_SYSTEM_PROMPT || 
         "You are a security analyst AI that assesses incident risk and provides actionable recommendations. Respond only with valid JSON.";
-      
+
       const completion = await this.groq.chat.completions.create({
         messages: [
           {
@@ -68,7 +68,7 @@ class AIService {
             Description: ${incident.description}
             Location: ${incident.location}
             Severity: ${incident.severity}
-            
+
             Provide a JSON response with:
             - riskAssessment: string (brief risk assessment)
             - recommendedActions: string[] (specific actions to take)
@@ -124,7 +124,7 @@ class AIService {
     try {
       const systemPrompt = process.env.AI_PATROL_PROMPT || 
         "You are a security patrol analyst that creates professional patrol summaries. Respond only with valid JSON.";
-      
+
       const completion = await this.groq.chat.completions.create({
         messages: [
           {
@@ -137,7 +137,7 @@ class AIService {
             Location: ${patrolData.location}
             Checkpoints: ${patrolData.checkpoints.join(', ')}
             Duration: ${patrolData.duration} hours
-            
+
             Provide a JSON response with:
             - summary: string (professional patrol summary)
             - insights: string[] (key observations)
@@ -186,7 +186,7 @@ class AIService {
     try {
       const systemPrompt = process.env.AI_CRIME_ANALYSIS_PROMPT || 
         "You are a crime analyst AI that identifies patterns and trends in incident data. Provide structured JSON responses.";
-      
+
       const completion = await this.groq.chat.completions.create({
         messages: [
           {
@@ -197,7 +197,7 @@ class AIService {
             role: "user",
             content: `Analyze these recent incidents for patterns:
             ${incidents.map(i => `${i.incidentType} at ${i.location} on ${i.time} (${i.severity})`).join('\n')}
-            
+
             Provide a JSON response with:
             - patterns: string[] (identified crime patterns)
             - hotspots: string[] (high-activity locations)

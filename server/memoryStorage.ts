@@ -161,7 +161,7 @@ export interface CommunityResource {
   id: string;
   name: string;
   category: string; // 'emergency_services', 'healthcare', 'social_services', 'education', 'legal_aid', 'housing', 'transportation'
-  subcategory?: string;
+  subcategory?: string; // 'hospitals', 'clinics', 'mental_health', 'food_banks', 'shelters'
   description: string;
   contactPerson?: string;
   phone?: string;
@@ -381,10 +381,10 @@ class MemoryStorage {
   private patrolReports: Map<string, PatrolReport> = new Map();
   private appointments: Map<string, Appointment> = new Map();
   private activities: Map<string, Activity> = new Map();
-  private financialRecords: Map<string, FinancialRecord> = new Map();
-  private evidence: Map<string, Evidence> = new Map();
-  private communityResources: Map<string, CommunityResource> = new Map();
-  private lawReferences: Map<string, LawReference> = new Map();
+  private financialRecords = new Map<string, FinancialRecord>();
+  private evidence = new Map<string, any>();
+  private communityResources = new Map<string, any>();
+  private lawReferences = new Map<string, any>();
   private schedules: Map<string, Schedule> = new Map();
   private shiftTemplates: Map<string, ShiftTemplate> = new Map();
   private crimeIntelligence: Map<string, CrimeIntelligence> = new Map();

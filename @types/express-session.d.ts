@@ -1,23 +1,17 @@
-import session from 'express-session';
 
-declare module 'express-session' {
-  interface SessionData {
-    userId?: string;
-    passport?: {
-      user: string;
-    };
-  }
-}
+import { User } from '../server/memoryStorage';
 
-declare module 'express' {
-  interface Request {
-    user?: {
-      id: string;
-      username: string;
-      email: string;
-      firstName: string;
-      lastName: string;
-      role: string;
-    };
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        username: string;
+        role: "admin" | "officer" | "supervisor";
+        firstName?: string;
+        lastName?: string;
+        email?: string;
+      };
+    }
   }
 }
