@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,13 @@ import {
   Filter
 } from "lucide-react";
 import { format } from "date-fns";
+import React from "react";
+import { cn } from "@/lib/utils";
+import { SidebarProvider } from "@/components/layout/sidebar-context";
+import { useIsMobile } from "@/hooks/use-mobile"
+import { useMobileViewport } from "@/hooks/use-mobile-viewport"
+import { useMobileGestures } from "@/hooks/use-mobile-gestures"
+import { MobileContainer } from "@/components/ui/mobile-container"
 
 interface DashboardStats {
   totalClients: number;
@@ -137,6 +143,27 @@ const ActivityItem = ({ activity }: { activity: any }) => (
 );
 
 export default function UltimateDashboard() {
+  const isMobile = useIsMobile()
+  const viewport = useMobileViewport()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Mobile gestures for sidebar
+  const { attachListeners } = useMobileGestures({
+    onSwipeRight: () => isMobile && setSidebarOpen(true),
+    onSwipeLeft: () => isMobile && setSidebarOpen(false),
+    threshold: 100,
+    enabled: isMobile
+  })
+
+  React.useEffect(() => {
+    if (isMobile) {
+      const element = document.getElementById('main-content');
+      if (element) {
+        attachListeners(element);
+      }
+    }
+  }, [isMobile, attachListeners])
+
   const [refreshInterval] = useState(30000);
   const queryClient = useQueryClient();
 
@@ -226,183 +253,381 @@ export default function UltimateDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      {/* Top Metrics Bar */}
-      <div className="bg-slate-800 p-4 border-b border-slate-700">
-        <div className="grid grid-cols-5 lg:grid-cols-10 gap-3">
-          {topMetrics.map((metric, index) => (
-            <MetricCard
-              key={index}
-              title={metric.title}
-              value={metric.value}
-              icon={metric.icon}
-              bgColor={metric.bgColor}
-              size="small"
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex h-[calc(100vh-140px)]">
-        {/* Activity Feed Panel */}
-        <div className="w-80 bg-slate-800 border-r border-slate-700 flex flex-col">
-          {/* Activity Feed Header */}
-          <div className="p-4 border-b border-slate-700">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Activity Feed</h3>
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-                  <Filter className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-                  <Search className="w-4 h-4" />
-                </Button>
+    <MobileContainer enableSafeArea fullHeight>
+      <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <div className={cn(
+          "min-h-screen flex w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900",
+          viewport.isMobile && "mobile-scroll"
+        )}>
+          {/* Sidebar */}
+          <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-slate-800 border-r border-slate-700 transform transition-transform duration-300 ease-in-out ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}`}>
+            <div className="p-4 border-b border-slate-700 flex items-center gap-2">
+              <Avatar className="w-10 h-10">
+                <AvatarImage src="/avatars/01.png" alt="@shadcn" />
+                <AvatarFallback>CN</AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-medium text-white">TRACKTIK Corp</div>
+                <div className="text-xs text-slate-400">Admin Dashboard</div>
               </div>
             </div>
-            
-            {/* Tabs */}
-            <div className="flex gap-4 text-sm">
-              <button className="text-blue-400 border-b-2 border-blue-400 pb-1">Activity Feed</button>
-              <button className="text-slate-400 hover:text-white">Attendance</button>
-              <button className="text-slate-400 hover:text-white">Scheduled Tours</button>
-            </div>
-          </div>
-
-          {/* Activity List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {mockActivities.map((activity) => (
-              <ActivityItem key={activity.id} activity={activity} />
-            ))}
-          </div>
-
-          {/* Mobile Patrol Status */}
-          <div className="p-4 border-t border-slate-700">
-            <div className="bg-slate-700 rounded-lg p-3">
-              <div className="flex items-center gap-3 mb-2">
-                <Avatar className="w-10 h-10">
-                  <AvatarFallback className="bg-blue-600 text-white">
-                    DB
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium">Darius Bates</div>
-                  <div className="text-xs text-slate-400">Mobile Patrol - South Western - Mobile</div>
-                  <div className="text-xs text-green-400">Clock In Time...</div>
-                </div>
-              </div>
-              
-              {/* Status indicators */}
-              <div className="flex justify-between items-center mt-3">
-                <div className="text-center">
-                  <Clock className="w-6 h-6 mx-auto mb-1 text-slate-400" />
-                  <div className="text-xs text-slate-400">TIME CLOCK</div>
-                </div>
-                <div className="text-center">
-                  <FileText className="w-6 h-6 mx-auto mb-1 text-slate-400" />
-                  <div className="text-xs text-slate-400">SITES</div>
-                </div>
-                <div className="text-center">
-                  <Shield className="w-6 h-6 mx-auto mb-1 text-blue-400" />
-                  <div className="text-xs text-slate-400">CHECKPOINTS</div>
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex gap-2 mt-4">
-                <Button className="bg-red-600 hover:bg-red-700 text-white flex-1 text-sm">
-                  Finish
-                </Button>
-                <Button className="bg-orange-600 hover:bg-orange-700 text-white flex-1 text-sm">
-                  Optimize
-                </Button>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white flex-1 text-sm">
-                  Reload
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Map and Status Panel */}
-        <div className="flex-1 flex flex-col">
-          {/* Map Area */}
-          <div className="flex-1 relative bg-slate-700">
-            {/* Map placeholder */}
-            <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
-              <div className="text-slate-600 text-center">
-                <MapPin className="w-16 h-16 mx-auto mb-4" />
-                <p className="text-lg font-medium">Interactive Map</p>
-                <p className="text-sm">Real-time patrol tracking</p>
-              </div>
-            </div>
-
-            {/* Map controls */}
-            <div className="absolute top-4 right-4 space-y-2">
-              <Button size="sm" className="bg-white text-black hover:bg-gray-100">
-                Auto-Fit: OFF
+            <nav className="p-4 space-y-2">
+              <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-700/50">
+                <Activity className="w-5 h-5 mr-3" /> Dashboard
               </Button>
-              <Button size="sm" className="bg-white text-black hover:bg-gray-100">
-                Full Page
+              <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-700/50">
+                <Users className="w-5 h-5 mr-3" /> Clients
+              </Button>
+              <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-700/50">
+                <MapPin className="w-5 h-5 mr-3" /> Properties
+              </Button>
+              <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-700/50">
+                <Shield className="w-5 h-5 mr-3" /> Patrols
+              </Button>
+              <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-700/50">
+                <Bell className="w-5 h-5 mr-3" /> Alerts
+              </Button>
+              <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-700/50">
+                <Calendar className="w-5 h-5 mr-3" /> Schedule
+              </Button>
+              <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-700/50">
+                <FileText className="w-5 h-5 mr-3" /> Reports
+              </Button>
+              <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-700/50">
+                <Settings className="w-5 h-5 mr-3" /> Settings
+              </Button>
+            </nav>
+          </aside>
+          {isMobile && (
+            <div className="absolute top-4 left-4 z-30">
+              <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="text-white">
+                <Filter className="w-5 h-5" />
               </Button>
             </div>
+          )}
 
-            {/* Status overlay */}
-            <div className="absolute bottom-4 left-4 bg-slate-800/90 rounded-lg p-3 backdrop-blur">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm text-blue-400">Status - On Route</span>
-              </div>
-              <div className="text-xs text-slate-300">City Healthcare Center (08:00am - 10:00pm) ID#5128</div>
-              <div className="text-xs text-blue-400 cursor-pointer">Click here when arrived on site</div>
-            </div>
-          </div>
-        </div>
+          {/* Main Content */}
+          <main 
+            id="main-content" 
+            className={cn(
+              "flex-1 overflow-auto",
+              viewport.isMobile && "mobile-scroll mobile-keyboard-padding"
+            )}
+          >
+            <div className={cn(
+              "p-6 space-y-6",
+              viewport.isMobile && "p-4 space-y-4"
+            )}>
 
-        {/* Right Panel - Patrol Status */}
-        <div className="w-80 bg-slate-800 border-l border-slate-700 p-4">
-          <div className="space-y-4">
-            {/* Quick actions */}
-            <div className="bg-slate-700 rounded-lg p-3">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-sm font-medium">Mobile Patrol - Northern</span>
-                <span className="text-xs text-green-400">Armed Mobile Patrol Officer</span>
+              {/* Top Metrics Bar */}
+              <div className="bg-slate-800 p-4 border-b border-slate-700 rounded-lg">
+                <div className={cn(
+                  "grid gap-4",
+                  viewport.isMobile 
+                    ? "grid-cols-3" 
+                    : "grid-cols-5 lg:grid-cols-10"
+                )}>
+                  {topMetrics.map((metric, index) => (
+                    <MetricCard
+                      key={index}
+                      title={metric.title}
+                      value={metric.value}
+                      icon={metric.icon}
+                      bgColor={metric.bgColor}
+                      size="small"
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="text-xs text-slate-400 mb-2">
-                Last Action: about 4 hours ago<br />
-                North Winnipeg
-              </div>
-              <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white w-full">
-                Track
-              </Button>
-            </div>
 
-            {/* Additional patrol entries */}
-            {[
-              { name: "Mobile Patrol - Northern", role: "Mobile Patrol MP", time: "about 11 minutes ago", location: "North Winnipeg" },
-              { name: "TrackPoint", role: "Main entrance", time: "about 2 hours ago", location: "North End" },
-              { name: "Great Northern Hotel", role: "Patrol Officer", time: "yesterday", location: "South Winnipeg" },
-              { name: "Mobile Patrol - Southern", role: "Mobile Patrol Boston", time: "about 2 hours ago", location: "South Winnipeg" }
-            ].map((patrol, index) => (
-              <div key={index} className="bg-slate-700 rounded-lg p-3">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{patrol.name}</div>
-                    <div className="text-xs text-slate-400">{patrol.role}</div>
-                    <div className="text-xs text-slate-500 mt-1">
-                      Last Action: {patrol.time}<br />
-                      {patrol.location}
+              {/* Stats Cards */}
+              <div className={cn(
+                "grid gap-6",
+                viewport.isMobile 
+                  ? "grid-cols-1 gap-4" 
+                  : "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
+              )}>
+                {/* MetricCard components for Total Clients, Active Properties, Total Staff, On Duty Staff */}
+                <MetricCard
+                  title="Total Clients"
+                  value={stats?.totalClients ?? 0}
+                  icon={Users}
+                  bgColor="bg-green-500"
+                />
+                <MetricCard
+                  title="Active Properties"
+                  value={stats?.activeProperties ?? 0}
+                  icon={MapPin}
+                  bgColor="bg-yellow-500"
+                />
+                <MetricCard
+                  title="Total Staff"
+                  value={stats?.totalStaff ?? 0}
+                  icon={Users}
+                  bgColor="bg-blue-500"
+                />
+                <MetricCard
+                  title="On Duty Staff"
+                  value={stats?.onDutyStaff ?? 0}
+                  icon={Clock}
+                  bgColor="bg-cyan-500"
+                />
+              </div>
+
+              {/* Second Row */}
+              <div className={cn(
+                "grid gap-6",
+                viewport.isMobile 
+                  ? "grid-cols-1 gap-4" 
+                  : "grid-cols-1 lg:grid-cols-3"
+              )}>
+                {/* Open Incidents Card */}
+                <Card className="bg-slate-800 border-slate-700 flex flex-col">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-base font-medium text-slate-400">Open Incidents</CardTitle>
+                    <AlertTriangle className="h-4 w-4 text-red-400" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-white">{stats?.openIncidents ?? 0}</div>
+                    <p className="text-xs text-slate-400">
+                      {stats?.resolvedIncidents24h ?? 0} resolved in last 24h
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Active Patrols Card */}
+                <Card className="bg-slate-800 border-slate-700 flex flex-col">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-base font-medium text-slate-400">Active Patrols</CardTitle>
+                    <Activity className="h-4 w-4 text-blue-400" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-white">{stats?.activePatrols ?? 0}</div>
+                    <p className="text-xs text-slate-400">
+                      {stats?.scheduledAppointments ?? 0} scheduled appointments
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* System Status Card */}
+                <Card className="bg-slate-800 border-slate-700 flex flex-col">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-base font-medium text-slate-400">System Status</CardTitle>
+                    <Eye className="h-4 w-4 text-purple-400" />
+                  </CardHeader>
+                  <CardContent className="flex flex-col justify-around">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Server</span>
+                      <Badge variant="outline" className={cn({
+                        "border-green-500 text-green-500": stats?.systemStatus.server === 'online',
+                        "border-yellow-500 text-yellow-500": stats?.systemStatus.server === 'degraded',
+                        "border-red-500 text-red-500": stats?.systemStatus.server === 'offline',
+                      })}>{stats?.systemStatus.server.toUpperCase()}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Database</span>
+                      <Badge variant="outline" className={cn({
+                        "border-green-500 text-green-500": stats?.systemStatus.database === 'connected',
+                        "border-yellow-500 text-yellow-500": stats?.systemStatus.database === 'slow',
+                        "border-red-500 text-red-500": stats?.systemStatus.database === 'disconnected',
+                      })}>{stats?.systemStatus.database.toUpperCase()}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Communications</span>
+                      <Badge variant="outline" className={cn({
+                        "border-green-500 text-green-500": stats?.systemStatus.communications === 'active',
+                        "border-yellow-500 text-yellow-500": stats?.systemStatus.communications === 'limited',
+                        "border-red-500 text-red-500": stats?.systemStatus.communications === 'down',
+                      })}>{stats?.systemStatus.communications.toUpperCase()}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Third Row - Performance Metrics & Map Placeholder */}
+              <div className={cn(
+                "grid gap-6",
+                viewport.isMobile 
+                  ? "grid-cols-1 gap-4" 
+                  : "grid-cols-1 lg:grid-cols-3"
+              )}>
+                {/* Performance Metrics Card */}
+                <Card className="bg-slate-800 border-slate-700 col-span-1 lg:col-span-1 flex flex-col">
+                  <CardHeader>
+                    <CardTitle className="text-base font-medium text-slate-400">Performance Metrics</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Response Time</span>
+                        <span className="text-white">{stats?.performanceMetrics.responseTime ?? 0} ms</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Client Satisfaction</span>
+                        <span className="text-white">{stats?.performanceMetrics.clientSatisfaction ?? 0}%</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Incident Resolution</span>
+                        <span className="text-white">{stats?.performanceMetrics.incidentResolution ?? 0}%</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Patrol Efficiency</span>
+                        <span className="text-white">{stats?.performanceMetrics.patrolEfficiency ?? 0}%</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Staff Utilization</span>
+                        <span className="text-white">{stats?.performanceMetrics.staffUtilization ?? 0}%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Map Area */}
+                <div className="bg-slate-700 rounded-lg p-4 col-span-1 lg:col-span-2 relative min-h-[250px] flex items-center justify-center">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center rounded-lg">
+                    <div className="text-slate-600 text-center">
+                      <MapPin className="w-16 h-16 mx-auto mb-4" />
+                      <p className="text-lg font-medium">Interactive Map</p>
+                      <p className="text-sm">Real-time patrol tracking</p>
                     </div>
                   </div>
-                  <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
+                  <div className="absolute top-3 right-3 space-y-2 z-10">
+                    <Button size="sm" className="bg-white text-black hover:bg-gray-100">
+                      Auto-Fit: OFF
+                    </Button>
+                    <Button size="sm" className="bg-white text-black hover:bg-gray-100">
+                      Full Page
+                    </Button>
+                  </div>
+                  <div className="absolute bottom-3 left-3 bg-slate-800/90 rounded-lg p-3 backdrop-blur z-10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm text-blue-400">Status - On Route</span>
+                    </div>
+                    <div className="text-xs text-slate-300">City Healthcare Center (08:00am - 10:00pm) ID#5128</div>
+                    <div className="text-xs text-blue-400 cursor-pointer">Click here when arrived on site</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Activity Feed Panel (Mobile View) */}
+              {!isMobile && (
+                <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Activity Feed</h3>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
+                        <Filter className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
+                        <Search className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 text-sm">
+                    <button className="text-blue-400 border-b-2 border-blue-400 pb-1">Activity Feed</button>
+                    <button className="text-slate-400 hover:text-white">Attendance</button>
+                    <button className="text-slate-400 hover:text-white">Scheduled Tours</button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 space-y-2 mt-4">
+                    {mockActivities.map((activity) => (
+                      <ActivityItem key={activity.id} activity={activity} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile Patrol Status (Mobile View) */}
+              {!isMobile && (
+                <div className="p-4 bg-slate-800 rounded-lg border border-slate-700">
+                  <div className="bg-slate-700 rounded-lg p-3">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Avatar className="w-10 h-10">
+                        <AvatarFallback className="bg-blue-600 text-white">
+                          DB
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">Darius Bates</div>
+                        <div className="text-xs text-slate-400">Mobile Patrol - South Western - Mobile</div>
+                        <div className="text-xs text-green-400">Clock In Time...</div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center mt-3">
+                      <div className="text-center">
+                        <Clock className="w-6 h-6 mx-auto mb-1 text-slate-400" />
+                        <div className="text-xs text-slate-400">TIME CLOCK</div>
+                      </div>
+                      <div className="text-center">
+                        <FileText className="w-6 h-6 mx-auto mb-1 text-slate-400" />
+                        <div className="text-xs text-slate-400">SITES</div>
+                      </div>
+                      <div className="text-center">
+                        <Shield className="w-6 h-6 mx-auto mb-1 text-blue-400" />
+                        <div className="text-xs text-slate-400">CHECKPOINTS</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button className="bg-red-600 hover:bg-red-700 text-white flex-1 text-sm">
+                        Finish
+                      </Button>
+                      <Button className="bg-orange-600 hover:bg-orange-700 text-white flex-1 text-sm">
+                        Optimize
+                      </Button>
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white flex-1 text-sm">
+                        Reload
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </main>
+
+          {/* Right Panel - Patrol Status (Mobile View) */}
+          {isMobile && (
+            <aside className="w-full bg-slate-800 border-t border-slate-700 p-4">
+              <div className="space-y-4">
+                <div className="bg-slate-700 rounded-lg p-3">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm font-medium">Mobile Patrol - Northern</span>
+                    <span className="text-xs text-green-400">Armed Mobile Patrol Officer</span>
+                  </div>
+                  <div className="text-xs text-slate-400 mb-2">
+                    Last Action: about 4 hours ago<br />
+                    North Winnipeg
+                  </div>
+                  <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white w-full">
                     Track
                   </Button>
                 </div>
+                {[
+                  { name: "Mobile Patrol - Northern", role: "Mobile Patrol MP", time: "about 11 minutes ago", location: "North Winnipeg" },
+                  { name: "TrackPoint", role: "Main entrance", time: "about 2 hours ago", location: "North End" },
+                  { name: "Great Northern Hotel", role: "Patrol Officer", time: "yesterday", location: "South Winnipeg" },
+                  { name: "Mobile Patrol - Southern", role: "Mobile Patrol Boston", time: "about 2 hours ago", location: "South Winnipeg" }
+                ].map((patrol, index) => (
+                  <div key={index} className="bg-slate-700 rounded-lg p-3">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">{patrol.name}</div>
+                        <div className="text-xs text-slate-400">{patrol.role}</div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          Last Action: {patrol.time}<br />
+                          {patrol.location}
+                        </div>
+                      </div>
+                      <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
+                        Track
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </aside>
+          )}
         </div>
-      </div>
-    </div>
-  );
+      </SidebarProvider>
+    </MobileContainer>
+  )
 }
