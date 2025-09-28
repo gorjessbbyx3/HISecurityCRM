@@ -6,10 +6,12 @@ export default defineConfig(async () => {
   const plugins = [react()];
 
   if (process.env.NODE_ENV !== "production" && process.env.REPL_ID !== undefined) {
-    const cartographer = await import("@replit/vite-plugin-cartographer").then((m) =>
-      m.cartographer(),
-    );
-    plugins.push(cartographer);
+    try {
+      const { cartographer } = await import("@replit/vite-plugin-cartographer");
+      plugins.push(cartographer());
+    } catch (error) {
+      console.warn("Cartographer plugin not available, skipping...");
+    }
   }
 
   return {
