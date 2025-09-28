@@ -1,4 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+
+config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -20,7 +23,7 @@ if (!supabaseServiceKey && !supabaseAnonKey) {
 // Prefer service role key for backend operations, fallback to anon key
 const apiKey = supabaseServiceKey || supabaseAnonKey;
 
-export const supabase = createClient(supabaseUrl, apiKey, {
+export const supabase = createClient(supabaseUrl!, apiKey!, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
@@ -158,6 +161,45 @@ export interface FinancialRecord {
   referenceNumber?: string;
   status: string;
   notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Evidence {
+  id: string;
+  incidentId?: string;
+  type: string;
+  description: string;
+  fileUrl?: string;
+  collectedAt: Date;
+  collectedBy?: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CommunityResource {
+  id: string;
+  name: string;
+  type: string;
+  description: string;
+  contactInfo?: string;
+  address?: string;
+  website?: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface LawReference {
+  id: string;
+  title: string;
+  section: string;
+  description: string;
+  category: string;
+  jurisdiction: string;
+  effectiveDate?: string;
+  status: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -400,14 +442,14 @@ class SupabaseStorage {
     return data || [];
   }
 
-  async getRecentIncidents(): Promise<Incident[]> {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  async getRecentIncidents(hours = 168): Promise<Incident[]> {
+    const sinceDate = new Date();
+    sinceDate.setHours(sinceDate.getHours() - hours);
 
     const { data, error } = await supabase
       .from('incidents')
       .select('*')
-      .gte('createdAt', sevenDaysAgo.toISOString())
+      .gte('createdAt', sinceDate.toISOString())
       .order('createdAt', { ascending: false });
 
     if (error) {
@@ -435,21 +477,42 @@ class SupabaseStorage {
 
   // Dashboard stats
   async getDashboardStats() {
-    const [clientsCount, propertiesCount, incidentsCount, staffCount, criticalIncidentsCount] = await Promise.all([
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const [clientsCount, propertiesCount, incidentsCount, staffCount, criticalIncidentsCount, activePatrolsCount, propertiesSecuredCount, staffOnDutyCount, yesterdayIncidentsCount, yesterdayStaffCount] = await Promise.all([
       supabase.from('clients').select('*', { count: 'exact', head: true }),
       supabase.from('properties').select('*', { count: 'exact', head: true }),
       supabase.from('incidents').select('*', { count: 'exact', head: true }),
       supabase.from('users').select('*', { count: 'exact', head: true }).eq('status', 'active'),
       supabase.from('incidents').select('*', { count: 'exact', head: true }).eq('severity', 'critical'),
+      supabase.from('patrol_reports').select('*', { count: 'exact', head: true }).eq('status', 'in_progress'),
+      supabase.from('properties').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+      supabase.from('users').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('shift', 'day'), // Assuming 'day' shift is on duty
+      supabase.from('incidents').select('*', { count: 'exact', head: true }).gte('createdAt', yesterday.toISOString()),
+      supabase.from('users').select('*', { count: 'exact', head: true }).eq('status', 'active').gte('updatedAt', yesterday.toISOString()),
     ]);
+
+    const totalIncidents = incidentsCount.count || 0;
+    const yesterdayIncidents = yesterdayIncidentsCount.count || 0;
+    const incidentsChange = yesterdayIncidents > 0 ? ((totalIncidents - yesterdayIncidents) / yesterdayIncidents) * 100 : 0;
+
+    const activeStaff = staffCount.count || 0;
+    const yesterdayStaff = yesterdayStaffCount.count || 0;
+    const staffChange = yesterdayStaff > 0 ? ((activeStaff - yesterdayStaff) / yesterdayStaff) * 100 : 0;
 
     return {
       totalClients: clientsCount.count || 0,
       totalProperties: propertiesCount.count || 0,
       activeIncidents: incidentsCount.count || 0,
-      activeStaff: staffCount.count || 0,
-      totalIncidents: incidentsCount.count || 0,
+      activeStaff: activeStaff,
+      totalIncidents: totalIncidents,
       criticalIncidents: criticalIncidentsCount.count || 0,
+      activePatrols: activePatrolsCount.count || 0,
+      propertiesSecured: propertiesSecuredCount.count || 0,
+      staffOnDuty: staffOnDutyCount.count || 0,
+      incidentsChange: Math.round(incidentsChange * 100) / 100,
+      staffChange: Math.round(staffChange * 100) / 100,
     };
   }
 
@@ -623,6 +686,216 @@ class SupabaseStorage {
       throw new Error(`Failed to create financial record: ${error.message}`);
     }
     return data;
+  }
+
+  async getPropertiesByClient(clientId: string): Promise<Property[]> {
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('clientId', clientId)
+      .order('createdAt', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch properties by client: ${error.message}`);
+    }
+    return data || [];
+  }
+
+  async updateIncident(id: string, updates: Partial<Incident>): Promise<Incident> {
+    const { data, error } = await supabase
+      .from('incidents')
+      .update({ ...updates, updatedAt: new Date() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update incident: ${error.message}`);
+    }
+    return data;
+  }
+
+  async getPatrolReportsByOfficer(officerId: string): Promise<PatrolReport[]> {
+    const { data, error } = await supabase
+      .from('patrol_reports')
+      .select('*')
+      .eq('officerId', officerId)
+      .order('startTime', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch patrol reports by officer: ${error.message}`);
+    }
+    return data || [];
+  }
+
+  async updatePatrolReport(id: string, updates: Partial<PatrolReport>): Promise<PatrolReport> {
+    const { data, error } = await supabase
+      .from('patrol_reports')
+      .update({ ...updates, updatedAt: new Date() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update patrol report: ${error.message}`);
+    }
+    return data;
+  }
+
+  async getFinancialSummary() {
+    const { data, error } = await supabase
+      .from('financial_records')
+      .select('recordType, amount');
+
+    if (error) {
+      throw new Error(`Failed to fetch financial summary: ${error.message}`);
+    }
+
+    const summary = (data || []).reduce((acc, record) => {
+      if (!acc[record.recordType]) {
+        acc[record.recordType] = 0;
+      }
+      acc[record.recordType] += record.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return summary;
+  }
+
+  async getEvidence(): Promise<Evidence[]> {
+    const { data, error } = await supabase
+      .from('evidence')
+      .select('*')
+      .order('createdAt', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch evidence: ${error.message}`);
+    }
+    return data || [];
+  }
+
+  async createEvidence(evidenceData: Omit<Evidence, 'id' | 'createdAt' | 'updatedAt'>): Promise<Evidence> {
+    const { data, error } = await supabase
+      .from('evidence')
+      .insert({
+        ...evidenceData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create evidence: ${error.message}`);
+    }
+    return data;
+  }
+
+  async getCommunityResources(): Promise<CommunityResource[]> {
+    const { data, error } = await supabase
+      .from('community_resources')
+      .select('*')
+      .order('createdAt', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch community resources: ${error.message}`);
+    }
+    return data || [];
+  }
+
+  async createCommunityResource(resourceData: Omit<CommunityResource, 'id' | 'createdAt' | 'updatedAt'>): Promise<CommunityResource> {
+    const { data, error } = await supabase
+      .from('community_resources')
+      .insert({
+        ...resourceData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create community resource: ${error.message}`);
+    }
+    return data;
+  }
+
+  async createLawReference(referenceData: Omit<LawReference, 'id' | 'createdAt' | 'updatedAt'>): Promise<LawReference> {
+    const { data, error } = await supabase
+      .from('law_references')
+      .insert({
+        ...referenceData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create law reference: ${error.message}`);
+    }
+    return data;
+  }
+
+  async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
+        ...userData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create user: ${error.message}`);
+    }
+    return data;
+  }
+
+  async updateUserPermissions(id: string, permissions: string[]): Promise<User> {
+    const { data, error } = await supabase
+      .from('users')
+      .update({ permissions, updatedAt: new Date() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update user permissions: ${error.message}`);
+    }
+    return data;
+  }
+
+  async updateUserStatus(id: string, status: string): Promise<User> {
+    return this.updateStaffStatus(id, status);
+  }
+
+  async getTodaysReports(): Promise<PatrolReport[]> {
+    return this.getTodaysPatrolReports();
+  }
+
+  async getLawReferences(options?: { search?: string; category?: string }): Promise<LawReference[]> {
+    let query = supabase
+      .from('law_references')
+      .select('*')
+      .order('createdAt', { ascending: false });
+
+    if (options?.search) {
+      query = query.ilike('title', `%${options.search}%`);
+    }
+
+    if (options?.category) {
+      query = query.eq('category', options.category);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(`Failed to fetch law references: ${error.message}`);
+    }
+    return data || [];
   }
 
   // Initialize database with default data

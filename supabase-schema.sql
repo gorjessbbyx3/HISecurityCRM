@@ -146,29 +146,10 @@ CREATE TABLE IF NOT EXISTS financial_records (
   "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Insert default admin user
+-- Add username and password columns for authentication
 ALTER TABLE public.users
-ADD COLUMN username VARCHAR(255) UNIQUE,
-ADD COLUMN password VARCHAR(255);
-INSERT INTO users (
-  id,
-  email,
-  "firstName", 
-  "lastName",
-  role,
-  status,
-  "hashedPassword",
-  permissions
-) VALUES (
-  'admin-001',
-  'admin@hawaiisecurity.com',
-  'Admin',
-  'User', 
-  'admin',
-  'active',
-  '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', -- Password3211 hashed
-  ARRAY['all']
-) ON CONFLICT (id) DO NOTHING;
+ADD COLUMN IF NOT EXISTS username VARCHAR(255) UNIQUE,
+ADD COLUMN IF NOT EXISTS password VARCHAR(255);
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

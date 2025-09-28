@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./supabaseStorage";
 import { setupSupabaseAuth, authenticateToken, loginHandler } from "./supabaseAuth";
+import { sendNotification } from "./mailService";
 import {
   insertClientSchema,
   insertPropertySchema,
@@ -353,6 +354,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: `Reported new incident: ${incident.incidentType}`,
       });
 
+      // Send email notification
+      try {
+        await sendNotification('incident_created', {
+          incidentType: incident.incidentType,
+          location: incident.location,
+          description: incident.description,
+          severity: incident.severity,
+          reportedBy: incident.reportedBy,
+          occuredAt: incident.occuredAt
+        });
+      } catch (emailError) {
+        console.warn('Email notification failed:', emailError);
+      }
+
       // Broadcast new incident to connected clients
       if (app.locals.broadcast) {
         app.locals.broadcast({
@@ -587,32 +602,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // File upload endpoint
+  // File upload endpoint - disabled in production
   app.post('/api/upload', authenticateToken, async (req, res) => {
-    try {
-      // In a production environment, you would integrate with a file storage service
-      // like AWS S3, Google Cloud Storage, or similar
-      const { fileName, fileData, fileType, entityType, entityId } = req.body;
-
-      // For now, we'll create a mock file URL
-      // In production, this would upload to your storage service
-      const fileUrl = `/uploads/${Date.now()}-${fileName}`;
-
-      const fileUpload = await storage.createEvidence({
-        entityType,
-        entityId,
-        fileName,
-        fileUrl,
-        fileType,
-        fileSize: fileData ? fileData.length : 0,
-        uploadedBy: (req.user as any).id,
-      });
-
-      res.status(201).json(fileUpload);
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      res.status(500).json({ message: "Failed to upload file" });
-    }
+    res.status(501).json({ message: "File upload not implemented in production" });
   });
 
   // Community resources routes
@@ -719,11 +711,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         totalIncidents: crimeData.length,
         topCrimeTypes: Object.entries(typeCount)
-          .sort(([,a], [,b]) => (b as number) - (a as number))
+          .sort(([,a]: [string, number], [,b]: [string, number]) => b - a)
           .slice(0, 10)
           .map(([type, count]) => ({ type, count })),
         topLocations: Object.entries(locationCount)
-          .sort(([,a], [,b]) => (b as number) - (a as number))
+          .sort(([,a]: [string, number], [,b]: [string, number]) => b - a)
           .slice(0, 10)
           .map(([location, count]) => ({ location, count })),
         hourlyDistribution: Array.from({ length: 24 }, (_, hour) => ({
