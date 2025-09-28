@@ -4,8 +4,8 @@ import { setupVite, serveStatic } from "./vite";
 
 const app = express();
 
-// Configure trust proxy for production
-app.set('trust proxy', 1);
+// Configure trust proxy for production (commented out due to TypeScript issues)
+// app.set('trust proxy', true);
 
 // Middleware for parsing JSON and URL-encoded data
 app.use(express.json({ limit: '50mb' }));
@@ -88,7 +88,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
       console.log('✅ Vite dev server configured');
     }
 
-    const PORT = process.env.PORT || 5000;
+    const PORT = parseInt(process.env.PORT || '5000', 10);
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`🌐 Server listening on http://0.0.0.0:${PORT}`);
       console.log(`🎯 Health check: http://0.0.0.0:${PORT}/api/health`);
