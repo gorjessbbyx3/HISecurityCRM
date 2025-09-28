@@ -183,9 +183,12 @@ export interface CommunityResource {
   name: string;
   type: string;
   description: string;
-  contactInfo?: string;
-  address?: string;
+  address: string;
+  phone: string;
+  email?: string;
   website?: string;
+  hours: string;
+  services: string[];
   status: string;
   createdAt: Date;
   updatedAt: Date;
@@ -818,6 +821,31 @@ class SupabaseStorage {
       throw new Error(`Failed to create community resource: ${error.message}`);
     }
     return data;
+  }
+
+  async updateCommunityResource(id: string, updates: Partial<CommunityResource>): Promise<CommunityResource> {
+    const { data, error } = await supabase
+      .from('community_resources')
+      .update({ ...updates, updatedAt: new Date() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update community resource: ${error.message}`);
+    }
+    return data;
+  }
+
+  async deleteCommunityResource(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('community_resources')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete community resource: ${error.message}`);
+    }
   }
 
   async createLawReference(referenceData: Omit<LawReference, 'id' | 'createdAt' | 'updatedAt'>): Promise<LawReference> {

@@ -16,16 +16,17 @@ import { toast } from "@/hooks/use-toast";
 interface CommunityResource {
   id: string;
   name: string;
-  type: string;
+  category: string;
   description: string;
-  address: string;
-  phone: string;
-  email?: string;
+  contactInfo?: string;
   website?: string;
-  hours: string;
-  services: string[];
-  status: string;
-  createdAt: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  hours?: string;
+  services?: string[];
+  status?: string;
+  lastUpdated: Date;
 }
 
 export default function CommunityOutreach() {
@@ -52,7 +53,7 @@ export default function CommunityOutreach() {
   const resources = allResources.filter((resource: CommunityResource) =>
     resource.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    resource.type.toLowerCase().includes(searchTerm.toLowerCase())
+    resource.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const createResourceMutation = useMutation({
@@ -170,7 +171,7 @@ export default function CommunityOutreach() {
     setSelectedResource(resource);
     editForm.reset({
       name: resource.name,
-      type: resource.type,
+      category: resource.category,
       description: resource.description,
       address: resource.address,
       phone: resource.phone,
@@ -248,10 +249,10 @@ export default function CommunityOutreach() {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="type" className="text-white">Type</Label>
-                          <Select onValueChange={(value) => createForm.setValue("type", value)}>
+                          <Label htmlFor="category" className="text-white">Category</Label>
+                          <Select onValueChange={(value) => createForm.setValue("category", value)}>
                             <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                              <SelectValue placeholder="Select type" />
+                              <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-700 border-slate-600">
                               {resourceTypes.map((type) => (
@@ -379,10 +380,10 @@ export default function CommunityOutreach() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="type" className="text-white">Type</Label>
-                      <Select onValueChange={(value) => editForm.setValue("type", value)}>
+                      <Label htmlFor="category" className="text-white">Category</Label>
+                      <Select onValueChange={(value) => editForm.setValue("category", value)}>
                         <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                          <SelectValue placeholder="Select type" />
+                          <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent className="bg-slate-700 border-slate-600">
                           {resourceTypes.map((type) => (
@@ -571,11 +572,11 @@ export default function CommunityOutreach() {
                         <div className="flex items-start justify-between mb-4" onClick={() => setSelectedResource(resource)}>
                           <div className="flex items-center space-x-3">
                             <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                              <i className={`fas ${getResourceTypeIcon(resource.type)} text-blue-400`}></i>
+                              <i className={`fas ${getResourceTypeIcon(resource.category)} text-blue-400`}></i>
                             </div>
                             <div>
                               <h3 className="text-white font-medium">{resource.name}</h3>
-                              <p className="text-slate-400 text-sm capitalize">{resource.type?.replace('_', ' ')}</p>
+                              <p className="text-slate-400 text-sm capitalize">{resource.category?.replace('_', ' ')}</p>
                             </div>
                           </div>
                           <Badge className={`${getStatusColor(resource.status)} text-white`}>
@@ -631,7 +632,7 @@ export default function CommunityOutreach() {
                 <DialogHeader>
                   <DialogTitle className="text-white flex items-center space-x-3">
                     <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                      <i className={`fas ${getResourceTypeIcon(selectedResource.type)} text-blue-400`}></i>
+                      <i className={`fas ${getResourceTypeIcon(selectedResource.category || '')} text-blue-400`}></i>
                     </div>
                     <span>{selectedResource.name}</span>
                     <Badge className={`${getStatusColor(selectedResource.status)} text-white ml-auto`}>

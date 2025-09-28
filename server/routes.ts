@@ -550,6 +550,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/evidence/recent', authenticateToken, async (req, res) => {
+    try {
+      const { limit = 5 } = req.query;
+      const recentEvidence = await storage.getRecentEvidence(parseInt(limit as string));
+      res.json(recentEvidence);
+    } catch (error) {
+      console.error("Error fetching recent evidence:", error);
+      res.status(500).json({ message: "Failed to fetch recent evidence" });
+    }
+  });
+
   app.post('/api/evidence', authenticateToken, async (req, res) => {
     try {
       const evidenceData = {
@@ -626,6 +637,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating community resource:", error);
       res.status(500).json({ message: "Failed to create community resource" });
+    }
+  });
+
+  app.put('/api/community-resources/:id', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const resource = await storage.updateCommunityResource(id, req.body);
+      res.json(resource);
+    } catch (error) {
+      console.error("Error updating community resource:", error);
+      res.status(500).json({ message: "Failed to update community resource" });
+    }
+  });
+
+  app.delete('/api/community-resources/:id', authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteCommunityResource(id);
+      res.json({ message: "Community resource deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting community resource:", error);
+      res.status(500).json({ message: "Failed to delete community resource" });
     }
   });
 

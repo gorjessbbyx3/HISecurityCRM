@@ -89,6 +89,29 @@ export const insertFinancialRecordSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const insertCommunityResourceSchema = z.object({
+  name: z.string().min(1),
+  category: z.string().min(1),
+  description: z.string().min(1),
+  contactInfo: z.string().optional(),
+  website: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+  hours: z.string().optional(),
+  services: z.array(z.string()).optional(),
+});
+
+export const insertLawReferenceSchema = z.object({
+  title: z.string().min(1),
+  category: z.string().min(1),
+  code: z.string().min(1),
+  description: z.string().min(1),
+  fullText: z.string().min(1),
+  penalties: z.string().optional(),
+  relatedCodes: z.array(z.string()).optional(),
+});
+
 // Export types
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
@@ -96,6 +119,8 @@ export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 export type InsertPatrolReport = z.infer<typeof insertPatrolReportSchema>;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 export type InsertFinancialRecord = z.infer<typeof insertFinancialRecordSchema>;
+export type InsertCommunityResource = z.infer<typeof insertCommunityResourceSchema>;
+export type InsertLawReference = z.infer<typeof insertLawReferenceSchema>;
 
 // Full entity types (with id and timestamps)
 export type Client = InsertClient & {
@@ -132,4 +157,14 @@ export type FinancialRecord = InsertFinancialRecord & {
   id: string;
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type CommunityResource = InsertCommunityResource & {
+  id: string;
+  lastUpdated: Date;
+};
+
+export type LawReference = InsertLawReference & {
+  id: string;
+  lastUpdated: Date;
 };

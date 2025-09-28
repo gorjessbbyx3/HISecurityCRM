@@ -70,7 +70,8 @@ export default function HawaiiLaw() {
         description: "Law reference created successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Create law error:", error);
       toast({
         title: "Error",
         description: "Failed to create law reference",
@@ -361,56 +362,70 @@ export default function HawaiiLaw() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredLaws.map((law: LawReference) => (
-                    <Card 
-                      key={law.id} 
-                      className="bg-slate-700 border-slate-600 hover:border-slate-500 transition-colors cursor-pointer"
-                      onClick={() => setSelectedLaw(law)}
-                    >
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center space-x-3">
-                            <div className={`w-10 h-10 ${getCategoryColor(law.category)}/20 rounded-lg flex items-center justify-center`}>
-                              <i className={`fas ${getCategoryIcon(law.category)} text-${getCategoryColor(law.category).replace('bg-', '').replace('-500', '')}-400`}></i>
-                            </div>
-                            <div>
-                              <h3 className="text-white font-medium line-clamp-2">{law.title}</h3>
-                              <p className="text-slate-400 text-sm">{law.code}</p>
-                            </div>
-                          </div>
-                          <Badge className={`${getCategoryColor(law.category)} text-white`}>
-                            {law.category.replace('_', ' ')}
-                          </Badge>
-                        </div>
-                        
-                        <p className="text-slate-300 text-sm mb-4 line-clamp-3">{law.description}</p>
-                        
-                        {law.penalties && (
-                          <div className="bg-slate-800 p-3 rounded-lg mb-4">
-                            <p className="text-slate-400 text-xs font-medium mb-1">PENALTIES</p>
-                            <p className="text-slate-300 text-sm line-clamp-2">{law.penalties}</p>
-                          </div>
-                        )}
-                        
-                        {law.relatedCodes && law.relatedCodes.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            <span className="text-slate-400 text-xs mr-2">Related:</span>
-                            {law.relatedCodes.slice(0, 2).map((code, index) => (
-                              <Badge key={index} variant="outline" className="text-xs border-slate-600 text-slate-300">
-                                {code}
-                              </Badge>
-                            ))}
-                            {law.relatedCodes.length > 2 && (
-                              <Badge variant="outline" className="text-xs border-slate-600 text-slate-300">
-                                +{law.relatedCodes.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left text-slate-300 bg-slate-700 border border-slate-600 rounded-lg">
+                    <thead className="text-xs uppercase bg-slate-800 text-slate-400">
+                      <tr>
+                        <th className="px-6 py-3">Title</th>
+                        <th className="px-6 py-3">Code</th>
+                        <th className="px-6 py-3">Category</th>
+                        <th className="px-6 py-3">Description</th>
+                        <th className="px-6 py-3">Penalties</th>
+                        <th className="px-6 py-3">Related Codes</th>
+                        <th className="px-6 py-3">Last Updated</th>
+                        <th className="px-6 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredLaws.map((law: LawReference) => (
+                        <tr 
+                          key={law.id} 
+                          className="border-b border-slate-600 hover:bg-slate-600 cursor-pointer"
+                          onClick={() => setSelectedLaw(law)}
+                        >
+                          <td className="px-6 py-4 font-medium text-white max-w-xs truncate">{law.title}</td>
+                          <td className="px-6 py-4 text-slate-300">{law.code}</td>
+                          <td className="px-6 py-4">
+                            <Badge className={`${getCategoryColor(law.category)} text-white text-xs`}>
+                              {law.category.replace('_', ' ')}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 max-w-md truncate" title={law.description}>{law.description}</td>
+                          <td className="px-6 py-4 max-w-xs truncate" title={law.penalties || 'N/A'}>{law.penalties || 'N/A'}</td>
+                          <td className="px-6 py-4">
+                            {law.relatedCodes && law.relatedCodes.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {law.relatedCodes.slice(0, 3).map((code, index) => (
+                                  <Badge key={index} variant="outline" className="text-xs border-slate-600 text-slate-300">
+                                    {code}
+                                  </Badge>
+                                ))}
+                                {law.relatedCodes.length > 3 && (
+                                  <Badge variant="outline" className="text-xs border-slate-600 text-slate-300">
+                                    +{law.relatedCodes.length - 3}
+                                  </Badge>
+                                )}
+                              </div>
+                            ) : 'None'}
+                          </td>
+                          <td className="px-6 py-4 text-slate-400">{new Date(law.lastUpdated).toLocaleDateString()}</td>
+                          <td className="px-6 py-4">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedLaw(law);
+                              }}
+                              className="text-slate-400 hover:text-white"
+                            >
+                              <i className="fas fa-eye mr-1"></i>View
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>
