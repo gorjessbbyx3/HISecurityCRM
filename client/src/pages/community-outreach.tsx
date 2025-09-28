@@ -30,12 +30,15 @@ interface CommunityResource {
 
 export default function CommunityOutreach() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<CommunityResource | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const queryClient = useQueryClient();
-  const form = useForm();
+  const createForm = useForm();
+  const editForm = useForm();
 
-  const { data: resources = [], isLoading } = useQuery({
+  const { data: allResources = [], isLoading } = useQuery({
     queryKey: ["/api/community-resources"],
     queryFn: async () => {
       const response = await fetch("/api/community-resources", {
@@ -45,6 +48,12 @@ export default function CommunityOutreach() {
       return response.json();
     },
   });
+
+  const resources = allResources.filter((resource: CommunityResource) =>
+    resource.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    resource.type.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const createResourceMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -60,16 +69,74 @@ export default function CommunityOutreach() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/community-resources"] });
       setIsCreateDialogOpen(false);
-      form.reset();
+      createForm.reset();
       toast({
         title: "Success",
         description: "Community resource created successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Create error:", error);
       toast({
         title: "Error",
         description: "Failed to create community resource",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateResourceMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await fetch(`/api/community-resources/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to update resource');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/community-resources"] });
+      setIsEditDialogOpen(false);
+      setSelectedResource(null);
+      editForm.reset();
+      toast({
+        title: "Success",
+        description: "Community resource updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error("Update error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update community resource",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteResourceMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/community-resources/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to delete resource');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/community-resources"] });
+      toast({
+        title: "Success",
+        description: "Community resource deleted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error("Delete error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete community resource",
         variant: "destructive",
       });
     },
@@ -80,6 +147,39 @@ export default function CommunityOutreach() {
       ...data,
       services: data.services?.split(',').map((s: string) => s.trim()) || [],
     });
+  };
+
+  const handleUpdateResource = (data: any) => {
+    if (!selectedResource) return;
+    updateResourceMutation.mutate({
+      id: selectedResource.id,
+      data: {
+        ...data,
+        services: data.services?.split(',').map((s: string) => s.trim()) || [],
+      },
+    });
+  };
+
+  const handleDeleteResource = (id: string) => {
+    if (confirm("Are you sure you want to delete this resource?")) {
+      deleteResourceMutation.mutate(id);
+    }
+  };
+
+  const openEditDialog = (resource: CommunityResource) => {
+    setSelectedResource(resource);
+    editForm.reset({
+      name: resource.name,
+      type: resource.type,
+      description: resource.description,
+      address: resource.address,
+      phone: resource.phone,
+      email: resource.email || '',
+      website: resource.website || '',
+      hours: resource.hours,
+      services: resource.services?.join(', ') || '',
+    });
+    setIsEditDialogOpen(true);
   };
 
   const getResourceTypeIcon = (type: string) => {
@@ -126,132 +226,263 @@ export default function CommunityOutreach() {
                 </p>
               </div>
 
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gold-500 hover:bg-gold-600 text-black">
-                    <i className="fas fa-plus mr-2"></i>Add Resource
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Add Community Resource</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={form.handleSubmit(handleCreateResource)} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-3">
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-gold-500 hover:bg-gold-600 text-black">
+                      <i className="fas fa-plus mr-2"></i>Add Resource
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle className="text-white">Add Community Resource</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={createForm.handleSubmit(handleCreateResource)} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="name" className="text-white">Name</Label>
+                          <Input
+                            id="name"
+                            {...createForm.register("name", { required: true })}
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="type" className="text-white">Type</Label>
+                          <Select onValueChange={(value) => createForm.setValue("type", value)}>
+                            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-slate-700 border-slate-600">
+                              {resourceTypes.map((type) => (
+                                <SelectItem key={type} value={type} className="text-white">
+                                  {type.replace('_', ' ').toUpperCase()}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
                       <div>
-                        <Label htmlFor="name" className="text-white">Name</Label>
-                        <Input
-                          id="name"
-                          {...form.register("name", { required: true })}
+                        <Label htmlFor="description" className="text-white">Description</Label>
+                        <Textarea
+                          id="description"
+                          {...createForm.register("description", { required: true })}
                           className="bg-slate-700 border-slate-600 text-white"
                         />
                       </div>
+
                       <div>
-                        <Label htmlFor="type" className="text-white">Type</Label>
-                        <Select onValueChange={(value) => form.setValue("type", value)}>
-                          <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-slate-700 border-slate-600">
-                            {resourceTypes.map((type) => (
-                              <SelectItem key={type} value={type} className="text-white">
-                                {type.replace('_', ' ').toUpperCase()}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="description" className="text-white">Description</Label>
-                      <Textarea
-                        id="description"
-                        {...form.register("description", { required: true })}
-                        className="bg-slate-700 border-slate-600 text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="address" className="text-white">Address</Label>
-                      <Input
-                        id="address"
-                        {...form.register("address", { required: true })}
-                        className="bg-slate-700 border-slate-600 text-white"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="phone" className="text-white">Phone</Label>
+                        <Label htmlFor="address" className="text-white">Address</Label>
                         <Input
-                          id="phone"
-                          {...form.register("phone", { required: true })}
+                          id="address"
+                          {...createForm.register("address", { required: true })}
                           className="bg-slate-700 border-slate-600 text-white"
                         />
                       </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="phone" className="text-white">Phone</Label>
+                          <Input
+                            id="phone"
+                            {...createForm.register("phone", { required: true })}
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="email" className="text-white">Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            {...createForm.register("email")}
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="website" className="text-white">Website</Label>
+                          <Input
+                            id="website"
+                            {...createForm.register("website")}
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="hours" className="text-white">Hours</Label>
+                          <Input
+                            id="hours"
+                            {...createForm.register("hours", { required: true })}
+                            className="bg-slate-700 border-slate-600 text-white"
+                            placeholder="e.g., Mon-Fri 9AM-5PM"
+                          />
+                        </div>
+                      </div>
+
                       <div>
-                        <Label htmlFor="email" className="text-white">Email</Label>
+                        <Label htmlFor="services" className="text-white">Services (comma separated)</Label>
                         <Input
-                          id="email"
-                          type="email"
-                          {...form.register("email")}
+                          id="services"
+                          {...createForm.register("services")}
                           className="bg-slate-700 border-slate-600 text-white"
+                          placeholder="e.g., Housing assistance, Case management"
                         />
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="website" className="text-white">Website</Label>
-                        <Input
-                          id="website"
-                          {...form.register("website")}
-                          className="bg-slate-700 border-slate-600 text-white"
-                        />
+                      <div className="flex justify-end space-x-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setIsCreateDialogOpen(false)}
+                          className="border-slate-600 text-slate-300"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="bg-gold-500 hover:bg-gold-600 text-black"
+                          disabled={createResourceMutation.isPending}
+                        >
+                          {createResourceMutation.isPending ? 'Creating...' : 'Create Resource'}
+                        </Button>
                       </div>
-                      <div>
-                        <Label htmlFor="hours" className="text-white">Hours</Label>
-                        <Input
-                          id="hours"
-                          {...form.register("hours", { required: true })}
-                          className="bg-slate-700 border-slate-600 text-white"
-                          placeholder="e.g., Mon-Fri 9AM-5PM"
-                        />
-                      </div>
-                    </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
 
-                    <div>
-                      <Label htmlFor="services" className="text-white">Services (comma separated)</Label>
-                      <Input
-                        id="services"
-                        {...form.register("services")}
-                        className="bg-slate-700 border-slate-600 text-white"
-                        placeholder="e.g., Housing assistance, Case management"
-                      />
-                    </div>
-
-                    <div className="flex justify-end space-x-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsCreateDialogOpen(false)}
-                        className="border-slate-600 text-slate-300"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        className="bg-gold-500 hover:bg-gold-600 text-black"
-                        disabled={createResourceMutation.isPending}
-                      >
-                        {createResourceMutation.isPending ? 'Creating...' : 'Create Resource'}
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
+                <Input
+                  placeholder="Search resources..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-slate-700 border-slate-600 text-white px-4 py-2 rounded-lg w-64 max-w-full"
+                />
+              </div>
             </div>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Edit Community Resource</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={editForm.handleSubmit(handleUpdateResource)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="name" className="text-white">Name</Label>
+                      <Input
+                        id="name"
+                        {...editForm.register("name", { required: true })}
+                        className="bg-slate-700 border-slate-600 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="type" className="text-white">Type</Label>
+                      <Select onValueChange={(value) => editForm.setValue("type", value)}>
+                        <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-700 border-slate-600">
+                          {resourceTypes.map((type) => (
+                            <SelectItem key={type} value={type} className="text-white">
+                              {type.replace('_', ' ').toUpperCase()}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="description" className="text-white">Description</Label>
+                    <Textarea
+                      id="description"
+                      {...editForm.register("description", { required: true })}
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="address" className="text-white">Address</Label>
+                    <Input
+                      id="address"
+                      {...editForm.register("address", { required: true })}
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="phone" className="text-white">Phone</Label>
+                      <Input
+                        id="phone"
+                        {...editForm.register("phone", { required: true })}
+                        className="bg-slate-700 border-slate-600 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email" className="text-white">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        {...editForm.register("email")}
+                        className="bg-slate-700 border-slate-600 text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="website" className="text-white">Website</Label>
+                      <Input
+                        id="website"
+                        {...editForm.register("website")}
+                        className="bg-slate-700 border-slate-600 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="hours" className="text-white">Hours</Label>
+                      <Input
+                        id="hours"
+                        {...editForm.register("hours", { required: true })}
+                        className="bg-slate-700 border-slate-600 text-white"
+                        placeholder="e.g., Mon-Fri 9AM-5PM"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="services" className="text-white">Services (comma separated)</Label>
+                    <Input
+                      id="services"
+                      {...editForm.register("services")}
+                      className="bg-slate-700 border-slate-600 text-white"
+                      placeholder="e.g., Housing assistance, Case management"
+                    />
+                  </div>
+
+                  <div className="flex justify-end space-x-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsEditDialogOpen(false)}
+                      className="border-slate-600 text-slate-300"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-gold-500 hover:bg-gold-600 text-black"
+                      disabled={updateResourceMutation.isPending}
+                    >
+                      {updateResourceMutation.isPending ? 'Updating...' : 'Update Resource'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Emergency Contacts */}
@@ -293,7 +524,7 @@ export default function CommunityOutreach() {
           {/* Community Resources */}
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white">Community Resources</CardTitle>
+              <CardTitle className="text-white">Community Resources ({resources.length})</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -305,15 +536,39 @@ export default function CommunityOutreach() {
               ) : resources.length === 0 ? (
                 <div className="text-center py-12">
                   <i className="fas fa-heart text-4xl text-slate-400 mb-4"></i>
-                  <p className="text-slate-400 text-lg">No community resources available</p>
-                  <p className="text-slate-500 text-sm">Add resources to help community members find assistance</p>
+                  <p className="text-slate-400 text-lg">No community resources match your search</p>
+                  <p className="text-slate-500 text-sm">Try adjusting your search terms or add new resources</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {resources.map((resource: CommunityResource) => (
-                    <Card key={resource.id} className="bg-slate-700 border-slate-600 hover:border-slate-500 transition-colors cursor-pointer" onClick={() => setSelectedResource(resource)}>
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
+                    <Card key={resource.id} className="bg-slate-700 border-slate-600 hover:border-slate-500 transition-colors">
+                      <CardContent className="p-6 relative">
+                        <div className="flex justify-end mb-4">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditDialog(resource);
+                            }}
+                            className="text-slate-400 hover:text-white"
+                          >
+                            <i className="fas fa-edit"></i>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteResource(resource.id);
+                            }}
+                            className="text-red-400 hover:text-red-300"
+                          >
+                            <i className="fas fa-trash"></i>
+                          </Button>
+                        </div>
+                        <div className="flex items-start justify-between mb-4" onClick={() => setSelectedResource(resource)}>
                           <div className="flex items-center space-x-3">
                             <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
                               <i className={`fas ${getResourceTypeIcon(resource.type)} text-blue-400`}></i>

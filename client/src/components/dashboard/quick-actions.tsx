@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertIncidentSchema, insertPatrolReportSchema } from "@shared/schema";
 
 export default function QuickActions() {
   const { toast } = useToast();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const emergencyMutation = useMutation({
     mutationFn: async () => {
@@ -74,7 +74,7 @@ export default function QuickActions() {
         emergencyMutation.mutate();
         break;
       case "log-incident":
-        router.push("/crime-intelligence");
+        navigate("/crime-intelligence");
         break;
       case "schedule-patrol":
         patrolMutation.mutate();
