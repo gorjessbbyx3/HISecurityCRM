@@ -104,7 +104,7 @@ export default function QuickActions() {
       ]);
 
       const csvContent = [csvHeaders, ...csvRows]
-        .map(row => row.map(field => `"${field}"`).join(","))
+        .map(row => row.map((field: string) => `"${field}"`).join(","))
         .join("\n");
 
       // Download CSV
@@ -136,7 +136,7 @@ export default function QuickActions() {
       <h3 className="text-lg font-semibold text-white mb-4" data-testid="text-quick-actions-title">
         Quick Actions
       </h3>
-      
+
       <div className="space-y-2">
         <Button
           onClick={() => handleAction("emergency-alert")}
@@ -145,7 +145,7 @@ export default function QuickActions() {
         >
           <i className="fas fa-exclamation-triangle mr-2"></i>Emergency Alert
         </Button>
-        
+
         <Button
           onClick={() => handleAction("log-incident")}
           className="w-full bg-navy-700 hover:bg-navy-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
@@ -153,7 +153,7 @@ export default function QuickActions() {
         >
           <i className="fas fa-plus mr-2"></i>Log Incident
         </Button>
-        
+
         <Button
           onClick={() => handleAction("schedule-patrol")}
           className="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
@@ -161,7 +161,7 @@ export default function QuickActions() {
         >
           <i className="fas fa-route mr-2"></i>Schedule Patrol
         </Button>
-        
+
         <Button
           onClick={() => handleAction("generate-report")}
           className="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"

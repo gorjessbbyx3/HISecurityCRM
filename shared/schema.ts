@@ -96,3 +96,40 @@ export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 export type InsertPatrolReport = z.infer<typeof insertPatrolReportSchema>;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 export type InsertFinancialRecord = z.infer<typeof insertFinancialRecordSchema>;
+
+// Full entity types (with id and timestamps)
+export type Client = InsertClient & {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Property = InsertProperty & {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Incident = InsertIncident & {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type PatrolReport = InsertPatrolReport & {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Appointment = InsertAppointment & {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type FinancialRecord = InsertFinancialRecord & {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+};

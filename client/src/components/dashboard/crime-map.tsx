@@ -1,15 +1,28 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
+interface CrimeAnalytics {
+  totalIncidents: number;
+  topCrimeTypes?: Array<{ type: string; count: number }>;
+  topLocations?: Array<{ location: string; count: number }>;
+}
+
+interface Incident {
+  id?: string;
+  type?: string;
+  location?: string;
+  date?: string;
+}
+
 export default function CrimeMap() {
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: crimeData, isLoading, refetch } = useQuery({
+  const { data: crimeData, isLoading, refetch } = useQuery<Incident[]>({
     queryKey: ['/api/crime-data/live'],
     staleTime: 300000, // 5 minutes
   });
 
-  const { data: analytics } = useQuery({
+  const { data: analytics } = useQuery<CrimeAnalytics>({
     queryKey: ['/api/crime-data/analytics'],
     staleTime: 600000, // 10 minutes
   });
@@ -27,7 +40,7 @@ export default function CrimeMap() {
           {import.meta.env.VITE_CRIME_MAP_TITLE || 'Crime Intelligence Dashboard'}
         </h3>
         <div className="flex space-x-2">
-          <button 
+          <button
             onClick={handleRefresh}
             disabled={refreshing}
             className="text-slate-400 hover:text-white transition-colors disabled:opacity-50"
@@ -35,7 +48,7 @@ export default function CrimeMap() {
           >
             <i className={`fas fa-sync-alt ${refreshing ? 'animate-spin' : ''}`}></i>
           </button>
-          <button 
+          <button
             className="text-slate-400 hover:text-white transition-colors"
             data-testid="button-fullscreen-map"
           >
@@ -80,7 +93,7 @@ export default function CrimeMap() {
             <p className="text-slate-400 text-sm">Real-time incident tracking</p>
           </div>
         </div>
-        
+
         {/* Crime Markers */}
         <div className="absolute top-4 left-4 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
         <div className="absolute top-12 right-8 w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
@@ -93,16 +106,16 @@ export default function CrimeMap() {
           Recent Incidents from Honolulu PD
           {isLoading && <span className="text-slate-400 text-xs ml-2">(Loading...)</span>}
         </h4>
-        
+
         {crimeData && crimeData.length > 0 ? (
-          crimeData.slice(0, 5).map((incident: any, index: number) => (
+          crimeData.slice(0, 5).map((incident: Incident, index: number) => (
             <div key={incident.id || index} className="flex items-center justify-between p-3 bg-slate-700 rounded-lg">
               <div className="flex items-center space-x-3">
                 <div className={`w-2 h-2 rounded-full ${
-                  incident.type?.toLowerCase().includes('theft') || incident.type?.toLowerCase().includes('burglary') 
-                    ? 'bg-red-500' 
-                    : incident.type?.toLowerCase().includes('assault') 
-                    ? 'bg-orange-500' 
+                  incident.type?.toLowerCase().includes('theft') || incident.type?.toLowerCase().includes('burglary')
+                    ? 'bg-red-500'
+                    : incident.type?.toLowerCase().includes('assault')
+                    ? 'bg-orange-500'
                     : 'bg-yellow-500'
                 }`}></div>
                 <div>

@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertFinancialRecordSchema, type FinancialRecord } from "@shared/schema";
+import { insertFinancialRecordSchema, type FinancialRecord, type Client } from "@shared/schema";
 
 export default function Accounting() {
   const { toast } = useToast();
@@ -44,12 +44,12 @@ export default function Accounting() {
     enabled: isAuthenticated,
   });
 
-  const { data: financialRecords = [], isLoading: recordsLoading } = useQuery({
+  const { data: financialRecords = [] as FinancialRecord[], isLoading: recordsLoading } = useQuery<FinancialRecord[]>({
     queryKey: ["/api/financial/records"],
     enabled: isAuthenticated,
   });
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [] as Client[] } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
     enabled: isAuthenticated,
   });
@@ -72,7 +72,7 @@ export default function Accounting() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: z.infer<typeof insertFinancialRecordSchema>) => {
       return await apiRequest("/api/financial/records", {
         method: "POST",
         body: JSON.stringify(data),
@@ -108,7 +108,7 @@ export default function Accounting() {
     },
   });
 
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: z.infer<typeof insertFinancialRecordSchema>) => {
     const formattedData = {
       ...data,
       amount: parseFloat(data.amount),
@@ -150,7 +150,7 @@ export default function Accounting() {
     }
   };
 
-  const filteredRecords = financialRecords.filter((record: any) => {
+  const filteredRecords = financialRecords.filter((record: FinancialRecord) => {
     const recordDate = new Date(record.transactionDate);
     const now = new Date();
     
@@ -171,14 +171,14 @@ export default function Accounting() {
 
   const periodSummary = {
     totalRevenue: filteredRecords
-      .filter((record: any) => record.recordType === "payment")
-      .reduce((sum: number, record: any) => sum + parseFloat(record.amount || 0), 0),
+      .filter((record: FinancialRecord) => record.recordType === "payment")
+      .reduce((sum: number, record: FinancialRecord) => sum + parseFloat(record.amount || 0), 0),
     totalExpenses: filteredRecords
-      .filter((record: any) => record.recordType === "expense")
-      .reduce((sum: number, record: any) => sum + parseFloat(record.amount || 0), 0),
+      .filter((record: FinancialRecord) => record.recordType === "expense")
+      .reduce((sum: number, record: FinancialRecord) => sum + parseFloat(record.amount || 0), 0),
     totalInvoices: filteredRecords
-      .filter((record: any) => record.recordType === "invoice")
-      .reduce((sum: number, record: any) => sum + parseFloat(record.amount || 0), 0),
+      .filter((record: FinancialRecord) => record.recordType === "invoice")
+      .reduce((sum: number, record: FinancialRecord) => sum + parseFloat(record.amount || 0), 0),
   };
 
   const netProfit = periodSummary.totalRevenue - periodSummary.totalExpenses;
@@ -304,7 +304,7 @@ export default function Accounting() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent className="bg-slate-700 border-slate-600">
-                                  {clients.map((client: any) => (
+                                  {clients.map((client: Client) => (
                                     <SelectItem key={client.id} value={client.id}>
                                       {client.name}
                                     </SelectItem>
@@ -605,8 +605,8 @@ export default function Accounting() {
                       <p className="text-slate-400 text-sm font-medium">Tax Deductible</p>
                       <p className="text-2xl font-bold text-white mt-1" data-testid="text-tax-deductible">
                         ${filteredRecords
-                          .filter((record: any) => record.taxCategory === "deductible")
-                          .reduce((sum: number, record: any) => sum + parseFloat(record.amount || 0), 0)
+                          .filter((record: FinancialRecord) => record.taxCategory === "deductible")
+                          .reduce((sum: number, record: FinancialRecord) => sum + parseFloat(record.amount || 0), 0)
                           .toLocaleString('en-US', { minimumFractionDigits: 2 })
                         }
                       </p>
@@ -674,7 +674,7 @@ export default function Accounting() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {filteredRecords.map((record: any) => (
+                    {filteredRecords.map((record: FinancialRecord) => (
                       <div key={record.id} className="flex items-center justify-between p-4 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors">
                         <div className="flex items-center space-x-4">
                           <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
@@ -682,7 +682,7 @@ export default function Accounting() {
                             record.recordType === 'invoice' ? 'bg-blue-500/20' :
                             'bg-red-500/20'
                           }`}>
-                            <i className={`${
+                            <i className={`${ 
                               record.recordType === 'payment' ? 'fas fa-dollar-sign text-green-400' :
                               record.recordType === 'invoice' ? 'fas fa-file-invoice text-blue-400' :
                               'fas fa-credit-card text-red-400'

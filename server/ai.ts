@@ -33,7 +33,7 @@ interface PatrolSummary {
 }
 
 class AIService {
-  private groq: Groq;
+  private groq?: Groq;
 
   constructor() {
     // Initialize Groq client if API key is available

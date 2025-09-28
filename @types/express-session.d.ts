@@ -18,6 +18,6 @@ declare module 'express-serve-static-core' {
       firstName: string;
       lastName: string;
       role: string;
-    };
+    } | null;
   }
 }

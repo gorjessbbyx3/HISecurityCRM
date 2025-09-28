@@ -1,15 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function RecentEvidence() {
   const { isAuthenticated } = useAuth();
 
-  const { data: evidenceItems, isLoading } = useQuery({
+  const { data: evidenceItems = [], isLoading } = useQuery({
     queryKey: ["/api/evidence"],
     enabled: isAuthenticated,
   });
-
-  const items = evidenceItems as any[] || [];
 
   if (isLoading) {
     return (
@@ -42,13 +41,13 @@ export default function RecentEvidence() {
       </h3>
 
       <div className="space-y-3">
-        {items.length === 0 ? (
+        {evidenceItems.length === 0 ? (
           <div className="text-center py-8">
             <i className="fas fa-image text-slate-400 text-2xl mb-2"></i>
             <p className="text-slate-400 text-sm">No recent evidence</p>
           </div>
         ) : (
-          items.slice(0, 5).map((item: any) => (
+          evidenceItems.slice(0, 5).map((item: any) => (
             <div key={item.id} className="p-3 border border-slate-600 rounded-lg">
               <div className="flex items-center space-x-3 mb-2">
                 <img
