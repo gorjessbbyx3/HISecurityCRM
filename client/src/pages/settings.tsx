@@ -7,7 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Lock, Bell, Shield, Palette } from "lucide-react";
+import { Lock, Bell, Shield } from "lucide-react";
+import Header from "@/components/layout/header";
+import Sidebar from "@/components/layout/sidebar";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -31,17 +34,23 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-page-title">
-          Settings
-        </h1>
-        <p className="text-slate-400">
-          Manage your account settings and preferences
-        </p>
-      </div>
+    <div className="bg-slate-900 min-h-screen">
+      <Header />
+      <div className="flex">
+        <Sidebar />
+        <main className="flex-1 p-6">
+          <Breadcrumbs />
+          <div className="max-w-4xl">
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-page-title">
+                Settings
+              </h1>
+              <p className="text-slate-400">
+                Manage your account settings and preferences
+              </p>
+            </div>
 
-      <Tabs defaultValue="security" className="space-y-6">
+            <Tabs defaultValue="security" className="space-y-6">
         <TabsList className="bg-slate-800 border border-slate-700">
           <TabsTrigger 
             value="security" 
@@ -254,7 +263,10 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+            </Tabs>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

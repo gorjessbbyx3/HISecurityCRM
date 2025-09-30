@@ -7,6 +7,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { User, Mail, Shield, Calendar, Edit } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import Header from "@/components/layout/header";
+import Sidebar from "@/components/layout/sidebar";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth();
@@ -15,9 +18,15 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-96 w-full" />
+      <div className="bg-slate-900 min-h-screen">
+        <Header />
+        <div className="flex">
+          <Sidebar />
+          <div className="flex-1 p-6">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-96 w-full mt-6" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -31,17 +40,23 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-page-title">
-          My Profile
-        </h1>
-        <p className="text-slate-400">
-          Manage your account information and preferences
-        </p>
-      </div>
+    <div className="bg-slate-900 min-h-screen">
+      <Header />
+      <div className="flex">
+        <Sidebar />
+        <main className="flex-1 p-6">
+          <Breadcrumbs />
+          <div className="max-w-4xl">
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-page-title">
+                My Profile
+              </h1>
+              <p className="text-slate-400">
+                Manage your account information and preferences
+              </p>
+            </div>
 
-      <div className="grid gap-6">
+            <div className="grid gap-6">
         <Card className="bg-slate-800 border-slate-700">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -203,6 +218,9 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );
