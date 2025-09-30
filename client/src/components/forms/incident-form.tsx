@@ -57,7 +57,7 @@ export default function IncidentForm({ initialData, onSaved, onCancel }: Inciden
     },
   });
 
-  const { data: properties = [] } = useQuery({
+  const { data: properties = [] } = useQuery<any[]>({
     queryKey: ["/api/properties"],
   });
 
@@ -67,7 +67,10 @@ export default function IncidentForm({ initialData, onSaved, onCancel }: Inciden
         ...data,
         photos: photoUrls,
       };
-      await apiRequest("POST", "/api/incidents", formattedData);
+      await apiRequest("/api/incidents", {
+        method: "POST",
+        body: JSON.stringify(formattedData),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
@@ -103,7 +106,10 @@ export default function IncidentForm({ initialData, onSaved, onCancel }: Inciden
         ...data,
         photos: photoUrls,
       };
-      await apiRequest("PUT", `/api/incidents/${initialData.id}`, formattedData);
+      await apiRequest(`/api/incidents/${initialData.id}`, {
+        method: "PUT",
+        body: JSON.stringify(formattedData),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });

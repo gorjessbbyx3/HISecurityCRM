@@ -104,7 +104,10 @@ export default function StaffManagement() {
 
   const createStaffMutation = useMutation({
     mutationFn: async (staffData: StaffFormData) => {
-      await apiRequest("POST", "/api/auth/staff", staffData);
+      await apiRequest("/api/auth/staff", {
+        method: "POST",
+        body: JSON.stringify(staffData),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/staff"] });
@@ -137,7 +140,10 @@ export default function StaffManagement() {
 
   const updateStaffMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<StaffFormData> }) => {
-      await apiRequest("PUT", `/api/auth/staff/${id}`, data);
+      await apiRequest(`/api/auth/staff/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/staff"] });

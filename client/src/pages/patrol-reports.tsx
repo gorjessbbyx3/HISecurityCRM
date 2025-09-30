@@ -35,17 +35,17 @@ export default function PatrolReports() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: patrolReports = [], isLoading: reportsLoading } = useQuery({
+  const { data: patrolReports = [], isLoading: reportsLoading } = useQuery<any[]>({
     queryKey: ["/api/patrol-reports"],
     enabled: isAuthenticated,
   });
 
-  const { data: properties = [] } = useQuery({
+  const { data: properties = [] } = useQuery<any[]>({
     queryKey: ["/api/properties"],
     enabled: isAuthenticated,
   });
 
-  const { data: staff = [] } = useQuery({
+  const { data: staff = [] } = useQuery<any[]>({
     queryKey: ["/api/staff"],
     enabled: isAuthenticated,
   });
