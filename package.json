@@ -4,9 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "node vercel-build.js",
-    "start": "next start",
+    "dev": "tsx server/index.ts",
+    "build": "tsc && vite build",
+    "start": "NODE_ENV=production tsx server/index.ts",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "db:push": "prisma db push",

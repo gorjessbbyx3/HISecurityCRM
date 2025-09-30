@@ -34,6 +34,12 @@ This is a full-stack JavaScript application with Express backend and React front
 - Migrate authentication to Supabase for better deployment compatibility
 
 ## Recent Changes
+- 2025-09-30: Completed Replit environment setup for GitHub import
+- 2025-09-30: Fixed authentication flow - replaced dynamic JWT import with optionalAuth middleware
+- 2025-09-30: Added missing getRecentEvidence method to Supabase storage
+- 2025-09-30: Updated package.json scripts to run Express server (tsx server/index.ts) instead of standalone Vite
+- 2025-09-30: Configured workflow for port 5000 with webview output type
+- 2025-09-30: Server now properly serves frontend through Express middleware mode
 - 2025-08-11: Successfully migrated from Replit Agent to standard Replit environment
 - 2025-08-11: Fixed database setup - PostgreSQL database created and connected
 - 2025-08-11: Configured SESSION_SECRET environment variable for authentication

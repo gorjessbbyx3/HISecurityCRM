@@ -2,7 +2,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./supabaseStorage";
-import { setupSupabaseAuth, authenticateToken, loginHandler } from "./supabaseAuth";
+import { setupSupabaseAuth, authenticateToken, optionalAuth, loginHandler } from "./supabaseAuth";
 import { sendNotification } from "./mailService";
 import {
   insertClientSchema,
@@ -48,24 +48,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupSupabaseAuth(app);
 
   // Authentication status endpoint
-  app.get('/api/auth/status', async (req: Request, res: Response) => {
+  app.get('/api/auth/status', optionalAuth, async (req: Request, res: Response) => {
     try {
-      const authHeader = req.headers['authorization'];
-      const token = authHeader && authHeader.split(' ')[1];
-      
-      if (!token) {
-        return res.json({ authenticated: false });
+      if (req.user) {
+        res.json({ authenticated: true, user: req.user });
+      } else {
+        res.json({ authenticated: false });
       }
-      
-      // Verify token and return user info if valid
-      const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
-      if (!jwtSecret) {
-        return res.json({ authenticated: false });
-      }
-      
-      const jwt = await import('jsonwebtoken');
-      const user = jwt.default.verify(token, jwtSecret);
-      res.json({ authenticated: true, user });
     } catch (error) {
       console.error('Auth status error:', error);
       res.json({ authenticated: false });

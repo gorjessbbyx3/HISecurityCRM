@@ -777,6 +777,19 @@ class SupabaseStorage {
     return data || [];
   }
 
+  async getRecentEvidence(limit: number = 5): Promise<Evidence[]> {
+    const { data, error } = await supabase
+      .from('evidence')
+      .select('*')
+      .order('createdAt', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      throw new Error(`Failed to fetch recent evidence: ${error.message}`);
+    }
+    return data || [];
+  }
+
   async createEvidence(evidenceData: Omit<Evidence, 'id' | 'createdAt' | 'updatedAt'>): Promise<Evidence> {
     const { data, error } = await supabase
       .from('evidence')
