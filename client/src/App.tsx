@@ -21,6 +21,8 @@ import StaffManagement from "@/pages/staff-management";
 import Scheduling from "@/pages/scheduling";
 import PatrolReports from "@/pages/patrol-reports";
 import HawaiiLaw from "@/pages/hawaii-law";
+import Profile from "@/pages/profile";
+import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -75,6 +77,8 @@ function Router() {
       <Route path="/community-outreach" component={CommunityOutreach} />
       <Route path="/accounting" component={Accounting} />
       <Route path="/scheduling" component={Scheduling} />
+      <Route path="/profile" component={Profile} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );
